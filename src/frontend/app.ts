@@ -1,6 +1,6 @@
 import { api } from './api';
 import type { World, WorldArc, WorldBeat, WorldEvent } from './api';
-import AuthService from './auth';
+import AuthService, { supabase } from './auth';
 
 export class WorldStoryApp {
   private currentWorld: World | null = null;
