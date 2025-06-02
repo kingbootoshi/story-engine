@@ -78,6 +78,44 @@ export class WorldStoryApp {
     worldsList.innerHTML = html || '<p>No worlds created yet. Create one to begin!</p>';
   }
 
+  public async loadWorld(worldId: string) {
+    try {
+      this.showLoading(true);
+      const worldState = await api.getWorldState(worldId);
+      
+      if (!worldState.world) {
+        throw new Error('World not found');
+      }
+      
+      this.currentWorld = worldState.world;
+      this.currentArc = worldState.currentArc;
+      this.currentBeats = worldState.currentBeats;
+      this.recentEvents = worldState.recentEvents;
+      
+      // Load all arcs
+      this.allArcs = await api.getArcs(worldId);
+      
+      this.updateWorldDisplay();
+      await this.loadEvents();
+
+      // Select the latest beat if available
+      if (this.currentBeats.length > 0) {
+        this.selectBeat(this.currentBeats[this.currentBeats.length - 1]);
+      }
+    } catch (error) {
+      this.showError(`Failed to load world: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // Reset state on error
+      this.currentWorld = null;
+      this.currentArc = null;
+      this.currentBeats = [];
+      this.recentEvents = [];
+      this.allArcs = [];
+      this.selectedBeat = null;
+    } finally {
+      this.showLoading(false);
+    }
+  }
+
   private render() {
     this.container.innerHTML = `
       <div class="world-story-engine">
@@ -364,33 +402,6 @@ export class WorldStoryApp {
       (document.getElementById('world-description') as HTMLTextAreaElement).value = '';
     } catch (error) {
       this.showError(`Failed to create world: ${error}`);
-    } finally {
-      this.showLoading(false);
-    }
-  }
-
-  public async loadWorld(worldId: string) {
-    try {
-      this.showLoading(true);
-      const worldState = await api.getWorldState(worldId);
-      
-      this.currentWorld = worldState.world;
-      this.currentArc = worldState.currentArc;
-      this.currentBeats = worldState.currentBeats;
-      this.recentEvents = worldState.recentEvents;
-      
-      // Load all arcs
-      this.allArcs = await api.getArcs(worldId);
-      
-      this.updateWorldDisplay();
-      await this.loadEvents();
-
-      // Select the latest beat if available
-      if (this.currentBeats.length > 0) {
-        this.selectBeat(this.currentBeats[this.currentBeats.length - 1]);
-      }
-    } catch (error) {
-      this.showError(`Failed to load world: ${error}`);
     } finally {
       this.showLoading(false);
     }

@@ -85,18 +85,27 @@ export class SupabaseService {
   async getWorld(id: string): Promise<World | null> {
     logger.debug('Fetching world', { id });
     
-    const { data, error } = await supabase
-      .from('worlds')
-      .select('*')
-      .eq('id', id)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('worlds')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-    if (error) {
+      if (error) {
+        // Handle PGRST116 (no rows) error specifically
+        if (error.code === 'PGRST116') {
+          logger.debug('World not found', { id });
+          return null;
+        }
+        throw error;
+      }
+      
+      return data;
+    } catch (error) {
       logger.logDBOperation('SELECT', 'worlds', { id }, null, error);
       throw error;
     }
-    
-    return data;
   }
 
   async updateWorld(id: string, updates: Partial<World>): Promise<World> {
@@ -150,7 +159,10 @@ export class SupabaseService {
       .eq('id', id)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
     return data;
   }
 
