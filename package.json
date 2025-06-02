@@ -4,13 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"npm run dev\" \"npm run server\"",
+    "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "server": "tsx src/backend/index.ts",
     "server:debug": "DEBUG=true tsx src/backend/index.ts",
-    "dev:all": "concurrently \"npm run dev\" \"npm run server\"",
-    "dev:debug": "concurrently \"npm run dev\" \"npm run server:debug\""
+    "dev:all": "concurrently \"vite\" \"npm run server\"",
+    "dev:debug": "concurrently \"vite\" \"npm run server:debug\""
   },
   "devDependencies": {
     "@types/cors": "^2.8.18",
