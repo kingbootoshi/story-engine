@@ -2,6 +2,16 @@
 
 A dynamic world narrative system that creates evolving story arcs for entire game worlds, responding to player actions and system events.
 
+## 📚 Documentation
+
+For comprehensive documentation, please visit the [docs directory](./docs/):
+- [System Overview](./docs/system-overview.md) - Understand the core concepts
+- [Narrative Design Guide](./docs/narrative-design.md) - Learn how stories evolve
+- [Developer Guide](./docs/developer-guide.md) - Set up and extend the system
+- [API Reference](./docs/api-reference.md) - Complete API documentation
+- [Architecture](./docs/architecture.md) - Technical design details
+- [Contributing](./docs/contributing.md) - How to contribute
+
 ## Overview
 
 The World Story Engine transforms static game worlds into living, breathing narratives that evolve based on collective player actions and system events. Using the Save the Cat narrative structure adapted for world-building, it creates compelling story arcs that affect entire civilizations, ecosystems, and realities.

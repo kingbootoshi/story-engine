@@ -276,43 +276,20 @@ export class WorldArcService {
   }
 
   private async generateArcSummary(arc: WorldArc, beats: WorldBeat[]): Promise<string> {
+    // Compose a human-readable outline of the beats to provide rich context to the AI summariser.
     const beatDescriptions = beats
       .sort((a, b) => a.beat_index - b.beat_index)
       .map(b => `Beat ${b.beat_index} (${b.beat_name}): ${b.description.substring(0, 200)}...`)
       .join('\n\n');
 
-    const messages = [
-      {
-        role: 'system' as const,
-        content: `You are a narrative expert who creates compelling summaries of world story arcs. 
-Create a comprehensive but concise summary that captures the complete world transformation, focusing on:
-1. Major world changes and their cascading effects
-2. Key turning points and catalytic events
-3. How different regions/factions were affected
-4. Overall thematic progression and meaning
-5. The new world state and future implications
-
-This summary will be used as continuity context for future arcs, so focus on elements that would impact the world's ongoing evolution.`
-      },
-      {
-        role: 'user' as const,
-        content: `Summarize this completed world arc:
-
-Arc Name: ${arc.story_name}
-Arc Idea: ${arc.story_idea}
-
-Story Beats:
-${beatDescriptions}
-
-Create a 2-3 paragraph summary that captures the essential world transformation and sets up future possibilities.`
-      }
-    ];
-
-    const summary = await aiService.generateCompletion(messages, {
-      metadata: { prompt_id: 'arc_summary' },
-      temperature: 0.7,
-      maxTokens: 500
-    });
+    // Delegate the heavy-lifting to the dedicated AI service method.  This keeps all
+    // OpenAI/OpenPipe interaction logic consolidated in `ai.service.ts`, ensuring a
+    // single source-of-truth and cleaner error handling.
+    const summary = await aiService.generateArcSummary(
+      arc.story_name,
+      arc.story_idea,
+      beatDescriptions,
+    );
 
     return summary || 'Arc completed without significant world changes.';
   }

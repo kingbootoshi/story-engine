@@ -329,7 +329,7 @@ Generate a compelling world beat that naturally incorporates the recent events w
         metadata: {
           prompt_id: "dynamic_world_beat",
           world_name: worldName,
-          beat_index: currentBeatIndex
+          beat_index: String(currentBeatIndex)
         },
         store: true,
       });

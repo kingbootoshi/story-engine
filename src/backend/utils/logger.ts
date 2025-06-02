@@ -29,7 +29,6 @@ const format = winston.format.combine(
   winston.format.printf(
     (info) => {
       const { timestamp, level, message, module, ...args } = info;
-      const ts = timestamp.slice(0, 19).replace('T', ' ');
       
       let logMessage = `${timestamp} [${level}] [${module || 'unknown'}]: ${message}`;
       
