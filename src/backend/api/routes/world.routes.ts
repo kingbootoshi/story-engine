@@ -7,26 +7,14 @@ import { createLogger } from '../../utils/logger';
 const logger = createLogger('world.routes');
 const router = Router();
 
-// ---------------------------------------------------------------------------
-// Helper:  Wrap an async route handler so that returned promises are properly
-// routed to `next()` for Express error handling _and_ align with the
-// `RequestHandler` type signature (which expects a *non*-Promise return type).
-// ---------------------------------------------------------------------------
 function asyncHandler<T = any>(
   fn: (req: Request, res: Response, next?: NextFunction) => Promise<T>,
 ) {
-  /*
-   * We deliberately return a standard (non-async) function here.  This keeps the
-   * type compatible with Express' `RequestHandler`, while still allowing the
-   * wrapped function to use `await` internally.  Any rejected promise is
-   * forwarded to `next()` so that our central error middleware can handle it.
-   */
   return (req: Request, res: Response, next: NextFunction) => {
     fn(req, res, next).catch(next);
   };
 }
 
-// Create a new world
 router.post('/', asyncHandler(async (req, res) => {
   logger.logAPICall('POST', '/api/worlds', req.body);
   
@@ -42,16 +30,24 @@ router.post('/', asyncHandler(async (req, res) => {
   res.status(201).json(world);
 }));
 
-// Get world details with current state
 router.get('/:worldId', asyncHandler(async (req, res) => {
   const { worldId } = req.params;
   logger.logAPICall('GET', `/api/worlds/${worldId}`);
   
-  const worldState = await worldArcService.getWorldState(worldId);
-  res.json(worldState);
+  try {
+    const worldState = await worldArcService.getWorldState(worldId);
+    if (!worldState.world) {
+      return res.status(404).json({ error: 'World not found' });
+    }
+    res.json(worldState);
+  } catch (error: any) {
+    if (error.code === 'PGRST116') {
+      return res.status(404).json({ error: 'World not found' });
+    }
+    throw error;
+  }
 }));
 
-// Create a new arc for a world
 router.post('/:worldId/arcs', asyncHandler(async (req, res) => {
   const { worldId } = req.params;
   const { storyIdea } = req.body;
@@ -71,21 +67,18 @@ router.post('/:worldId/arcs', asyncHandler(async (req, res) => {
   res.status(201).json(result);
 }));
 
-// Get all arcs for a world
 router.get('/:worldId/arcs', asyncHandler(async (req, res) => {
   const { worldId } = req.params;
   const arcs = await supabaseService.getWorldArcs(worldId);
   res.json(arcs);
 }));
 
-// Get beats for a specific arc
 router.get('/:worldId/arcs/:arcId/beats', asyncHandler(async (req, res) => {
   const { arcId } = req.params;
   const beats = await supabaseService.getArcBeats(arcId);
   res.json(beats);
 }));
 
-// Progress the current arc (generate next beat)
 router.post('/:worldId/arcs/:arcId/progress', asyncHandler(async (req, res) => {
   const { worldId, arcId } = req.params;
   logger.logAPICall('POST', `/api/worlds/${worldId}/arcs/${arcId}/progress`, req.body);
@@ -108,7 +101,6 @@ router.post('/:worldId/arcs/:arcId/progress', asyncHandler(async (req, res) => {
   res.json(beat);
 }));
 
-// Record a world event
 router.post('/:worldId/events', asyncHandler(async (req, res) => {
   const { worldId } = req.params;
   const { 
@@ -139,7 +131,6 @@ router.post('/:worldId/events', asyncHandler(async (req, res) => {
   res.status(201).json(event);
 }));
 
-// Get recent events for a world
 router.get('/:worldId/events', asyncHandler(async (req, res) => {
   const { worldId } = req.params;
   const limit = parseInt(req.query.limit as string) || 20;
@@ -148,7 +139,6 @@ router.get('/:worldId/events', asyncHandler(async (req, res) => {
   res.json(events);
 }));
 
-// Complete the current arc
 router.post('/:worldId/arcs/:arcId/complete', asyncHandler(async (req, res) => {
   const { worldId, arcId } = req.params;
   
