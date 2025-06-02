@@ -145,6 +145,15 @@ export class WorldStoryApp {
       
       await this.recordEvent(description, eventType, impactLevel);
     });
+
+    // Timeline beat clicks
+    const timeline = document.getElementById('beats-timeline');
+    timeline?.addEventListener('click', async (e) => {
+      const beatEl = (e.target as HTMLElement).closest('.beat');
+      if (beatEl && this.currentArc) {
+        await this.progressArc();
+      }
+    });
   }
 
   private showLoading(show: boolean) {
@@ -204,7 +213,8 @@ export class WorldStoryApp {
     }
   }
 
-  private async switchArc(arcId: string) {
+  // Make switchArc public so it can be called from HTML
+  public async handleArcSwitch(arcId: string) {
     try {
       this.showLoading(true);
       const arc = this.allArcs.find(a => a.id === arcId);
@@ -279,7 +289,7 @@ export class WorldStoryApp {
           <span class="arc-status">${arc.status}</span>
         </div>
         <p class="arc-idea">${arc.story_idea}</p>
-        <button onclick="app.switchArc('${arc.id}')" ${arc.id === this.currentArc?.id ? 'disabled' : ''}>
+        <button onclick="app.handleArcSwitch('${arc.id}')" ${arc.id === this.currentArc?.id ? 'disabled' : ''}>
           ${arc.id === this.currentArc?.id ? 'Current Arc' : 'Switch to Arc'}
         </button>
       </div>
@@ -446,11 +456,6 @@ export class WorldStoryApp {
     `).join('');
     
     eventsList.innerHTML = html || '<p>No events recorded yet</p>';
-  }
-
-  // Make switchArc public so it can be called from the HTML
-  public switchArc(arcId: string) {
-    this.switchArc(arcId);
   }
 }
 
