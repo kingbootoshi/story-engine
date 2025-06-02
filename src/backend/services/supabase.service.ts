@@ -1,7 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('supabase.service');
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || '';
+
+logger.info('Initializing Supabase client', {
+  hasUrl: !!supabaseUrl,
+  hasKey: !!supabaseAnonKey
+});
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
@@ -57,24 +65,37 @@ export interface WorldEvent {
 export class SupabaseService {
   // World Management
   async createWorld(name: string, description: string): Promise<World> {
+    logger.info('Creating new world', { name });
+    
     const { data, error } = await supabase
       .from('worlds')
       .insert({ name, description })
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      logger.logDBOperation('INSERT', 'worlds', { name, description }, null, error);
+      throw error;
+    }
+    
+    logger.logDBOperation('INSERT', 'worlds', { name, description }, data);
     return data;
   }
 
   async getWorld(id: string): Promise<World | null> {
+    logger.debug('Fetching world', { id });
+    
     const { data, error } = await supabase
       .from('worlds')
       .select('*')
       .eq('id', id)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      logger.logDBOperation('SELECT', 'worlds', { id }, null, error);
+      throw error;
+    }
+    
     return data;
   }
 

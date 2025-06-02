@@ -1,4 +1,7 @@
 import OpenAI from "openpipe/openai";
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('ai.service');
 
 // Initialize OpenAI client with OpenRouter through OpenPipe
 const openai = new OpenAI({
@@ -20,40 +23,153 @@ export interface GenerationOptions {
   metadata?: Record<string, any>;
 }
 
+// Define structured output schemas for function calling
+const WORLD_ARC_ANCHORS_SCHEMA = {
+  type: "function",
+  function: {
+    name: "generate_world_arc_anchors",
+    description: "Generate three anchor points for a world story arc",
+    parameters: {
+      type: "object",
+      properties: {
+        anchors: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              beatIndex: {
+                type: "number",
+                enum: [0, 7, 14],
+                description: "The beat index (0, 7, or 14)"
+              },
+              beatName: {
+                type: "string",
+                description: "A descriptive name for this world event/era"
+              },
+              description: {
+                type: "string",
+                description: "Detailed description of the world state and ongoing changes"
+              },
+              worldDirectives: {
+                type: "array",
+                items: { type: "string" },
+                description: "Clear directives on how different factions, regions, or systems should behave"
+              },
+              majorEvents: {
+                type: "array",
+                items: { type: "string" },
+                description: "Major events or phenomena occurring during this period"
+              },
+              emergentStorylines: {
+                type: "array",
+                items: { type: "string" },
+                description: "3-5 emergent storylines that players might engage with"
+              }
+            },
+            required: ["beatIndex", "beatName", "description", "worldDirectives", "majorEvents", "emergentStorylines"],
+            additionalProperties: false
+          },
+          minItems: 3,
+          maxItems: 3
+        }
+      },
+      required: ["anchors"],
+      additionalProperties: false
+    },
+    strict: true
+  }
+} as const;
+
+const DYNAMIC_WORLD_BEAT_SCHEMA = {
+  type: "function",
+  function: {
+    name: "generate_dynamic_world_beat",
+    description: "Generate a dynamic world beat within an existing story arc",
+    parameters: {
+      type: "object",
+      properties: {
+        beatName: {
+          type: "string",
+          description: "A descriptive name for this world event/period"
+        },
+        description: {
+          type: "string",
+          description: "Detailed description of world changes and their cascading effects"
+        },
+        worldDirectives: {
+          type: "array",
+          items: { type: "string" },
+          description: "Directives for how different regions, factions, or systems respond"
+        },
+        emergingConflicts: {
+          type: "array",
+          items: { type: "string" },
+          description: "3-5 emerging conflicts or opportunities"
+        },
+        environmentalChanges: {
+          type: ["array", "null"],
+          items: { type: "string" },
+          description: "Environmental or metaphysical changes if applicable"
+        }
+      },
+      required: ["beatName", "description", "worldDirectives", "emergingConflicts", "environmentalChanges"],
+      additionalProperties: false
+    },
+    strict: true
+  }
+} as const;
+
+const ARC_SUMMARY_SCHEMA = {
+  type: "function",
+  function: {
+    name: "generate_arc_summary",
+    description: "Generate a comprehensive summary of a completed world arc",
+    parameters: {
+      type: "object",
+      properties: {
+        summary: {
+          type: "string",
+          description: "2-3 paragraph summary capturing the essential world transformation"
+        },
+        majorChanges: {
+          type: "array",
+          items: { type: "string" },
+          description: "List of major world changes and their effects"
+        },
+        affectedRegions: {
+          type: "array",
+          items: { type: "string" },
+          description: "How different regions/factions were affected"
+        },
+        thematicProgression: {
+          type: "string",
+          description: "Overall thematic progression and meaning"
+        },
+        futureImplications: {
+          type: "array",
+          items: { type: "string" },
+          description: "Future possibilities and implications for the world"
+        }
+      },
+      required: ["summary", "majorChanges", "affectedRegions", "thematicProgression", "futureImplications"],
+      additionalProperties: false
+    },
+    strict: true
+  }
+} as const;
+
 export class AIService {
   private static instance: AIService;
   
-  private constructor() {}
+  private constructor() {
+    logger.info('AI Service initialized');
+  }
   
   static getInstance(): AIService {
     if (!AIService.instance) {
       AIService.instance = new AIService();
     }
     return AIService.instance;
-  }
-
-  async generateCompletion(
-    messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
-    options: GenerationOptions = {}
-  ) {
-    try {
-      const completion = await openai.chat.completions.create({
-        messages,
-        model: options.model || "openai/gpt-4o-mini",
-        temperature: options.temperature || 0.8,
-        max_tokens: options.maxTokens || 2000,
-        metadata: {
-          ...options.metadata,
-          prompt_id: options.metadata?.prompt_id || "world_story_generation",
-        },
-        store: true,
-      });
-
-      return completion.choices[0].message.content;
-    } catch (error) {
-      console.error("AI Service Error:", error);
-      throw new Error("Failed to generate completion");
-    }
   }
 
   async generateWorldArcAnchors(
@@ -95,27 +211,57 @@ ${previousArcs?.length ? `\nIMPORTANT WORLD HISTORY:\nThis world has experienced
 ## STORY INPUT SEED:
 ${storyIdea ? `Story idea: <story_idea>${storyIdea}</story_idea>` : "Based on the world's current state, generate an appropriate and engaging story arc."}
 
-For EACH of the THREE anchor beats, provide:
-1. A descriptive name for this world event/era
-2. A detailed description of the world state and ongoing changes
-3. Clear directives on how different factions, regions, or systems should behave
-4. Major events or phenomena occurring during this period
-5. 3-5 emergent storylines that players might engage with
+Generate exactly 3 anchor beats at indices 0, 7, and 14. Each beat should include all required fields.`;
 
-Ensure the arc creates opportunities for player agency while maintaining narrative coherence.`;
+    try {
+      logger.info('Generating world arc anchors', {
+        worldName,
+        hasPreviousArcs: !!previousArcs?.length,
+        hasStoryIdea: !!storyIdea
+      });
 
-    const messages = [
-      { role: "system" as const, content: systemPrompt },
-      { role: "user" as const, content: userPrompt }
-    ];
+      const completion = await openai.chat.completions.create({
+        model: "openai/gpt-4o-mini",
+        messages: [
+          { role: "system" as const, content: systemPrompt },
+          { role: "user" as const, content: userPrompt }
+        ],
+        tools: [WORLD_ARC_ANCHORS_SCHEMA],
+        tool_choice: { type: "function", function: { name: "generate_world_arc_anchors" } },
+        temperature: 0.9,
+        max_tokens: 3000,
+        metadata: {
+          prompt_id: "world_arc_anchors",
+          world_name: worldName
+        },
+        store: true,
+      });
 
-    const response = await this.generateCompletion(messages, {
-      metadata: { prompt_id: "world_arc_anchors" },
-      temperature: 0.9,
-      maxTokens: 3000
-    });
+      const toolCall = completion.choices[0].message.tool_calls?.[0];
+      if (!toolCall) {
+        throw new Error('No tool call returned from AI');
+      }
 
-    return this.parseAnchorPoints(response || "");
+      const result = JSON.parse(toolCall.function.arguments);
+      
+      logger.logAICall(
+        'generateWorldArcAnchors',
+        'openai/gpt-4o-mini',
+        { worldName, storyIdea },
+        result
+      );
+
+      return result.anchors;
+    } catch (error) {
+      logger.logAICall(
+        'generateWorldArcAnchors',
+        'openai/gpt-4o-mini',
+        { worldName, storyIdea },
+        undefined,
+        error
+      );
+      throw error;
+    }
   }
 
   async generateDynamicWorldBeat(
@@ -160,87 +306,131 @@ ${nextAnchor.beatName}: ${nextAnchor.description}
 ## RECENT WORLD EVENTS:
 ${recentEvents || 'No specific events recorded.'}
 
-For this beat (Beat #${currentBeatIndex}: ${beatName}), provide:
-1. A descriptive name for this world event/period
-2. A detailed description of world changes and their cascading effects
-3. Directives for how different regions, factions, or systems respond
-4. 3-5 emerging conflicts or opportunities
-5. Environmental or metaphysical changes if applicable
+Generate a compelling world beat that naturally incorporates the recent events while maintaining the arc's direction.`;
 
-IMPORTANT: This beat should reflect the consequences of recent events while maintaining the arc's direction.`;
+    try {
+      logger.info('Generating dynamic world beat', {
+        worldName,
+        currentBeatIndex,
+        beatName,
+        hasRecentEvents: !!recentEvents
+      });
 
-    const messages = [
-      { role: "system" as const, content: systemPrompt },
-      { role: "user" as const, content: userPrompt }
-    ];
+      const completion = await openai.chat.completions.create({
+        model: "openai/gpt-4o-mini",
+        messages: [
+          { role: "system" as const, content: systemPrompt },
+          { role: "user" as const, content: userPrompt }
+        ],
+        tools: [DYNAMIC_WORLD_BEAT_SCHEMA],
+        tool_choice: { type: "function", function: { name: "generate_dynamic_world_beat" } },
+        temperature: 0.85,
+        max_tokens: 2000,
+        metadata: {
+          prompt_id: "dynamic_world_beat",
+          world_name: worldName,
+          beat_index: currentBeatIndex
+        },
+        store: true,
+      });
 
-    const response = await this.generateCompletion(messages, {
-      metadata: { prompt_id: "dynamic_world_beat" },
-      temperature: 0.85
-    });
-
-    return this.parseDynamicBeat(response || "");
-  }
-
-  private parseAnchorPoints(response: string): any {
-    // Parse the AI response into structured anchor points
-    // This is a simplified parser - you'd want more robust parsing in production
-    const anchors = [];
-    const sections = response.split(/(?=Beat \d+:|Opening State:|Catalyst Event:|New Equilibrium:)/i);
-    
-    for (const section of sections) {
-      if (section.trim()) {
-        const lines = section.trim().split('\n');
-        const beatName = lines[0].replace(/^(Beat \d+:|Opening State:|Catalyst Event:|New Equilibrium:)\s*/i, '').trim();
-        
-        anchors.push({
-          beatName,
-          description: section,
-          worldDirectives: this.extractDirectives(section),
-          emergentStorylines: this.extractStorylines(section)
-        });
+      const toolCall = completion.choices[0].message.tool_calls?.[0];
+      if (!toolCall) {
+        throw new Error('No tool call returned from AI');
       }
+
+      const result = JSON.parse(toolCall.function.arguments);
+      
+      logger.logAICall(
+        'generateDynamicWorldBeat',
+        'openai/gpt-4o-mini',
+        { worldName, currentBeatIndex },
+        result
+      );
+
+      return {
+        ...result,
+        emergentStorylines: result.emergingConflicts, // Map to expected field name
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      logger.logAICall(
+        'generateDynamicWorldBeat',
+        'openai/gpt-4o-mini',
+        { worldName, currentBeatIndex },
+        undefined,
+        error
+      );
+      throw error;
     }
-
-    return anchors;
   }
 
-  private parseDynamicBeat(response: string): any {
-    return {
-      beatName: this.extractBeatName(response),
-      description: response,
-      worldDirectives: this.extractDirectives(response),
-      emergentStorylines: this.extractStorylines(response),
-      timestamp: new Date().toISOString()
-    };
-  }
+  async generateArcSummary(arcName: string, arcIdea: string, beatDescriptions: string) {
+    const systemPrompt = `You are a narrative expert who creates compelling summaries of world story arcs. 
+Create a comprehensive but concise summary that captures the complete world transformation, focusing on:
+1. Major world changes and their cascading effects
+2. Key turning points and catalytic events
+3. How different regions/factions were affected
+4. Overall thematic progression and meaning
+5. The new world state and future implications
 
-  private extractBeatName(text: string): string {
-    const match = text.match(/(?:name|title|event):\s*(.+?)(?:\n|$)/i);
-    return match ? match[1].trim() : "Unnamed World Event";
-  }
+This summary will be used as continuity context for future arcs, so focus on elements that would impact the world's ongoing evolution.`;
 
-  private extractDirectives(text: string): string[] {
-    const directives = [];
-    const matches = text.matchAll(/(?:directive|instruction|change)s?:\s*(.+?)(?=\n\n|\n(?:directive|instruction|change)|$)/gis);
-    
-    for (const match of matches) {
-      directives.push(match[1].trim());
+    const userPrompt = `Summarize this completed world arc:
+
+Arc Name: ${arcName}
+Arc Idea: ${arcIdea}
+
+Story Beats:
+${beatDescriptions}
+
+Create a comprehensive summary with all required fields that captures the essential world transformation and sets up future possibilities.`;
+
+    try {
+      logger.info('Generating arc summary', { arcName });
+
+      const completion = await openai.chat.completions.create({
+        model: "openai/gpt-4o-mini",
+        messages: [
+          { role: "system" as const, content: systemPrompt },
+          { role: "user" as const, content: userPrompt }
+        ],
+        tools: [ARC_SUMMARY_SCHEMA],
+        tool_choice: { type: "function", function: { name: "generate_arc_summary" } },
+        temperature: 0.7,
+        max_tokens: 1000,
+        metadata: {
+          prompt_id: "arc_summary",
+          arc_name: arcName
+        },
+        store: true,
+      });
+
+      const toolCall = completion.choices[0].message.tool_calls?.[0];
+      if (!toolCall) {
+        throw new Error('No tool call returned from AI');
+      }
+
+      const result = JSON.parse(toolCall.function.arguments);
+      
+      logger.logAICall(
+        'generateArcSummary',
+        'openai/gpt-4o-mini',
+        { arcName },
+        result
+      );
+
+      return result.summary;
+    } catch (error) {
+      logger.logAICall(
+        'generateArcSummary',
+        'openai/gpt-4o-mini',
+        { arcName },
+        undefined,
+        error
+      );
+      throw error;
     }
-    
-    return directives;
-  }
-
-  private extractStorylines(text: string): string[] {
-    const storylines = [];
-    const matches = text.matchAll(/(?:storyline|conflict|opportunity|emerging)s?:\s*(.+?)(?=\n\n|\n(?:storyline|conflict|opportunity)|$)/gis);
-    
-    for (const match of matches) {
-      const lines = match[1].split(/\n|;/).map(l => l.trim()).filter(l => l);
-      storylines.push(...lines);
-    }
-    
-    return storylines.slice(0, 5);
   }
 
   private getWorldBeatStructure() {

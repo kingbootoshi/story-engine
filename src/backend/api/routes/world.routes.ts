@@ -1,11 +1,15 @@
 import { Router } from 'express';
 import supabaseService from '../../services/supabase.service';
 import worldArcService from '../../services/worldArc.service';
+import { createLogger } from '../../utils/logger';
 
+const logger = createLogger('world.routes');
 const router = Router();
 
 // Create a new world
 router.post('/', async (req, res, next) => {
+  logger.logAPICall('POST', '/api/worlds', req.body);
+  
   try {
     const { name, description } = req.body;
     
@@ -14,6 +18,8 @@ router.post('/', async (req, res, next) => {
     }
 
     const world = await supabaseService.createWorld(name, description);
+    
+    logger.logAPICall('POST', '/api/worlds', req.body, { status: 201, data: world });
     res.status(201).json(world);
   } catch (error) {
     next(error);
@@ -22,8 +28,10 @@ router.post('/', async (req, res, next) => {
 
 // Get world details with current state
 router.get('/:worldId', async (req, res, next) => {
+  const { worldId } = req.params;
+  logger.logAPICall('GET', `/api/worlds/${worldId}`);
+  
   try {
-    const { worldId } = req.params;
     const worldState = await worldArcService.getWorldState(worldId);
     res.json(worldState);
   } catch (error) {
@@ -79,8 +87,10 @@ router.get('/:worldId/arcs/:arcId/beats', async (req, res, next) => {
 
 // Progress the current arc (generate next beat)
 router.post('/:worldId/arcs/:arcId/progress', async (req, res, next) => {
+  const { worldId, arcId } = req.params;
+  logger.logAPICall('POST', `/api/worlds/${worldId}/arcs/${arcId}/progress`, req.body);
+  
   try {
-    const { worldId, arcId } = req.params;
     const { recentEvents } = req.body;
 
     const beat = await worldArcService.progressArc({

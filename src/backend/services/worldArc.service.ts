@@ -1,6 +1,9 @@
 import aiService from './ai.service';
 import supabaseService from './supabase.service';
 import type { WorldArc, WorldBeat, WorldEvent } from './supabase.service';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('worldArc.service');
 
 export interface WorldArcCreationParams {
   worldId: string;
@@ -28,9 +31,19 @@ export class WorldArcService {
   }
 
   async createNewArc(params: WorldArcCreationParams): Promise<{ arc: WorldArc; anchors: WorldBeat[] }> {
+    logger.info('Creating new arc', {
+      worldId: params.worldId,
+      worldName: params.worldName,
+      hasStoryIdea: !!params.storyIdea
+    });
+    
     try {
       // Get previous arc summaries for continuity
       const previousArcs = await this.getPreviousArcSummaries(params.worldId);
+      logger.debug('Retrieved previous arc summaries', { 
+        worldId: params.worldId, 
+        arcCount: previousArcs.length 
+      });
       
       // Generate anchor points using AI
       const anchors = await aiService.generateWorldArcAnchors(
@@ -41,8 +54,13 @@ export class WorldArcService {
       );
 
       if (!anchors || anchors.length !== 3) {
+        logger.error('Invalid anchor points generated', null, { anchors });
         throw new Error('Failed to generate valid anchor points');
       }
+      
+      logger.info('Successfully generated anchor points', {
+        anchorNames: anchors.map((a: any) => a.beatName)
+      });
 
       // Create the arc in database
       const arc = await supabaseService.createArc(
@@ -70,19 +88,32 @@ export class WorldArcService {
         savedAnchors.push(beat);
       }
 
+      logger.success('Arc created successfully', {
+        arcId: arc.id,
+        arcName: arc.story_name,
+        anchorCount: savedAnchors.length
+      });
+      
       return { arc, anchors: savedAnchors };
     } catch (error) {
-      console.error('Error creating new arc:', error);
+      logger.error('Failed to create new arc', error, { worldId: params.worldId });
       throw error;
     }
   }
 
   async progressArc(params: BeatProgressionParams): Promise<WorldBeat | null> {
+    logger.info('Progressing arc', {
+      worldId: params.worldId,
+      arcId: params.arcId,
+      hasRecentEvents: !!params.recentEvents
+    });
+    
     try {
       // Get current arc beats
       const beats = await supabaseService.getArcBeats(params.arcId);
       if (beats.length >= 15) {
         // Arc is complete
+        logger.info('Arc is complete, finishing', { arcId: params.arcId, beatCount: beats.length });
         await this.completeArc(params.worldId, params.arcId);
         return null;
       }
@@ -96,6 +127,12 @@ export class WorldArcService {
           break;
         }
       }
+      
+      logger.debug('Determined next beat index', {
+        arcId: params.arcId,
+        existingBeats: beats.length,
+        nextBeatIndex
+      });
 
       // Get previous beats for context
       const previousBeats = beats
@@ -151,14 +188,24 @@ export class WorldArcService {
         impact_level: 'moderate'
       });
 
+      logger.logArcProgression(
+        params.worldId,
+        params.arcId,
+        nextBeatIndex,
+        'Beat Generated',
+        { beatName: savedBeat.beat_name }
+      );
+      
       return savedBeat;
     } catch (error) {
-      console.error('Error progressing arc:', error);
+      logger.error('Failed to progress arc', error, { arcId: params.arcId });
       throw error;
     }
   }
 
   async completeArc(worldId: string, arcId: string): Promise<void> {
+    logger.info('Completing arc', { worldId, arcId });
+    
     try {
       // Get all beats for summary
       const beats = await supabaseService.getArcBeats(arcId);
@@ -180,8 +227,9 @@ export class WorldArcService {
         description: `World arc completed: ${arc.story_name}. ${summary}`,
         impact_level: 'major'
       });
+      logger.success('Arc completed successfully', { worldId, arcId });
     } catch (error) {
-      console.error('Error completing arc:', error);
+      logger.error('Failed to complete arc', error, { worldId, arcId });
       throw error;
     }
   }
