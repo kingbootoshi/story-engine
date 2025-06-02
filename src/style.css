@@ -385,6 +385,53 @@ button:disabled {
   flex: 1;
 }
 
+/* Add styles for selected beat and beat display */
+.beat.selected {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(100, 108, 255, 0.4);
+  border-color: #646cff;
+}
+
+.selected-beat {
+  background: #2d3748;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+  border: 1px solid #646cff;
+}
+
+.selected-beat h3 {
+  color: #646cff;
+  margin: 0 0 1rem 0;
+}
+
+.selected-beat p {
+  color: #ddd;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.selected-beat .directives,
+.selected-beat .storylines {
+  margin-top: 1rem;
+}
+
+.selected-beat strong {
+  color: #fff;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.selected-beat ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: #aaa;
+}
+
+.selected-beat li {
+  margin-bottom: 0.5rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .world-story-engine {
