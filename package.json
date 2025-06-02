@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"npm run dev\" \"npm run server\"",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "server": "tsx src/backend/index.ts",
