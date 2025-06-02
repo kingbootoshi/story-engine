@@ -6,6 +6,7 @@ export class WorldStoryApp {
   private currentArc: WorldArc | null = null;
   private currentBeats: WorldBeat[] = [];
   private recentEvents: WorldEvent[] = [];
+  private allArcs: WorldArc[] = [];
 
   constructor(private container: HTMLElement) {
     this.render();
@@ -36,9 +37,17 @@ export class WorldStoryApp {
             <h2>Current World: <span id="world-name-display"></span></h2>
             <p id="world-description-display"></p>
             
+            <!-- Arc Selection -->
+            <div class="arc-selection">
+              <h3>Story Arcs</h3>
+              <div id="arc-list" class="arc-list">
+                <!-- Arc list will be populated here -->
+              </div>
+            </div>
+            
             <!-- Arc Controls -->
             <div class="arc-controls">
-              <h3>Story Arc</h3>
+              <h3>Current Arc</h3>
               <div id="arc-info" style="display: none;">
                 <p><strong>Arc:</strong> <span id="arc-name"></span></p>
                 <p><strong>Status:</strong> <span id="arc-status"></span></p>
@@ -183,10 +192,30 @@ export class WorldStoryApp {
       this.currentBeats = worldState.currentBeats;
       this.recentEvents = worldState.recentEvents;
       
+      // Load all arcs
+      this.allArcs = await api.getArcs(worldId);
+      
       this.updateWorldDisplay();
       await this.loadEvents();
     } catch (error) {
       this.showError(`Failed to load world: ${error}`);
+    } finally {
+      this.showLoading(false);
+    }
+  }
+
+  private async switchArc(arcId: string) {
+    try {
+      this.showLoading(true);
+      const arc = this.allArcs.find(a => a.id === arcId);
+      if (!arc) throw new Error('Arc not found');
+      
+      this.currentArc = arc;
+      this.currentBeats = await api.getArcBeats(arcId);
+      
+      this.updateWorldDisplay();
+    } catch (error) {
+      this.showError(`Failed to switch arc: ${error}`);
     } finally {
       this.showLoading(false);
     }
@@ -206,6 +235,9 @@ export class WorldStoryApp {
     const worldDescDisplay = document.getElementById('world-description-display');
     if (worldNameDisplay) worldNameDisplay.textContent = this.currentWorld.name;
     if (worldDescDisplay) worldDescDisplay.textContent = this.currentWorld.description;
+
+    // Update arc list
+    this.updateArcList();
 
     // Update arc info
     const arcInfo = document.getElementById('arc-info');
@@ -233,6 +265,26 @@ export class WorldStoryApp {
 
     // Update beats timeline
     this.updateBeatsTimeline();
+  }
+
+  private updateArcList() {
+    const arcList = document.getElementById('arc-list');
+    if (!arcList) return;
+
+    const html = this.allArcs.map(arc => `
+      <div class="arc-item ${arc.id === this.currentArc?.id ? 'active' : ''} ${arc.status}">
+        <div class="arc-header">
+          <h4>${arc.story_name}</h4>
+          <span class="arc-status">${arc.status}</span>
+        </div>
+        <p class="arc-idea">${arc.story_idea}</p>
+        <button onclick="window.app.switchArc('${arc.id}')" ${arc.id === this.currentArc?.id ? 'disabled' : ''}>
+          ${arc.id === this.currentArc?.id ? 'Current Arc' : 'Switch to Arc'}
+        </button>
+      </div>
+    `).join('');
+
+    arcList.innerHTML = html || '<p>No story arcs yet. Create one to begin!</p>';
   }
 
   private updateBeatsTimeline() {
@@ -291,6 +343,9 @@ export class WorldStoryApp {
       this.currentArc = result.arc;
       this.currentBeats = result.anchors;
       
+      // Add to all arcs
+      this.allArcs.push(result.arc);
+      
       this.updateWorldDisplay();
       
       // Clear input
@@ -322,6 +377,11 @@ export class WorldStoryApp {
       
       if (result.completed) {
         this.currentArc.status = 'completed';
+        // Update arc in allArcs
+        const arcIndex = this.allArcs.findIndex(a => a.id === this.currentArc?.id);
+        if (arcIndex !== -1) {
+          this.allArcs[arcIndex] = this.currentArc;
+        }
         this.showError('Arc completed! Create a new arc to continue the world story.');
       } else {
         // Add new beat to our list
@@ -385,6 +445,13 @@ export class WorldStoryApp {
     `).join('');
     
     eventsList.innerHTML = html || '<p>No events recorded yet</p>';
+  }
+}
+
+// Make app instance available globally for arc switching
+declare global {
+  interface Window {
+    app: WorldStoryApp;
   }
 }
 

@@ -60,6 +60,18 @@ class WorldStoryAPI {
     return response.json();
   }
 
+  async getArcs(worldId: string): Promise<WorldArc[]> {
+    const response = await fetch(`${API_BASE}/worlds/${worldId}/arcs`);
+    if (!response.ok) throw new Error('Failed to get arcs');
+    return response.json();
+  }
+
+  async getArcBeats(arcId: string): Promise<WorldBeat[]> {
+    const response = await fetch(`${API_BASE}/worlds/${arcId}/beats`);
+    if (!response.ok) throw new Error('Failed to get arc beats');
+    return response.json();
+  }
+
   async createArc(worldId: string, storyIdea?: string) {
     const response = await fetch(`${API_BASE}/worlds/${worldId}/arcs`, {
       method: 'POST',
