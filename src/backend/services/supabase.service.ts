@@ -90,15 +90,15 @@ export class SupabaseService {
         .from('worlds')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        // Handle PGRST116 (no rows) error specifically
-        if (error.code === 'PGRST116') {
-          logger.debug('World not found', { id });
-          return null;
-        }
+        logger.logDBOperation('SELECT', 'worlds', { id }, null, error);
         throw error;
+      }
+      
+      if (!data) {
+        logger.debug('World not found', { id });
       }
       
       return data;
