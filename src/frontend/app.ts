@@ -7,6 +7,7 @@ export class WorldStoryApp {
   private currentBeats: WorldBeat[] = [];
   private recentEvents: WorldEvent[] = [];
   private allArcs: WorldArc[] = [];
+  private selectedBeat: WorldBeat | null = null;
 
   constructor(private container: HTMLElement) {
     this.render();
@@ -63,6 +64,20 @@ export class WorldStoryApp {
             <div class="story-timeline">
               <h3>Story Timeline</h3>
               <div id="beats-timeline" class="beats-timeline"></div>
+            </div>
+
+            <!-- Selected Beat Display -->
+            <div id="selected-beat" class="selected-beat" style="display: none;">
+              <h3 id="selected-beat-name"></h3>
+              <p id="selected-beat-description"></p>
+              <div class="directives">
+                <strong>World Changes:</strong>
+                <ul id="selected-beat-directives"></ul>
+              </div>
+              <div class="storylines">
+                <strong>Emerging Stories:</strong>
+                <ul id="selected-beat-storylines"></ul>
+              </div>
             </div>
 
             <!-- World Events -->
@@ -146,14 +161,42 @@ export class WorldStoryApp {
       await this.recordEvent(description, eventType, impactLevel);
     });
 
-    // Timeline beat clicks
+    // Timeline beat clicks for navigation
     const timeline = document.getElementById('beats-timeline');
-    timeline?.addEventListener('click', async (e) => {
+    timeline?.addEventListener('click', (e) => {
       const beatEl = (e.target as HTMLElement).closest('.beat');
-      if (beatEl && this.currentArc) {
-        await this.progressArc();
+      if (beatEl) {
+        const beatIndex = parseInt(beatEl.getAttribute('data-index') || '0', 10);
+        const beat = this.currentBeats.find(b => b.beat_index === beatIndex);
+        if (beat) {
+          this.selectBeat(beat);
+        }
       }
     });
+  }
+
+  private selectBeat(beat: WorldBeat) {
+    this.selectedBeat = beat;
+    
+    const selectedBeatEl = document.getElementById('selected-beat');
+    const nameEl = document.getElementById('selected-beat-name');
+    const descEl = document.getElementById('selected-beat-description');
+    const directivesEl = document.getElementById('selected-beat-directives');
+    const storylinesEl = document.getElementById('selected-beat-storylines');
+    
+    if (selectedBeatEl && nameEl && descEl && directivesEl && storylinesEl) {
+      selectedBeatEl.style.display = 'block';
+      nameEl.textContent = beat.beat_name;
+      descEl.textContent = beat.description;
+      
+      directivesEl.innerHTML = beat.world_directives
+        .map(d => `<li>${d}</li>`)
+        .join('');
+        
+      storylinesEl.innerHTML = beat.emergent_storylines
+        .map(s => `<li>${s}</li>`)
+        .join('');
+    }
   }
 
   private showLoading(show: boolean) {
@@ -206,6 +249,11 @@ export class WorldStoryApp {
       
       this.updateWorldDisplay();
       await this.loadEvents();
+
+      // Select the latest beat if available
+      if (this.currentBeats.length > 0) {
+        this.selectBeat(this.currentBeats[this.currentBeats.length - 1]);
+      }
     } catch (error) {
       this.showError(`Failed to load world: ${error}`);
     } finally {
@@ -213,7 +261,6 @@ export class WorldStoryApp {
     }
   }
 
-  // Make switchArc public so it can be called from HTML
   public async handleArcSwitch(arcId: string) {
     try {
       this.showLoading(true);
@@ -225,6 +272,11 @@ export class WorldStoryApp {
       this.currentBeats = beats;
       
       this.updateWorldDisplay();
+
+      // Select the latest beat in the new arc
+      if (beats.length > 0) {
+        this.selectBeat(beats[beats.length - 1]);
+      }
     } catch (error) {
       this.showError(`Failed to switch arc: ${error}`);
     } finally {
@@ -308,9 +360,11 @@ export class WorldStoryApp {
     for (let i = 0; i < totalBeats; i++) {
       const beat = this.currentBeats.find(b => b.beat_index === i);
       const isAnchor = i === 0 || i === 7 || i === 14;
+      const isSelected = beat?.id === this.selectedBeat?.id;
       
       html += `
-        <div class="beat ${beat ? 'completed' : 'pending'} ${isAnchor ? 'anchor' : 'dynamic'}" 
+        <div class="beat ${beat ? 'completed' : 'pending'} ${isAnchor ? 'anchor' : 'dynamic'} ${isSelected ? 'selected' : ''}" 
+             data-index="${i}"
              title="${beat ? beat.beat_name : `Beat ${i}`}">
           <div class="beat-number">${i}</div>
           ${beat ? `<div class="beat-name">${beat.beat_name}</div>` : ''}
@@ -319,28 +373,6 @@ export class WorldStoryApp {
     }
     
     html += '</div>';
-    
-    if (this.currentBeats.length > 0) {
-      const latestBeat = this.currentBeats[this.currentBeats.length - 1];
-      html += `
-        <div class="latest-beat">
-          <h4>${latestBeat.beat_name}</h4>
-          <p>${latestBeat.description}</p>
-          <div class="directives">
-            <strong>World Changes:</strong>
-            <ul>
-              ${latestBeat.world_directives.map(d => `<li>${d}</li>`).join('')}
-            </ul>
-          </div>
-          <div class="storylines">
-            <strong>Emerging Stories:</strong>
-            <ul>
-              ${latestBeat.emergent_storylines.map(s => `<li>${s}</li>`).join('')}
-            </ul>
-          </div>
-        </div>
-      `;
-    }
     
     timeline.innerHTML = html;
   }
@@ -358,6 +390,11 @@ export class WorldStoryApp {
       this.allArcs.push(result.arc);
       
       this.updateWorldDisplay();
+      
+      // Select the first beat
+      if (result.anchors.length > 0) {
+        this.selectBeat(result.anchors[0]);
+      }
       
       // Clear input
       (document.getElementById('story-idea') as HTMLInputElement).value = '';
@@ -397,6 +434,8 @@ export class WorldStoryApp {
       } else {
         // Add new beat to our list
         this.currentBeats.push(result);
+        // Select the new beat
+        this.selectBeat(result);
       }
       
       this.updateWorldDisplay();
