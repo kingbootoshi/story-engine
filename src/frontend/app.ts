@@ -1,5 +1,6 @@
 import { api } from './api';
 import type { World, WorldArc, WorldBeat, WorldEvent } from './api';
+import AuthService from './auth';
 
 export class WorldStoryApp {
   private currentWorld: World | null = null;
@@ -8,10 +9,73 @@ export class WorldStoryApp {
   private recentEvents: WorldEvent[] = [];
   private allArcs: WorldArc[] = [];
   private selectedBeat: WorldBeat | null = null;
+  private worlds: World[] = [];
 
   constructor(private container: HTMLElement) {
+    this.initialize();
+  }
+
+  private async initialize() {
+    await AuthService.initialize();
     this.render();
     this.attachEventListeners();
+    this.checkAuthState();
+
+    // Listen for auth state changes
+    supabase.auth.onAuthStateChange((_event, session) => {
+      this.checkAuthState();
+    });
+  }
+
+  private checkAuthState() {
+    const isAuthenticated = AuthService.isAuthenticated();
+    const authSection = document.getElementById('auth-section');
+    const appContent = document.getElementById('app-content');
+    const worldsList = document.getElementById('worlds-list');
+    
+    if (authSection && appContent) {
+      if (isAuthenticated) {
+        authSection.style.display = 'none';
+        appContent.style.display = 'block';
+        this.loadUserWorlds();
+      } else {
+        authSection.style.display = 'block';
+        appContent.style.display = 'none';
+        this.currentWorld = null;
+        this.worlds = [];
+        if (worldsList) worldsList.innerHTML = '';
+      }
+    }
+  }
+
+  private async loadUserWorlds() {
+    try {
+      this.worlds = await api.getUserWorlds();
+      this.updateWorldsList();
+    } catch (error) {
+      this.showError('Failed to load worlds');
+    }
+  }
+
+  private updateWorldsList() {
+    const worldsList = document.getElementById('worlds-list');
+    if (!worldsList) return;
+
+    const html = this.worlds.map(world => `
+      <div class="world-item ${world.id === this.currentWorld?.id ? 'active' : ''}">
+        <div class="world-header">
+          <h4>${world.name}</h4>
+          <span class="world-date">${new Date(world.created_at).toLocaleDateString()}</span>
+        </div>
+        <p class="world-description">${world.description}</p>
+        <button onclick="app.loadWorld('${world.id}')" 
+                ${world.id === this.currentWorld?.id ? 'disabled' : ''}>
+          ${world.id === this.currentWorld?.id ? 'Current World' : 'Load World'}
+        </button>
+      </div>
+    `).join('');
+
+    worldsList.innerHTML = html || '<p>No worlds created yet. Create one to begin!</p>';
   }
 
   private render() {
@@ -20,9 +84,47 @@ export class WorldStoryApp {
         <header>
           <h1>🌍 World Story Engine</h1>
           <p>Create and evolve dynamic world narratives</p>
+          ${AuthService.isAuthenticated() ? `
+            <div class="auth-info">
+              <span>Signed in as ${AuthService.getCurrentUser()?.email}</span>
+              <button id="sign-out-btn" class="secondary">Sign Out</button>
+            </div>
+          ` : ''}
         </header>
 
-        <main>
+        <!-- Authentication Section -->
+        <section id="auth-section" class="auth-section" style="display: none;">
+          <div class="auth-forms">
+            <div class="auth-form">
+              <h2>Sign In</h2>
+              <form id="sign-in-form">
+                <input type="email" id="sign-in-email" placeholder="Email" required />
+                <input type="password" id="sign-in-password" placeholder="Password" required />
+                <button type="submit">Sign In</button>
+              </form>
+            </div>
+
+            <div class="auth-form">
+              <h2>Sign Up</h2>
+              <form id="sign-up-form">
+                <input type="email" id="sign-up-email" placeholder="Email" required />
+                <input type="password" id="sign-up-password" placeholder="Password" required />
+                <button type="submit">Sign Up</button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- Main App Content (Protected) -->
+        <main id="app-content" style="display: none;">
+          <!-- Worlds List -->
+          <section class="worlds-section">
+            <h2>Your Worlds</h2>
+            <div id="worlds-list" class="worlds-list">
+              <!-- Worlds will be listed here -->
+            </div>
+          </section>
+
           <!-- World Creation -->
           <section class="world-creation">
             <h2>Create New World</h2>
@@ -102,13 +204,6 @@ export class WorldStoryApp {
               <div id="events-list" class="events-list"></div>
             </div>
           </section>
-
-          <!-- World Selector -->
-          <section class="world-selector">
-            <h3>Load Existing World</h3>
-            <input type="text" id="world-id-input" placeholder="Enter World ID" />
-            <button id="load-world-btn">Load World</button>
-          </section>
         </main>
 
         <div id="loading" class="loading" style="display: none;">Loading...</div>
@@ -118,23 +213,60 @@ export class WorldStoryApp {
   }
 
   private attachEventListeners() {
+    // Auth Forms
+    const signInForm = document.getElementById('sign-in-form') as HTMLFormElement;
+    const signUpForm = document.getElementById('sign-up-form') as HTMLFormElement;
+    const signOutBtn = document.getElementById('sign-out-btn');
+
+    signInForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = (document.getElementById('sign-in-email') as HTMLInputElement).value;
+      const password = (document.getElementById('sign-in-password') as HTMLInputElement).value;
+      
+      try {
+        this.showLoading(true);
+        await AuthService.signIn(email, password);
+        signInForm.reset();
+      } catch (error) {
+        this.showError('Failed to sign in');
+      } finally {
+        this.showLoading(false);
+      }
+    });
+
+    signUpForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = (document.getElementById('sign-up-email') as HTMLInputElement).value;
+      const password = (document.getElementById('sign-up-password') as HTMLInputElement).value;
+      
+      try {
+        this.showLoading(true);
+        await AuthService.signUp(email, password);
+        signUpForm.reset();
+        this.showError('Check your email to confirm your account');
+      } catch (error) {
+        this.showError('Failed to sign up');
+      } finally {
+        this.showLoading(false);
+      }
+    });
+
+    signOutBtn?.addEventListener('click', async () => {
+      try {
+        await AuthService.signOut();
+      } catch (error) {
+        this.showError('Failed to sign out');
+      }
+    });
+
     // Create World Form
     const createWorldForm = document.getElementById('create-world-form') as HTMLFormElement;
-    createWorldForm.addEventListener('submit', async (e) => {
+    createWorldForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = (document.getElementById('world-name') as HTMLInputElement).value;
       const description = (document.getElementById('world-description') as HTMLTextAreaElement).value;
       
       await this.createWorld(name, description);
-    });
-
-    // Load World Button
-    const loadWorldBtn = document.getElementById('load-world-btn');
-    loadWorldBtn?.addEventListener('click', async () => {
-      const worldId = (document.getElementById('world-id-input') as HTMLInputElement).value;
-      if (worldId) {
-        await this.loadWorld(worldId);
-      }
     });
 
     // Create Arc Button
@@ -221,7 +353,10 @@ export class WorldStoryApp {
     try {
       this.showLoading(true);
       const world = await api.createWorld(name, description);
-      this.currentWorld = world;
+      
+      // Add to worlds list and select it
+      this.worlds.unshift(world);
+      this.updateWorldsList();
       await this.loadWorld(world.id);
       
       // Clear form
@@ -234,7 +369,7 @@ export class WorldStoryApp {
     }
   }
 
-  private async loadWorld(worldId: string) {
+  public async loadWorld(worldId: string) {
     try {
       this.showLoading(true);
       const worldState = await api.getWorldState(worldId);
