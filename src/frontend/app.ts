@@ -211,7 +211,8 @@ export class WorldStoryApp {
       if (!arc) throw new Error('Arc not found');
       
       this.currentArc = arc;
-      this.currentBeats = await api.getArcBeats(arcId);
+      const beats = await api.getArcBeats(arcId);
+      this.currentBeats = beats;
       
       this.updateWorldDisplay();
     } catch (error) {
@@ -278,7 +279,7 @@ export class WorldStoryApp {
           <span class="arc-status">${arc.status}</span>
         </div>
         <p class="arc-idea">${arc.story_idea}</p>
-        <button onclick="window.app.switchArc('${arc.id}')" ${arc.id === this.currentArc?.id ? 'disabled' : ''}>
+        <button onclick="app.switchArc('${arc.id}')" ${arc.id === this.currentArc?.id ? 'disabled' : ''}>
           ${arc.id === this.currentArc?.id ? 'Current Arc' : 'Switch to Arc'}
         </button>
       </div>
@@ -445,6 +446,11 @@ export class WorldStoryApp {
     `).join('');
     
     eventsList.innerHTML = html || '<p>No events recorded yet</p>';
+  }
+
+  // Make switchArc public so it can be called from the HTML
+  public switchArc(arcId: string) {
+    this.switchArc(arcId);
   }
 }
 
