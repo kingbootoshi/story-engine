@@ -1,3 +1,5 @@
+import { supabase } from './auth';
+
 const API_BASE = 'http://localhost:3001/api';
 
 export interface World {
@@ -7,6 +9,7 @@ export interface World {
   created_at: string;
   updated_at: string;
   current_arc_id?: string;
+  user_id: string;
 }
 
 export interface WorldArc {
@@ -43,15 +46,32 @@ export interface WorldEvent {
 }
 
 class WorldStoryAPI {
+  async getUserWorlds(): Promise<World[]> {
+    const { data, error } = await supabase
+      .from('worlds')
+      .select('*')
+      .order('created_at', { ascending: false });
+      
+    if (error) throw error;
+    return data;
+  }
+
   async createWorld(name: string, description: string): Promise<World> {
-    const response = await fetch(`${API_BASE}/worlds`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, description })
-    });
-    
-    if (!response.ok) throw new Error('Failed to create world');
-    return response.json();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data, error } = await supabase
+      .from('worlds')
+      .insert({ 
+        name, 
+        description,
+        user_id: user.id 
+      })
+      .select()
+      .single();
+      
+    if (error) throw error;
+    return data;
   }
 
   async getWorldState(worldId: string) {
