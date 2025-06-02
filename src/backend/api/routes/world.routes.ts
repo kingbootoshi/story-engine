@@ -13,7 +13,7 @@ const router = Router();
 // `RequestHandler` type signature (which expects a *non*-Promise return type).
 // ---------------------------------------------------------------------------
 function asyncHandler<T = any>(
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<T>,
+  fn: (req: Request, res: Response, next?: NextFunction) => Promise<T>,
 ) {
   /*
    * We deliberately return a standard (non-async) function here.  This keeps the
@@ -27,7 +27,7 @@ function asyncHandler<T = any>(
 }
 
 // Create a new world
-router.post('/', asyncHandler(async (req, res, _next) => {
+router.post('/', asyncHandler(async (req, res) => {
   logger.logAPICall('POST', '/api/worlds', req.body);
   
   const { name, description } = req.body;
@@ -43,7 +43,7 @@ router.post('/', asyncHandler(async (req, res, _next) => {
 }));
 
 // Get world details with current state
-router.get('/:worldId', asyncHandler(async (req, res, _next) => {
+router.get('/:worldId', asyncHandler(async (req, res) => {
   const { worldId } = req.params;
   logger.logAPICall('GET', `/api/worlds/${worldId}`);
   
@@ -52,7 +52,7 @@ router.get('/:worldId', asyncHandler(async (req, res, _next) => {
 }));
 
 // Create a new arc for a world
-router.post('/:worldId/arcs', asyncHandler(async (req, res, _next) => {
+router.post('/:worldId/arcs', asyncHandler(async (req, res) => {
   const { worldId } = req.params;
   const { storyIdea } = req.body;
   
@@ -72,21 +72,21 @@ router.post('/:worldId/arcs', asyncHandler(async (req, res, _next) => {
 }));
 
 // Get all arcs for a world
-router.get('/:worldId/arcs', asyncHandler(async (req, res, _next) => {
+router.get('/:worldId/arcs', asyncHandler(async (req, res) => {
   const { worldId } = req.params;
   const arcs = await supabaseService.getWorldArcs(worldId);
   res.json(arcs);
 }));
 
 // Get beats for a specific arc
-router.get('/:worldId/arcs/:arcId/beats', asyncHandler(async (req, res, _next) => {
+router.get('/:worldId/arcs/:arcId/beats', asyncHandler(async (req, res) => {
   const { arcId } = req.params;
   const beats = await supabaseService.getArcBeats(arcId);
   res.json(beats);
 }));
 
 // Progress the current arc (generate next beat)
-router.post('/:worldId/arcs/:arcId/progress', asyncHandler(async (req, res, _next) => {
+router.post('/:worldId/arcs/:arcId/progress', asyncHandler(async (req, res) => {
   const { worldId, arcId } = req.params;
   logger.logAPICall('POST', `/api/worlds/${worldId}/arcs/${arcId}/progress`, req.body);
   
@@ -109,7 +109,7 @@ router.post('/:worldId/arcs/:arcId/progress', asyncHandler(async (req, res, _nex
 }));
 
 // Record a world event
-router.post('/:worldId/events', asyncHandler(async (req, res, _next) => {
+router.post('/:worldId/events', asyncHandler(async (req, res) => {
   const { worldId } = req.params;
   const { 
     arcId, 
@@ -140,7 +140,7 @@ router.post('/:worldId/events', asyncHandler(async (req, res, _next) => {
 }));
 
 // Get recent events for a world
-router.get('/:worldId/events', asyncHandler(async (req, res, _next) => {
+router.get('/:worldId/events', asyncHandler(async (req, res) => {
   const { worldId } = req.params;
   const limit = parseInt(req.query.limit as string) || 20;
   
@@ -149,7 +149,7 @@ router.get('/:worldId/events', asyncHandler(async (req, res, _next) => {
 }));
 
 // Complete the current arc
-router.post('/:worldId/arcs/:arcId/complete', asyncHandler(async (req, res, _next) => {
+router.post('/:worldId/arcs/:arcId/complete', asyncHandler(async (req, res) => {
   const { worldId, arcId } = req.params;
   
   await worldArcService.completeArc(worldId, arcId);

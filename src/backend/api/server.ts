@@ -17,7 +17,7 @@ app.use(cors());
 app.use(express.json());
 
 // Request logging middleware
-app.use((req, res, next) => {
+app.use((req, _res, next) => {
   logger.http(`${req.method} ${req.path}`, {
     query: req.query,
     body: req.body,
@@ -30,7 +30,7 @@ app.use((req, res, next) => {
 app.use('/api/worlds', worldRoutes);
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (_req, res) => {
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
@@ -42,7 +42,10 @@ app.get('/api/health', (req, res) => {
 });
 
 // Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  // Explicitly reference _next to satisfy the TypeScript noUnusedParameters rule.
+  void _next;
+
   logger.error(`API Error: ${req.method} ${req.path}`, err, {
     status: err.status || 500,
     path: req.path,
