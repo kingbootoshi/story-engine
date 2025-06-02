@@ -21,6 +21,7 @@
     "vite": "^6.3.5"
   },
   "dependencies": {
+    "@octokit/rest": "^20.0.2",
     "@supabase/supabase-js": "^2.39.7",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
