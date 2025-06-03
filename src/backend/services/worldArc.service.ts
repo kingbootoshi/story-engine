@@ -1,7 +1,7 @@
 import aiService from './ai.service';
 import supabaseService from './supabase.service';
 import type { WorldArc, WorldBeat, WorldEvent } from './supabase.service';
-import { createLogger } from '../utils/logger';
+import { createLogger } from '../../shared/utils/logger';
 
 const logger = createLogger('worldArc.service');
 

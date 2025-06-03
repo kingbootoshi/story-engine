@@ -9,4 +9,4 @@ if (appElement) {
   (window as any).app = app;
 } else {
   console.error('App element not found');
-}
+} 

@@ -39,6 +39,8 @@ export interface WorldBeat {
 export interface WorldEvent {
   id: string;
   world_id: string;
+  /** Unique identifier for the beat this event belongs to */
+  beat_id?: string;
   event_type: string;
   description: string;
   impact_level: string;
@@ -86,8 +88,12 @@ class WorldStoryAPI {
     return response.json();
   }
 
-  async getArcBeats(arcId: string): Promise<WorldBeat[]> {
-    const response = await fetch(`${API_BASE}/worlds/${arcId}/beats`);
+  /*
+   * Fetch all beats for a given arc.  The API route lives under the parent
+   * world so we need both IDs in the path.
+   */
+  async getArcBeats(worldId: string, arcId: string): Promise<WorldBeat[]> {
+    const response = await fetch(`${API_BASE}/worlds/${worldId}/arcs/${arcId}/beats`);
     if (!response.ok) throw new Error('Failed to get arc beats');
     return response.json();
   }
@@ -104,6 +110,8 @@ class WorldStoryAPI {
   }
 
   async progressArc(worldId: string, arcId: string, recentEvents?: string) {
+    console.log('[API] progressArc', { worldId, arcId, recentEvents });
+
     const response = await fetch(`${API_BASE}/worlds/${worldId}/arcs/${arcId}/progress`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -119,6 +127,7 @@ class WorldStoryAPI {
     description: string;
     impactLevel?: string;
     arcId?: string;
+    beatId?: string;
   }) {
     const response = await fetch(`${API_BASE}/worlds/${worldId}/events`, {
       method: 'POST',

@@ -1,10 +1,21 @@
 import { createClient } from '@supabase/supabase-js';
-import { createLogger } from '../utils/logger';
+import { createLogger } from '../../shared/utils/logger';
 
 const logger = createLogger('supabase.service');
 
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || '';
+// Allow the backend to transparently consume the same env vars the Vite
+// frontend uses (prefixed with VITE_).  This prevents accidental mismatch
+// where the UI and API point at different Supabase projects which manifests
+// as "World not found" even though the record exists.
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+
+// Prefer the service-role key for server-side code so we bypass RLS when
+// necessary, but gracefully fall back to the anon key (or the Vite variant)
+// if a service key hasn't been supplied.  This gives the backend full
+// visibility of data created by authenticated frontend users while keeping
+// local setup friction low.
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseAnonKey = supabaseServiceKey || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
 
 logger.info('Initializing Supabase client', {
   hasUrl: !!supabaseUrl,

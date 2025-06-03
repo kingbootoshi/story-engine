@@ -2,7 +2,7 @@ import { Router } from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import supabaseService from '../../services/supabase.service';
 import worldArcService from '../../services/worldArc.service';
-import { createLogger } from '../../utils/logger';
+import { createLogger } from '../../../shared/utils/logger';
 
 const logger = createLogger('world.routes');
 const router = Router();
@@ -73,22 +73,28 @@ router.get('/:worldId/arcs', asyncHandler(async (req, res) => {
   res.json(arcs);
 }));
 
-router.get('/:worldId/arcs/:arcId/beats', asyncHandler(async (req, res) => {
+router.get('/arcs/:arcId/beats', asyncHandler(async (req, res) => {
   const { arcId } = req.params;
+  logger.logAPICall('GET', `/api/arcs/${arcId}/beats`);
   const beats = await supabaseService.getArcBeats(arcId);
+  logger.success('Returned beats', { arcId, count: beats.length });
   res.json(beats);
 }));
 
-router.post('/:worldId/arcs/:arcId/progress', asyncHandler(async (req, res) => {
-  const { worldId, arcId } = req.params;
-  logger.logAPICall('POST', `/api/worlds/${worldId}/arcs/${arcId}/progress`, req.body);
-  
+router.post('/arcs/:arcId/progress', asyncHandler(async (req, res) => {
+  const { arcId } = req.params;
+  logger.logAPICall('POST', `/api/arcs/${arcId}/progress`, req.body);
+
+  // Look up arc to obtain worldId
+  const arc = await supabaseService.getArc(arcId);
+  if (!arc) return res.status(404).json({ error: 'Arc not found' });
+
   const { recentEvents } = req.body;
 
   const beat = await worldArcService.progressArc({
-    worldId,
+    worldId: arc.world_id,
     arcId,
-    recentEvents
+    recentEvents,
   });
 
   if (!beat) {
@@ -147,6 +153,54 @@ router.post('/:worldId/arcs/:arcId/complete', asyncHandler(async (req, res) => {
     message: 'Arc completed successfully',
     arcId
   });
+}));
+
+// ---------------------------------------------------------------------------
+// Nested routes (preferred new pattern) -------------------------------------
+// These mirror the above endpoints but include the parent worldId in the URL
+// so the REST hierarchy is clearer.  They simply delegate to the same logic
+// after basic validation, ensuring backward-compatibility with existing
+// clients while allowing newer clients to adopt the nested structure.
+// ---------------------------------------------------------------------------
+
+router.get('/:worldId/arcs/:arcId/beats', asyncHandler(async (req, res) => {
+  const { worldId, arcId } = req.params;
+  logger.logAPICall('GET', `/api/worlds/${worldId}/arcs/${arcId}/beats`);
+
+  // Validate the arc belongs to the world to prevent cross-world leakage.
+  const arc = await supabaseService.getArc(arcId);
+  if (!arc || arc.world_id !== worldId) {
+    return res.status(404).json({ error: 'Arc not found for this world' });
+  }
+
+  const beats = await supabaseService.getArcBeats(arcId);
+  logger.success('Returned beats (nested)', { worldId, arcId, count: beats.length });
+  res.json(beats);
+}));
+
+router.post('/:worldId/arcs/:arcId/progress', asyncHandler(async (req, res) => {
+  const { worldId, arcId } = req.params;
+  logger.logAPICall('POST', `/api/worlds/${worldId}/arcs/${arcId}/progress`, req.body);
+
+  // Verify arc -> world relationship first
+  const arc = await supabaseService.getArc(arcId);
+  if (!arc || arc.world_id !== worldId) {
+    return res.status(404).json({ error: 'Arc not found for this world' });
+  }
+
+  const { recentEvents } = req.body;
+
+  const beat = await worldArcService.progressArc({
+    worldId,
+    arcId,
+    recentEvents,
+  });
+
+  if (!beat) {
+    return res.json({ message: 'Arc is complete', completed: true });
+  }
+
+  res.json(beat);
 }));
 
 export default router;

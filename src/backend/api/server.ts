@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import worldRoutes from './routes/world.routes';
-import { createLogger } from '../utils/logger';
+import { createLogger } from '../../shared/utils/logger';
 
 // Load environment variables
 dotenv.config();

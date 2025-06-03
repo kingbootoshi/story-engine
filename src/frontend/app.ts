@@ -22,7 +22,7 @@ export class WorldStoryApp {
     this.checkAuthState();
 
     // Listen for auth state changes
-    supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.onAuthStateChange((_event) => {
       this.checkAuthState();
     });
   }
@@ -367,6 +367,10 @@ export class WorldStoryApp {
         .map(s => `<li>${s}</li>`)
         .join('');
     }
+
+    // Refresh the events list to show only events tied to this beat so
+    // the UI stays context-aware as the user navigates between beats.
+    this.updateEventsList();
   }
 
   private showLoading(show: boolean) {
@@ -410,11 +414,13 @@ export class WorldStoryApp {
   public async handleArcSwitch(arcId: string) {
     try {
       this.showLoading(true);
+      if (!this.currentWorld) throw new Error('No current world');
+
       const arc = this.allArcs.find(a => a.id === arcId);
       if (!arc) throw new Error('Arc not found');
-      
+
       this.currentArc = arc;
-      const beats = await api.getArcBeats(arcId);
+      const beats = await api.getArcBeats(this.currentWorld.id, arcId);
       this.currentBeats = beats;
       
       this.updateWorldDisplay();
@@ -557,8 +563,19 @@ export class WorldStoryApp {
     try {
       this.showLoading(true);
       
-      // Get recent events as context
-      const recentEventsText = this.recentEvents
+      // Filter events to only include those from the CURRENT beat so we
+      // don't accidentally feed the AI duplicate context from earlier
+      // beats.  The current beat is always the last one in the timeline
+      // (highest index) so we grab its id and filter accordingly.
+      const currentBeatId = this.currentBeats.length
+        ? this.currentBeats[this.currentBeats.length - 1].id
+        : undefined;
+
+      const eventsForContext = currentBeatId
+        ? this.recentEvents.filter(e => e.beat_id === currentBeatId)
+        : this.recentEvents;
+
+      const recentEventsText = eventsForContext
         .slice(0, 5)
         .map(e => `[${e.impact_level}] ${e.description}`)
         .join('\n');
@@ -596,11 +613,20 @@ export class WorldStoryApp {
     if (!this.currentWorld) return;
     
     try {
+      // Always associate the new event with the *current* beat so the
+      // backend can cleanly separate events by beat.  This also enables
+      // us to provide precise context when we ask the AI to progress
+      // the story.
+      const currentBeatId = this.currentBeats.length
+        ? this.currentBeats[this.currentBeats.length - 1].id
+        : undefined;
+
       const event = await api.recordEvent(this.currentWorld.id, {
         eventType,
         description,
         impactLevel,
-        arcId: this.currentArc?.id
+        arcId: this.currentArc?.id,
+        beatId: currentBeatId
       });
       
       // Add to beginning of events list
@@ -629,7 +655,18 @@ export class WorldStoryApp {
     const eventsList = document.getElementById('events-list');
     if (!eventsList) return;
     
-    const html = this.recentEvents.slice(0, 10).map(event => `
+    // Determine which beat's events to show.  Prefer the selected beat if
+    // the user has clicked one; otherwise default to the *current* beat
+    // (the most recently generated beat in the timeline).
+    const beatIdToShow = this.selectedBeat?.id || (this.currentBeats.length
+      ? this.currentBeats[this.currentBeats.length - 1].id
+      : undefined);
+
+    const filteredEvents = beatIdToShow
+      ? this.recentEvents.filter(e => e.beat_id === beatIdToShow)
+      : this.recentEvents;
+
+    const html = filteredEvents.slice(0, 10).map(event => `
       <div class="event ${event.impact_level}">
         <div class="event-header">
           <span class="event-type">${event.event_type}</span>
@@ -640,7 +677,7 @@ export class WorldStoryApp {
       </div>
     `).join('');
     
-    eventsList.innerHTML = html || '<p>No events recorded yet</p>';
+    eventsList.innerHTML = html || '<p>No events recorded yet for this beat</p>';
   }
 }
 

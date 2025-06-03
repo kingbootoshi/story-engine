@@ -1,7 +1,6 @@
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import gitService from './services/git.service';
 
 // Get the directory name in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -16,8 +15,6 @@ console.log('- SUPABASE_URL:', process.env.SUPABASE_URL ? '✅ Loaded' : '❌ Mi
 console.log('- SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? '✅ Loaded' : '❌ Missing');
 console.log('- OPENROUTER_API_KEY:', process.env.OPENROUTER_API_KEY ? '✅ Loaded' : '❌ Missing');
 console.log('- OPENPIPE_API_KEY:', process.env.OPENPIPE_API_KEY ? '✅ Loaded' : '❌ Missing');
-console.log('- GITHUB_REPO_TOKEN:', process.env.GITHUB_REPO_TOKEN ? '✅ Loaded' : '❌ Missing');
-console.log('- GITHUB_REPO_URL:', process.env.GITHUB_REPO_URL ? '✅ Loaded' : '❌ Missing');
 
 // Check required environment variables
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
@@ -32,23 +29,8 @@ if (!process.env.OPENROUTER_API_KEY) {
   process.exit(1);
 }
 
-if (!process.env.GITHUB_REPO_TOKEN || !process.env.GITHUB_REPO_URL) {
-  console.error('❌ Missing GitHub configuration!');
-  console.error('Please check your .env file and ensure GITHUB_REPO_TOKEN and GITHUB_REPO_URL are set.');
-  process.exit(1);
-}
-
-// Initialize Git service
-try {
-  await gitService.getFileContent('README.md');
-  console.log('✅ GitHub connection verified');
-} catch (error) {
-  console.error('❌ Failed to connect to GitHub:', error);
-  process.exit(1);
-}
-
 // Now import and start the server after env vars are loaded
-import('./api/server.js').then(() => {
+import('./api/server.ts').then(() => {
   console.log('✅ Server module loaded successfully');
 }).catch(err => {
   console.error('❌ Failed to load server:', err);

@@ -1,13 +1,30 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
+// If the developer hasn't provided the required env vars, we log an error but
+// allow the app shell to render.  Auth-dependent functionality will throw
+// explicit errors when invoked.
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
+  console.error('[Auth] Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY in your .env file. Authentication layer disabled.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Tiny noop Supabase stub so that the rest of the UI can load without runtime
+// errors. Any attempt to actually use auth methods will throw a helpful error.
+const stubSupabase = {
+  auth: {
+    getUser: async () => ({ data: { user: null } }),
+    onAuthStateChange: () => ({ data: null, error: null }),
+    signUp: async () => { throw new Error('Supabase not configured'); },
+    signInWithPassword: async () => { throw new Error('Supabase not configured'); },
+    signOut: async () => { throw new Error('Supabase not configured'); },
+  },
+} as unknown as ReturnType<typeof createClient>;
+
+export const supabase = supabaseUrl && supabaseAnonKey
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : stubSupabase;
 
 export interface User {
   id: string;
