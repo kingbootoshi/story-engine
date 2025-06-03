@@ -246,7 +246,7 @@ export class AIService {
     const systemPrompt = DYNAMIC_BEAT_SYSTEM_PROMPT;
 
     // Build summaries for previous beats and next anchor to pass into prompt builder
-    const previousBeatsSummary = previousBeats.map((b, i) => `Beat ${b.beat_index}: ${b.beatName || b.beat_name} - ${b.description.substring(0, 200)}...`).join('\n');
+    const previousBeatsSummary = previousBeats.map((b) => `Beat ${b.beat_index}: ${b.beatName || b.beat_name} - ${b.description.substring(0, 200)}...`).join('\n');
     const nextAnchorSummary = `${nextAnchor.beatName || nextAnchor.beat_name}: ${nextAnchor.description}`;
 
     const beatStructure = this.getWorldBeatStructure();
