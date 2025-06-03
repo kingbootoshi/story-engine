@@ -32,10 +32,10 @@ export function EventCard({
 
   const getImpactColor = () => {
     const colors = {
-      minor: 'border-l-mystic',
-      moderate: 'border-l-amber',
-      major: 'border-l-destructive',
-      catastrophic: 'border-l-destructive bg-destructive/10'
+      minor: 'border-l-blue-500',
+      moderate: 'border-l-yellow-500',
+      major: 'border-l-red-500',
+      catastrophic: 'border-l-red-500 bg-red-500/10'
     }
     return colors[impactLevel]
   }

@@ -27,10 +27,10 @@ const MagicalButton = forwardRef<
   ...props 
 }, ref) => {
   const variants = {
-    primary: 'gradient-magical text-white border-transparent',
-    secondary: 'bg-secondary text-secondary-foreground border-secondary',
-    tertiary: 'bg-accent text-accent-foreground border-accent',
-    ghost: 'bg-transparent hover:bg-white/10 text-foreground border-transparent'
+    primary: 'bg-blue-500 hover:bg-blue-600 text-white border-transparent',
+    secondary: 'bg-gray-700 hover:bg-gray-600 text-white border-gray-600',
+    tertiary: 'bg-green-500 hover:bg-green-600 text-white border-green-500',
+    ghost: 'bg-transparent hover:bg-white/10 text-white border-transparent'
   }
 
   const sizes = {
@@ -46,7 +46,7 @@ const MagicalButton = forwardRef<
         'relative inline-flex items-center justify-center font-medium rounded-lg',
         'border transition-all duration-200',
         'disabled:opacity-50 disabled:cursor-not-allowed',
-        'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+        'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
         variants[variant],
         sizes[size],
         glow && !disabled && 'glow hover:glow-lg',

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { MagicalButton, BeatNode, EventCard, GlowingInput } from '../../components/ui'
-import { ArrowLeft, Plus, Loader2, Play, Check } from 'lucide-react'
+import { MagicalButton, BeatNode, EventCard } from '../../components/ui'
+import { ArrowLeft, Plus, Loader2, Play, Check, Sparkles, Zap } from 'lucide-react'
 import { api, type World, type WorldArc, type WorldBeat, type WorldEvent } from '../../lib/api'
 
 export function WorldDetail() {
@@ -204,115 +204,164 @@ export function WorldDetail() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl animate-pulse" />
+        </div>
+        <motion.div 
+          className="text-center relative z-10"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8 }}
+        >
+          <div className="relative mb-8">
+            <Loader2 className="w-20 h-20 animate-spin text-blue-500 mx-auto" />
+            <div className="absolute inset-0 w-20 h-20 border-4 border-blue-500/20 rounded-full mx-auto animate-ping" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-4">Loading World Data</h2>
+          <p className="text-lg text-gray-400">Accessing the narrative dimensions...</p>
+        </motion.div>
       </div>
     )
   }
 
   if (error || !world) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-destructive mb-4">{error || 'World not found'}</p>
-          <MagicalButton onClick={() => navigate('/dashboard')} variant="secondary">
-            Back to Dashboard
-          </MagicalButton>
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-red-500/10 rounded-full blur-3xl animate-pulse" />
         </div>
+        <motion.div 
+          className="text-center relative z-10"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="bg-gradient-to-r from-red-500/10 to-red-500/5 border border-red-500/20 rounded-3xl p-16 max-w-lg backdrop-blur-sm">
+            <div className="w-20 h-20 bg-red-500/20 rounded-2xl flex items-center justify-center mx-auto mb-8">
+              <Sparkles className="w-10 h-10 text-red-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-red-500 mb-6">World Access Failed</h2>
+            <p className="text-red-400 mb-10 leading-relaxed text-lg">{error || 'World not found'}</p>
+            <MagicalButton onClick={() => navigate('/dashboard')} variant="secondary" size="lg">
+              Return to Dashboard
+            </MagicalButton>
+          </div>
+        </motion.div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <header className="border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-4">
-          <MagicalButton
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/dashboard')}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Worlds
-          </MagicalButton>
-          <h1 className="text-xl font-semibold">{world.name}</h1>
+    <div className="min-h-screen bg-gray-900 relative overflow-hidden">
+
+      {/* Navigation Header */}
+      <header className="sticky top-0 z-40 border-b border-gray-800 bg-gray-900">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <MagicalButton
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/dashboard')}
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </MagicalButton>
+              <h1 className="text-xl font-bold text-white">{world.name}</h1>
+            </div>
+            
+            <div className="flex items-center gap-4 text-sm text-gray-400">
+              <span>{beats.length} Beats</span>
+              <span>•</span>
+              <span>{events.length} Events</span>
+            </div>
+          </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="relative z-10 max-w-7xl mx-auto px-6 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.6 }}
+          className="space-y-8"
         >
-          {/* World Info */}
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold mb-2">{world.name}</h2>
-            <p className="text-muted-foreground">{world.description}</p>
-          </div>
+          {/* World Description */}
+          <section className="pb-6 border-b border-gray-800">
+            <p className="text-gray-400">{world.description}</p>
+          </section>
 
-          {/* Arc Section */}
-          <section className="mb-8">
-            <h3 className="text-2xl font-semibold mb-4">Story Arcs</h3>
+          {/* Story Arcs Section */}
+          <section>
+            <h3 className="text-lg font-bold text-white mb-4">Story Arcs</h3>
+            
             {allArcs.length > 0 ? (
-              <div className="space-y-4">
-                {allArcs.map((arc) => (
-                  <div
+              <div className="grid gap-8">
+                {allArcs.map((arc, index) => (
+                  <motion.div
                     key={arc.id}
-                    className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                    className={`p-4 border rounded-xl cursor-pointer transition-all duration-200 ${
                       arc.id === selectedArcId 
-                        ? 'border-primary bg-primary/10' 
-                        : 'border-border hover:border-muted'
+                        ? 'border-blue-500 bg-blue-500/10' 
+                        : 'border-gray-700 hover:border-gray-600 hover:bg-gray-800/50'
                     }`}
                     onClick={() => handleArcSwitch(arc.id)}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.05 * index }}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-semibold">{arc.story_name}</h4>
+                        <div className="flex items-center gap-3 mb-2">
+                          <h4 className="font-semibold text-white">
+                            {arc.story_name}
+                          </h4>
                           {arc.id === world.current_arc_id && (
-                            <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded-full">
-                              Current
-                            </span>
+                            <span className="text-xs px-2 py-1 bg-blue-500/10 text-blue-500 rounded-md font-medium">Active</span>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground">{arc.story_idea}</p>
+                        <p className="text-sm text-gray-400 line-clamp-1">
+                          {arc.story_idea}
+                        </p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 ml-4">
                         {arc.status === 'completed' && (
-                          <Check className="w-5 h-5 text-aurora" />
+                          <Check className="w-4 h-4 text-green-500" />
                         )}
-                        <span className="text-sm font-medium">
-                          {arc.status.charAt(0).toUpperCase() + arc.status.slice(1)}
+                        <span className="text-xs text-gray-400 capitalize">
+                          {arc.status}
                         </span>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             ) : (
-              <p className="text-muted-foreground">No arcs created yet</p>
+              <div className="text-center py-12 border border-dashed border-gray-700 rounded-xl">
+                <p className="text-sm text-gray-400">No story arcs yet. Create one to begin.</p>
+              </div>
             )}
             
-            {/* Create Arc */}
+            {/* Create Arc Section */}
             {(!currentArc || currentArc.status === 'completed') && (
-              <div className="mt-4 p-4 border border-dashed border-border rounded-lg">
-                <h4 className="font-medium mb-2">Create New Arc</h4>
-                <div className="flex gap-2">
-                  <GlowingInput
-                    placeholder="Story idea (optional)"
+              <div className="mt-4 p-4 border border-dashed border-gray-700 rounded-xl">
+                <div className="flex gap-4">
+                  <input
+                    type="text"
+                    placeholder="Describe your story concept (optional)"
                     value={newArcIdea}
                     onChange={(e) => setNewArcIdea(e.target.value)}
-                    className="flex-1"
+                    className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-white placeholder-gray-400"
                   />
                   <MagicalButton
                     onClick={handleCreateArc}
                     isLoading={isCreatingArc}
                     disabled={isCreatingArc}
+                    size="sm"
                   >
-                    <Plus className="w-4 h-4 mr-2" />
+                    <Plus className="w-4 h-4 mr-1" />
                     Create Arc
                   </MagicalButton>
                 </div>
@@ -320,70 +369,92 @@ export function WorldDetail() {
             )}
           </section>
 
-          {/* Timeline */}
+          {/* Story Timeline */}
           {currentArc && (
-            <section className="mb-8">
+            <section>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-2xl font-semibold">Story Timeline</h3>
+                <h3 className="text-lg font-bold text-white">Story Timeline</h3>
                 {currentArc.status === 'active' && (
                   <MagicalButton
                     onClick={handleProgressArc}
                     isLoading={isProgressingArc}
                     disabled={isProgressingArc || beats.length >= 15}
+                    size="sm"
                   >
-                    <Play className="w-4 h-4 mr-2" />
+                    <Play className="w-4 h-4 mr-1" />
                     Progress Story
                   </MagicalButton>
                 )}
               </div>
               
-              <div className="overflow-x-auto pb-4">
-                <div className="flex gap-8 min-w-max p-4">
-                  {[...Array(15)].map((_, index) => {
-                    const beat = beats.find(b => b.beat_index === index)
-                    const isAnchor = index === 0 || index === 7 || index === 14
-                    
-                    return (
-                      <BeatNode
-                        key={index}
-                        index={index}
-                        name={beat?.beat_name}
-                        type={isAnchor ? 'anchor' : beat ? 'dynamic' : 'future'}
-                        status={getBeatStatus(index)}
-                        isSelected={selectedBeat?.beat_index === index}
-                        onClick={() => beat && handleBeatClick(beat)}
-                      />
-                    )
-                  })}
+              <div className="border border-gray-700 rounded-xl p-8 bg-gray-800/50">
+                <div className="relative">
+                  {/* Timeline line */}
+                  <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gray-700 -translate-y-1/2" />
+                  
+                  {/* Progress line */}
+                  {beats.length > 0 && (
+                    <div 
+                      className="absolute top-1/2 left-0 h-0.5 bg-blue-500 -translate-y-1/2 transition-all duration-500"
+                      style={{ width: `${(beats.length - 1) / 14 * 100}%` }}
+                    />
+                  )}
+                  
+                  {/* Beat nodes */}
+                  <div className="relative flex justify-between items-center">
+                    {[...Array(15)].map((_, index) => {
+                      const beat = beats.find(b => b.beat_index === index)
+                      const isAnchor = index === 0 || index === 7 || index === 14
+                      
+                      return (
+                        <BeatNode
+                          key={index}
+                          index={index}
+                          name={beat?.beat_name}
+                          type={isAnchor ? 'anchor' : beat ? 'dynamic' : 'future'}
+                          status={getBeatStatus(index)}
+                          isSelected={selectedBeat?.beat_index === index}
+                          onClick={() => beat && handleBeatClick(beat)}
+                        />
+                      )
+                    })}
+                  </div>
+                  
+                  {/* Timeline labels */}
+                  <div className="flex justify-between mt-8 text-xs text-gray-500">
+                    <span>Beginning</span>
+                    <span>Midpoint</span>
+                    <span>Climax</span>
+                  </div>
                 </div>
               </div>
             </section>
           )}
 
-          {/* Selected Beat */}
+          {/* Selected Beat Details */}
           {selectedBeat && (
-            <section className="mb-8 p-6 rounded-lg bg-card border border-border">
-              <h3 className="text-xl font-semibold mb-4">{selectedBeat.beat_name}</h3>
-              <p className="text-muted-foreground mb-6">{selectedBeat.description}</p>
+            <section className="border border-gray-700 rounded-xl p-6 bg-gray-800/50">
+              <h3 className="text-lg font-bold text-white mb-2">{selectedBeat.beat_name}</h3>
+              <p className="text-sm text-gray-400 mb-6">{selectedBeat.description}</p>
               
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid lg:grid-cols-2 gap-6">
                 <div>
-                  <h4 className="font-medium mb-2">World Directives</h4>
+                  <h4 className="text-sm font-semibold text-white mb-3">World Directives</h4>
                   <ul className="space-y-2">
                     {selectedBeat.world_directives.map((directive, i) => (
-                      <li key={i} className="text-sm text-muted-foreground">
-                        • {directive}
+                      <li key={i} className="text-sm text-gray-400 pl-4 border-l-2 border-blue-500/20">
+                        {directive}
                       </li>
                     ))}
                   </ul>
                 </div>
                 
                 <div>
-                  <h4 className="font-medium mb-2">Emergent Storylines</h4>
+                  <h4 className="text-sm font-semibold text-white mb-3">Emergent Storylines</h4>
                   <ul className="space-y-2">
                     {selectedBeat.emergent_storylines.map((storyline, i) => (
-                      <li key={i} className="text-sm text-muted-foreground">
-                        • {storyline}
+                      <li key={i} className="text-sm text-gray-400 pl-4 border-l-2 border-green-500/20">
+                        {storyline}
                       </li>
                     ))}
                   </ul>
@@ -392,70 +463,92 @@ export function WorldDetail() {
             </section>
           )}
 
-          {/* Events */}
+          {/* World Events */}
           {currentArc && (
             <section>
-              <h3 className="text-2xl font-semibold mb-4">World Events</h3>
+              <h3 className="text-lg font-bold text-white mb-4">World Events</h3>
               
-              {/* Record Event Form */}
-              <form onSubmit={handleRecordEvent} className="mb-6 p-4 bg-card rounded-lg border border-border">
-                <div className="grid md:grid-cols-3 gap-4 mb-4">
-                  <GlowingInput
-                    placeholder="Event description"
-                    value={eventDescription}
-                    onChange={(e) => setEventDescription(e.target.value)}
-                    required
-                  />
+              {/* Event Form */}
+              <form 
+                onSubmit={handleRecordEvent} 
+                className="mb-6 p-4 border border-gray-700 rounded-xl bg-gray-800/50"
+              >
+                <div className="grid lg:grid-cols-12 gap-4 mb-4">
+                  <div className="lg:col-span-6">
+                    <input
+                      type="text"
+                      placeholder="Describe what happened..."
+                      value={eventDescription}
+                      onChange={(e) => setEventDescription(e.target.value)}
+                      required
+                      className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-white placeholder-gray-400"
+                    />
+                  </div>
                   
-                  <select
-                    value={eventType}
-                    onChange={(e) => setEventType(e.target.value)}
-                    className="px-3 py-3 bg-background border border-input rounded-lg"
-                  >
-                    <option value="player_action">Player Action</option>
-                    <option value="environmental">Environmental</option>
-                    <option value="social">Social</option>
-                    <option value="system_event">System Event</option>
-                  </select>
+                  <div className="lg:col-span-3">
+                    <select
+                      value={eventType}
+                      onChange={(e) => setEventType(e.target.value)}
+                      className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-white placeholder-gray-400"
+                    >
+                      <option value="player_action">Player Action</option>
+                      <option value="environmental">Environmental</option>
+                      <option value="social">Social</option>
+                      <option value="system_event">System Event</option>
+                    </select>
+                  </div>
                   
-                  <select
-                    value={impactLevel}
-                    onChange={(e) => setImpactLevel(e.target.value)}
-                    className="px-3 py-3 bg-background border border-input rounded-lg"
-                  >
-                    <option value="minor">Minor</option>
-                    <option value="moderate">Moderate</option>
-                    <option value="major">Major</option>
-                    <option value="catastrophic">Catastrophic</option>
-                  </select>
+                  <div className="lg:col-span-3">
+                    <select
+                      value={impactLevel}
+                      onChange={(e) => setImpactLevel(e.target.value)}
+                      className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-white placeholder-gray-400"
+                    >
+                      <option value="minor">Minor</option>
+                      <option value="moderate">Moderate</option>
+                      <option value="major">Major</option>
+                      <option value="catastrophic">Catastrophic</option>
+                    </select>
+                  </div>
                 </div>
                 
                 <MagicalButton
                   type="submit"
                   isLoading={isSubmittingEvent}
                   disabled={isSubmittingEvent || !eventDescription}
+                  size="sm"
                 >
+                  <Zap className="w-4 h-4 mr-1" />
                   Record Event
                 </MagicalButton>
               </form>
               
               {/* Events List */}
-              <div className="space-y-4">
+              <div className="space-y-8">
                 {events
                   .filter(e => !selectedBeat || e.beat_id === selectedBeat.id)
-                  .map((event) => (
-                    <EventCard
+                  .map((event, index) => (
+                    <motion.div
                       key={event.id}
-                      {...event}
-                      type={event.event_type as any}
-                      impactLevel={event.impact_level as any}
-                    />
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, delay: 0.1 * index }}
+                    >
+                      <EventCard
+                        id={event.id}
+                        description={event.description}
+                        type={event.event_type as any}
+                        impactLevel={event.impact_level as any}
+                        beatId={event.beat_id}
+                        createdAt={event.created_at}
+                      />
+                    </motion.div>
                   ))}
                   
                 {events.length === 0 && (
-                  <p className="text-center text-muted-foreground py-8">
-                    No events recorded yet
-                  </p>
+                  <div className="text-center py-12 border border-dashed border-gray-700 rounded-xl">
+                    <p className="text-sm text-gray-400">No events recorded yet.</p>
+                  </div>
                 )}
               </div>
             </section>

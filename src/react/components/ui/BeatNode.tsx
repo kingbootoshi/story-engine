@@ -22,96 +22,65 @@ export function BeatNode({
   const isAnchor = type === 'anchor'
   
   const getIcon = () => {
-    if (status === 'completed') return <CheckCircle className="w-5 h-5" />
-    if (isAnchor) return <Star className="w-5 h-5" />
-    return <Circle className="w-4 h-4" />
+    if (status === 'completed') return <CheckCircle className="w-4 h-4" />
+    if (isAnchor) return <Star className="w-4 h-4" />
+    return <Circle className="w-3 h-3" />
   }
 
   const getNodeStyles = () => {
-    const base = 'relative flex items-center justify-center cursor-pointer transition-all duration-300'
-    const size = isAnchor ? 'w-16 h-16' : 'w-12 h-12'
+    const base = 'relative flex items-center justify-center cursor-pointer transition-all duration-300 group'
+    const size = isAnchor ? 'w-10 h-10' : 'w-8 h-8'
     
     const variants = {
       completed: isAnchor 
-        ? 'bg-aurora text-white border-2 border-aurora' 
-        : 'bg-primary text-white border-2 border-primary',
-      current: 'bg-primary/20 text-primary border-2 border-primary',
-      future: 'bg-muted/20 text-muted-foreground border-2 border-muted/40 border-dashed'
+        ? 'bg-green-500 text-white border-2 border-green-500' 
+        : 'bg-blue-500 text-white border-2 border-blue-500',
+      current: 'bg-blue-500/20 text-blue-500 border-2 border-blue-500 animate-pulse',
+      future: 'bg-gray-800 text-gray-500 border-2 border-gray-600'
     }
 
     return cn(base, size, 'rounded-full', variants[status])
   }
 
   return (
-    <div className="relative">
+    <div className="relative flex items-center">
       <motion.div
         className={getNodeStyles()}
         onClick={onClick}
-        whileHover={{ scale: 1.1 }}
+        whileHover={{ scale: 1.2 }}
         whileTap={{ scale: 0.95 }}
-        animate={isSelected ? {
-          boxShadow: [
-            '0 0 0 0 rgba(var(--primary) / 0)',
-            '0 0 0 8px rgba(var(--primary) / 0.2)',
-            '0 0 0 0 rgba(var(--primary) / 0)'
-          ]
-        } : {}}
-        transition={isSelected ? {
-          duration: 2,
-          repeat: Infinity,
-          ease: 'easeInOut'
-        } : {}}
       >
-        {/* Connection line */}
-        {index > 0 && (
-          <div className={cn(
-            'absolute right-full top-1/2 -translate-y-1/2 h-0.5 w-8',
-            status === 'future' ? 'bg-muted/40' : 'bg-primary'
-          )} />
+        {getIcon()}
+        
+        {/* Hover tooltip */}
+        {name && (
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            <div className="bg-gray-800 text-white text-xs px-3 py-2 rounded-lg whitespace-nowrap border border-gray-700">
+              <div className="font-semibold">{name}</div>
+              <div className="text-gray-400">Beat {index}</div>
+            </div>
+            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1">
+              <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800" />
+            </div>
+          </div>
         )}
         
-        {/* Beat number or icon */}
-        <div className="font-semibold">
-          {status === 'current' && (
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-              className="absolute inset-0 rounded-full"
-              style={{
-                background: 'conic-gradient(from 0deg, transparent, rgb(var(--primary)), transparent)',
-                opacity: 0.3
-              }}
-            />
-          )}
-          {getIcon()}
-        </div>
+        {/* Beat number for nodes without names */}
+        {!name && (
+          <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-gray-500">
+            {index}
+          </div>
+        )}
         
-        {/* Current beat pulse */}
-        {status === 'current' && (
+        {/* Selected ring */}
+        {isSelected && (
           <motion.div
-            className="absolute inset-0 rounded-full bg-primary"
-            animate={{
-              scale: [1, 1.3, 1],
-              opacity: [0.3, 0, 0.3]
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: 'easeInOut'
-            }}
+            className="absolute inset-0 rounded-full border-2 border-blue-400"
+            animate={{ scale: [1, 1.3, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
           />
         )}
       </motion.div>
-      
-      {/* Beat label */}
-      <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
-        <div className="text-xs text-muted-foreground">Beat {index}</div>
-        {name && (
-          <div className="text-xs font-medium text-foreground max-w-24 truncate">
-            {name}
-          </div>
-        )}
-      </div>
     </div>
   )
 }

@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+/* Theme configuration */
+@theme {
+  /* Colors */
+  --color-background: #1a1a1a;
+  --color-foreground: #fafafa;
+  --color-card: #242424;
+  --color-primary: #6366F1;
+  --color-secondary: #3B82F6;
+  --color-muted: #404040;
+  --color-muted-foreground: #a3a3a3;
+  --color-accent: #10B981;
+  --color-destructive: #ef4444;
+  --color-border: #404040;
+  --color-input: #404040;
+  --color-ring: #6366F1;
+  
+  /* Custom colors */
+  --color-aurora: #10B981;
+  --color-cosmos: #6366F1;
+  --color-mystic: #3B82F6;
+  --color-amber: #F59E0B;
+}
+
+/* Base styles */
+@layer base {
+  :root {
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    color-scheme: dark;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+  
+  #app {
+    height: 100vh;
+    width: 100vw;
+  }
+  
+  .font-cinzel {
+    font-family: "Cinzel", serif;
+    font-optical-sizing: auto;
+    font-style: normal;
+  }
+}
+
+/* Component styles */
+@layer components {
+  /* Gradients */
+  .gradient-magical {
+    background: linear-gradient(135deg, var(--color-cosmos), var(--color-mystic));
+  }
+  
+  .gradient-aurora {
+    background: linear-gradient(135deg, var(--color-aurora), var(--color-mystic));
+  }
+  
+  .gradient-radial {
+    background: radial-gradient(circle, var(--tw-gradient-stops));
+  }
+  
+  .text-gradient {
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+/* Utilities */
+@layer utilities {
+  /* Animations */
+  .animate-pulse-slow {
+    animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: .5;
+    }
+  }
+}
