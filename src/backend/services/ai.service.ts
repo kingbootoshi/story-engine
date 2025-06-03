@@ -193,7 +193,7 @@ export class AIService {
       });
 
       const completion = await openai.chat.completions.create({
-        model: "openai/gpt-4o-mini",
+        model: "anthropic/claude-sonnet-4",
         messages: [
           { role: "system" as const, content: systemPrompt },
           { role: "user" as const, content: userPrompt }
@@ -218,7 +218,7 @@ export class AIService {
       
       logger.logAICall(
         'generateWorldArcAnchors',
-        'openai/gpt-4o-mini',
+        'anthropic/claude-sonnet-4',
         { worldName, storyIdea },
         result
       );
@@ -227,7 +227,7 @@ export class AIService {
     } catch (error) {
       logger.logAICall(
         'generateWorldArcAnchors',
-        'openai/gpt-4o-mini',
+        'anthropic/claude-sonnet-4',
         { worldName, storyIdea },
         undefined,
         error
@@ -269,7 +269,7 @@ export class AIService {
       });
 
       const completion = await openai.chat.completions.create({
-        model: "openai/gpt-4o-mini",
+        model: "anthropic/claude-sonnet-4",
         messages: [
           { role: "system" as const, content: systemPrompt },
           { role: "user" as const, content: userPrompt }
@@ -295,7 +295,7 @@ export class AIService {
       
       logger.logAICall(
         'generateDynamicWorldBeat',
-        'openai/gpt-4o-mini',
+        'anthropic/claude-sonnet-4',
         { worldName, currentBeatIndex },
         result
       );
@@ -308,7 +308,7 @@ export class AIService {
     } catch (error) {
       logger.logAICall(
         'generateDynamicWorldBeat',
-        'openai/gpt-4o-mini',
+        'anthropic/claude-sonnet-4',
         { worldName, currentBeatIndex },
         undefined,
         error
@@ -326,7 +326,7 @@ export class AIService {
       logger.info('Generating arc summary', { arcName });
 
       const completion = await openai.chat.completions.create({
-        model: "openai/gpt-4o-mini",
+        model: "anthropic/claude-sonnet-4",
         messages: [
           { role: "system" as const, content: systemPrompt },
           { role: "user" as const, content: userPrompt }
@@ -351,7 +351,7 @@ export class AIService {
       
       logger.logAICall(
         'generateArcSummary',
-        'openai/gpt-4o-mini',
+        'anthropic/claude-sonnet-4',
         { arcName },
         result
       );
@@ -360,7 +360,7 @@ export class AIService {
     } catch (error) {
       logger.logAICall(
         'generateArcSummary',
-        'openai/gpt-4o-mini',
+        'anthropic/claude-sonnet-4',
         { arcName },
         undefined,
         error
