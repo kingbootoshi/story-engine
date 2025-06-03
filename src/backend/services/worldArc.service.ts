@@ -88,6 +88,11 @@ export class WorldArcService {
         savedAnchors.push(beat);
       }
 
+      // Update world to set this arc as current
+      await supabaseService.updateWorld(params.worldId, {
+        current_arc_id: arc.id
+      });
+
       logger.success('Arc created successfully', {
         arcId: arc.id,
         arcName: arc.story_name,
@@ -218,6 +223,11 @@ export class WorldArcService {
       
       // Mark arc as completed
       await supabaseService.completeArc(arcId, summary);
+
+      // Clear the current_arc_id from the world since this arc is now complete
+      await supabaseService.updateWorld(worldId, {
+        current_arc_id: undefined
+      });
 
       // Create a major world event for arc completion
       await supabaseService.createEvent({

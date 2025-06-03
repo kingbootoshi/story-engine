@@ -1,13 +1,74 @@
 import { createClient } from '@supabase/supabase-js';
-import { env } from '../config/env';
 import type { World } from '../types/world.types';
 import type { WorldBeat } from '../types/beat.types';
-import { createLogger } from './logger';
+
+// ---------------------------------------------------------------------------
+// Supabase Credential Resolution
+// ---------------------------------------------------------------------------
+
+// Helper to detect if we're running in a browser-like environment.  Vite sets
+// `window` during client-side execution, while it is undefined when running
+// under Node (e.g. the server or tests).
+const isBrowser = typeof window !== 'undefined';
+
+// Front-end builds use the Vite-exposed environment variables that are
+// statically injected at compile-time (prefixed with `VITE_`).  Back-end code
+// falls back to plain `process.env` so we can reuse the same utility on both
+// sides without duplicating logic.
+const supabaseUrl: string | undefined = isBrowser
+  ? (import.meta as any).env.VITE_SUPABASE_URL
+  : process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+
+const supabaseAnonKey: string | undefined = isBrowser
+  ? (import.meta as any).env.VITE_SUPABASE_ANON_KEY
+  : process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  // eslint-disable-next-line no-console
+  console.error('[Supabase] Missing credentials – make sure the appropriate ' +
+                'environment variables are set in your .env and/or Vite config');
+}
 
 // Supabase client is a singleton across the app.
-export const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
 
-const log = createLogger(__filename);
+// Lightweight logger that defers to our full Winston-based logger when we're
+// running server-side, but degrades gracefully to `console` in the browser so
+// we don't drag heavy Node-only dependencies (and their reliance on `process`)
+// into the client bundle.
+
+type LogMethods = 'info' | 'debug' | 'warn' | 'error' | 'success';
+
+// Simple shim — every method just forwards to console with a tag
+const browserLogger = /*#__PURE__*/ (() => {
+  const tag = '[supabase]';
+  const handler = (level: LogMethods) => (...args: any[]) => {
+    // eslint-disable-next-line no-console
+    (console as any)[level === 'success' ? 'info' : level](tag, ...args);
+  };
+  return {
+    info: handler('info'),
+    debug: handler('debug'),
+    warn: handler('warn'),
+    error: handler('error'),
+    success: handler('success'),
+  } as const;
+})();
+
+// Conditionally load the heavy logger only on the server.
+let log: typeof browserLogger;
+if (typeof window === 'undefined') {
+  try {
+    // Use runtime require via eval to avoid static bundler analysis.
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval, @typescript-eslint/no-var-requires
+    const { createLogger } = (eval('require') as NodeRequire)('./logger');
+    log = createLogger(__filename);
+  } catch {
+    // Silent fallback; will use browserLogger
+  }
+} else {
+  log = browserLogger;
+}
 
 // Typed table shortcuts (helps with intellisense) -----------------------------
 export const db = {
