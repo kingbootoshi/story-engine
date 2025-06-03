@@ -12,7 +12,7 @@ export function Landing() {
         loop
         muted
         playsInline
-        className="absolute inset-0 w-full h-full object-cover blur-[2px]"
+        className="absolute inset-0 w-full h-full object-cover blur-[1px]"
       >
         <source src="/worldtree.mp4" type="video/mp4" />
       </video>
