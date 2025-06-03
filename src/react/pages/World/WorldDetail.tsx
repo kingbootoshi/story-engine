@@ -4,6 +4,11 @@ import { motion } from 'framer-motion'
 import { MagicalButton, BeatNode, EventCard } from '../../components/ui'
 import { ArrowLeft, Plus, Loader2, Play, Check, Sparkles, Zap } from 'lucide-react'
 import { api, type World, type WorldArc, type WorldBeat, type WorldEvent } from '../../lib/api'
+import { getCurrentBeat } from '../../lib/beatHelpers'
+import { createLogger } from '../../../shared/utils/loggerBrowser'
+
+// Instantiate once so we keep a single child logger for this module
+const uiLog = createLogger('WorldDetail')
 
 export function WorldDetail() {
   const { worldId } = useParams<{ worldId: string }>()
@@ -54,10 +59,15 @@ export function WorldDetail() {
       const arcs = await api.getArcs(worldId)
       setAllArcs(arcs)
       
-      // Select the latest beat if available
-      if (state.currentBeats.length > 0) {
-        setSelectedBeat(state.currentBeats[state.currentBeats.length - 1])
-      }
+      // Resolve the *current* beat using contiguous-index logic ------------
+      const currentBeat = getCurrentBeat(state.currentBeats)
+      setSelectedBeat(currentBeat)
+
+      uiLog.debug('UI current beat resolved', {
+        beatIndex: currentBeat?.beat_index,
+        beatId: currentBeat?.id,
+        arcId: state.currentArc?.id,
+      })
     } catch (err) {
       setError('Failed to load world data')
       console.error(err)
@@ -99,10 +109,8 @@ export function WorldDetail() {
     try {
       setIsProgressingArc(true)
       
-      // Get events for current beat
-      const currentBeatId = beats.length > 0 
-        ? beats[beats.length - 1].id 
-        : undefined
+      // Get events for the *current* beat ----------------------------------
+      const currentBeatId = getCurrentBeat(beats)?.id
       
       const eventsForContext = currentBeatId
         ? events.filter(e => e.beat_id === currentBeatId)
@@ -141,9 +149,7 @@ export function WorldDetail() {
     try {
       setIsSubmittingEvent(true)
       
-      const currentBeatId = beats.length > 0 
-        ? beats[beats.length - 1].id 
-        : undefined
+      const currentBeatId = getCurrentBeat(beats)?.id
       
       // Always use the world's current arc for events
       const arcIdForEvent = world?.current_arc_id || currentArc?.id
@@ -158,6 +164,11 @@ export function WorldDetail() {
       
       setEvents([event, ...events])
       setEventDescription('')
+
+      uiLog.info('Posting new event', {
+        beatId: currentBeatId,
+        description: eventDescription,
+      })
     } catch (err) {
       setError('Failed to record event')
     } finally {
@@ -183,23 +194,25 @@ export function WorldDetail() {
       const beats = await api.getArcBeats(worldId, arcId)
       setBeats(beats)
       
-      // Select the latest beat if available
-      if (beats.length > 0) {
-        setSelectedBeat(beats[beats.length - 1])
-      } else {
-        setSelectedBeat(null)
-      }
+      // Update selection using helper -------------------------------------
+      const currentBeat = getCurrentBeat(beats)
+      setSelectedBeat(currentBeat)
+      uiLog.debug('Arc switched – current beat resolved', {
+        arcId,
+        beatIndex: currentBeat?.beat_index,
+      })
     } catch (err) {
       setError('Failed to switch arc')
     }
   }
 
+  // Determine visual status for timeline nodes ------------------------------
   const getBeatStatus = (index: number): 'completed' | 'current' | 'future' => {
     const beatExists = beats.some(b => b.beat_index === index)
     if (!beatExists) return 'future'
     
-    const isLatest = beats.length > 0 && beats[beats.length - 1].beat_index === index
-    return isLatest ? 'current' : 'completed'
+    const currentBeat = getCurrentBeat(beats)
+    return currentBeat?.beat_index === index ? 'current' : 'completed'
   }
 
   if (isLoading) {

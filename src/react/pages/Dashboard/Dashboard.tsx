@@ -5,12 +5,17 @@ import { MagicalButton, WorldCard, Modal, GlowingInput } from '../../components/
 import { useAuthStore } from '../../stores/authStore'
 import { Plus, Loader2, Sparkles, LogOut } from 'lucide-react'
 import { api, type World } from '../../lib/api'
+import { getCurrentBeat } from '../../lib/beatHelpers'
+import { createLogger } from '../../../shared/utils/loggerBrowser'
 
 interface EnhancedWorld extends World {
   currentBeat?: number
   activeEvents?: number
   arcProgress?: number
 }
+
+// Dashboard specific logger ---------------------------------------------------
+const log = createLogger('Dashboard')
 
 export function Dashboard() {
   const navigate = useNavigate()
@@ -37,15 +42,22 @@ export function Dashboard() {
         fetchedWorlds.map(async (world) => {
           try {
             const state = await api.getWorldState(world.id)
-            const currentBeat = state.currentBeats.length - 1
+            // Derive metrics using helper to respect contiguous rules -------
+            const currentBeatObj = getCurrentBeat(state.currentBeats)
+            const currentBeatIdx = currentBeatObj ? currentBeatObj.beat_index : -1
             const activeEvents = state.recentEvents.length
             const arcProgress = state.currentArc 
-              ? Math.round((currentBeat / 14) * 100)
+              ? Math.round((currentBeatIdx / 14) * 100)
               : 0
-              
+            log.debug('World card metrics', {
+              worldId: world.id,
+              currentBeatIndex: currentBeatIdx,
+              arcProgress,
+            })
+            
             return {
               ...world,
-              currentBeat,
+              currentBeat: currentBeatIdx,
               activeEvents,
               arcProgress
             }
