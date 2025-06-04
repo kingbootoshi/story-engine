@@ -1,8 +1,8 @@
 import OpenAI from "openpipe/openai";
 import { createLogger } from '../../shared/utils/logger';
-import { ANCHOR_SYSTEM_PROMPT, buildAnchorUserPrompt } from '../../ai/prompts/anchor.prompts';
-import { DYNAMIC_BEAT_SYSTEM_PROMPT, buildDynamicBeatUserPrompt } from '../../ai/prompts/dynamicBeat.prompts';
-import { ARC_SUMMARY_SYSTEM_PROMPT, buildArcSummaryUserPrompt } from '../../ai/prompts/arcSummary.prompts';
+import { ANCHOR_SYSTEM_PROMPT, buildAnchorUserPrompt } from '../../core/ai/prompts/anchor.prompts';
+import { DYNAMIC_BEAT_SYSTEM_PROMPT, buildDynamicBeatUserPrompt } from '../../core/ai/prompts/dynamicBeat.prompts';
+import { ARC_SUMMARY_SYSTEM_PROMPT, buildArcSummaryUserPrompt } from '../../core/ai/prompts/arcSummary.prompts';
 
 const logger = createLogger('ai.service');
 

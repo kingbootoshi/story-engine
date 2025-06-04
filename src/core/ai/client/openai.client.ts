@@ -3,8 +3,8 @@ import OpenAI from 'openpipe/openai';
 // raw JSON Schema objects or Zod-generated schemas converted to JSON. The OpenPipe
 // SDK ultimately only needs a plain JSON schema object.
 type JSONSchema = Record<string, any>;
-import { log } from '../../shared/utils/logger';
-import { env } from '../../shared/config/env';
+import { log } from '../../../shared/utils/logger';
+import { env } from '../../../shared/config/env';
 
 // ---------------------------------------------------------------------------
 // OpenAI (OpenRouter) Client Wrapper

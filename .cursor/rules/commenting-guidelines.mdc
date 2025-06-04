@@ -1,0 +1,208 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# STORY ENGINE Commenting Guidelines
+
+## Philosophy
+
+Our primary goal for commenting is **clarity and maintainability**. In a TypeScript codebase, types already provide significant information about the *what*. Therefore, our comments should focus on the **why**, the **intent**, and the **complexities** that aren't immediately obvious from the code and types alone.
+
+We use **JSDoc** as the standard format. This provides structure, integrates well with TypeScript's language server for enhanced IntelliSense, and offers a consistent format for both human developers and AI systems interacting with our code.
+
+Comments should add value. Avoid redundant comments that merely restate the obvious or duplicate type information. Prioritize commenting complex logic, process boundaries, and non-intuitive decisions.
+
+## Core Standard: JSDoc
+
+All multi-line comments explaining functions, classes, types, components, hooks, or complex blocks should use the JSDoc format (`/** ... */`).
+
+## When to Comment
+
+Focus commenting efforts where they provide the most value:
+
+1. **Process Boundaries:**
+   * **Main Process Functions:** Document functions that handle IPC communication, window management, database operations, and system integration.
+   * **Preload Scripts:** Explain the purpose of exposed APIs and their security implications.
+   * **IPC Handlers:** Document message formats, validation requirements, and potential side effects.
+
+2. **UI Components (Renderer Process):**
+   * **React Components:** Describe the component's purpose, its props, and any significant state or behavior. Use `@param` for props.
+   * **Custom Hooks:** Explain what the hook does, its parameters, and what it returns.
+   * **View Controllers:** Document the responsibility of views and their interaction with the main process.
+
+3. **Modules:**
+   * **Module Entry Points:** Document the purpose, functionality, and integration points of each module.
+   * **Module APIs:** Explain the interface that modules expose to the rest of the application.
+   * **Dependencies:** Note any specific requirements or dependencies for module operation.
+
+4. **Complex Logic:**
+   * If an algorithm, calculation, or piece of business logic is intricate or non-obvious, add comments explaining the approach and the reasoning behind it. Focus on the *why*.
+
+5. **Non-Obvious Decisions & Trade-offs:**
+   * If a particular implementation choice was made for specific reasons (performance, security, workaround for an Electron limitation), document it. This provides crucial context for future maintainers.
+
+6. **Security Considerations:**
+   * Document security-related decisions, particularly around IPC communication, data encryption, and external process handling.
+   * Explain validation approaches for user input or IPC messages.
+
+7. **Database Operations:**
+   * Document database schemas, encryption approaches, and query patterns.
+   * Explain transaction boundaries and retry logic.
+
+8. **Workarounds and `TODO`s:**
+   * Use `// HACK:` or `// WORKAROUND:` for temporary fixes, explaining *why* the workaround is necessary.
+   * Use `// TODO:` for planned improvements or missing features, ideally with context.
+
+## How to Comment with JSDoc (Essential Tags)
+
+Use clear, concise English. Start block comments with a brief summary sentence.
+
+```typescript
+/**
+ * [Summary sentence explaining the overall purpose.]
+ *
+ * [Optional: More detailed explanation, rationale, or context.]
+ *
+ * @param {Type} name - [Description of the parameter's purpose and expected value.]
+ * @param {Type} [optionalName] - [Description for optional parameter. Use brackets.]
+ * @param {Type} [nameWithDefault='default'] - [Description for parameter with default.]
+ * @param {object} options - Description of the options object.
+ * @param {string} options.id - Description of the 'id' property within options.
+ * @param {number} [options.count] - Description of optional 'count' property.
+ * @returns {ReturnType} - [Description of what the function returns and why/when.]
+ * @throws {ErrorType} - [Description of when/why this error might be thrown.]
+ * @example
+ * ```typescript
+ * // Example usage demonstrates how to call it.
+ * const result = myFunction(inputValue);
+ * console.log(result);
+ * ```
+ */
+function myFunction(name: string, options: { id: string; count?: number }): ReturnType {
+  // ...implementation
+}
+
+/**
+ * Handles the 'get-user-data' IPC event from renderer.
+ * Retrieves user data from the database with proper decryption.
+ *
+ * @param {IpcMainInvokeEvent} event - The IPC event object
+ * @param {string} userId - ID of the user to retrieve
+ * @returns {Promise<UserData>} The decrypted user data
+ * @throws {DatabaseError} If database access fails
+ * @throws {AuthError} If the request lacks proper authentication
+ */
+ipcMain.handle('get-user-data', async (event, userId) => {
+  // ...implementation
+});
+
+/**
+ * Renders a secure note card with encryption status indicator.
+ *
+ * @param {object} props - Component properties
+ * @param {Note} props.note - The note data to display
+ * @param {boolean} props.isEditable - Whether the note can be edited
+ * @param {(id: string) => void} props.onSelect - Callback when note is selected
+ * @returns {JSX.Element} The rendered note card
+ */
+export const NoteCard = ({ note, isEditable, onSelect }: NoteCardProps): JSX.Element => {
+  // ...implementation
+};
+```
+
+**Key JSDoc Tags to Use:**
+
+* **Description:** Always provide a clear summary. Add more detail if necessary.
+* **`@param {Type} name - Description`**: Essential for functions and methods. Explain the *role* of the parameter. TypeScript handles the type, JSDoc explains the *purpose*.
+* **`@returns {Type} - Description`**: Explain *what* is being returned and under what conditions, especially if it's complex or conditional.
+* **`@throws {ErrorType} - Condition`**: Document expected errors that callers might need to handle.
+* **`@example`**: Very helpful for demonstrating usage, especially for utilities or complex functions.
+* **`@see {Link/Reference}`**: Useful for linking to related code or documentation.
+
+## What NOT to Comment
+
+* **Obvious Code:** Don't explain code that is self-evident (e.g., `// Increment count` for `count++`).
+* **Exact Type Duplication:** Avoid comments that just re-state the TypeScript type. Focus on *purpose* if adding a `@param` comment.
+* **Version Control Information:** Don't add comments about authors or change history. Use `git blame` and commit history for this.
+* **Outdated Comments:** Delete or update comments if the code changes. Incorrect comments are worse than no comments.
+* **Commented-Out Code:** Remove dead code instead of commenting it out. Use version control to retrieve old code if needed.
+
+## Examples For Different Application Areas
+
+### Main Process
+
+```typescript
+/**
+ * Creates and initializes the application database.
+ * Uses AES-256-CBC encryption with a key derived from the user's master password.
+ *
+ * @param {string} masterPassword - User's master password for key derivation
+ * @param {DatabaseOptions} [options] - Optional database configuration
+ * @returns {Promise<Database>} Initialized database connection
+ * @throws {EncryptionError} If key derivation fails
+ */
+async function initializeDatabase(masterPassword: string, options?: DatabaseOptions): Promise<Database> {
+  // ...implementation
+}
+```
+
+### Preload Script
+
+```typescript
+/**
+ * Exposes a limited subset of database operations to the renderer process.
+ * All operations are validated and authenticated before execution.
+ *
+ * @returns {Object} API object with allowed database operations
+ */
+function exposeDbApi(): DbApiInterface {
+  return {
+    /**
+     * Retrieves notes for the authenticated user.
+     * Filters notes based on provided criteria.
+     *
+     * @param {NotesFilter} filter - Filtering criteria
+     * @returns {Promise<Note[]>} List of filtered notes
+     */
+    getNotes: (filter: NotesFilter) => ipcRenderer.invoke('get-notes', filter),
+    // ...other methods
+  };
+}
+```
+
+### Renderer Process (React Component)
+
+```typescript
+/**
+ * Main dashboard view displaying user's note collections and editor.
+ * Handles local state management and synchronization with the main process.
+ *
+ * @returns {JSX.Element} The rendered dashboard
+ */
+export const DashboardView = (): JSX.Element => {
+  // ...implementation
+};
+```
+
+### Module Definitions
+
+```typescript
+/**
+ * Echo module - provides test functionality for verifying IPC communication.
+ * This module demonstrates the standard structure for GHOST application modules.
+ *
+ * @module Echo
+ */
+
+/**
+ * Module initialization function called by the module loader.
+ * Sets up IPC handlers and returns the public module API.
+ *
+ * @param {ModuleContext} context - Application context with references to core services
+ * @returns {EchoModuleApi} Public module API
+ */
+export function initialize(context: ModuleContext): EchoModuleApi {
+  // ...implementation
+}
+``` 
