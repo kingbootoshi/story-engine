@@ -1,3 +1,7 @@
+// ⚠️ SERVER-ONLY: Do not import this file in frontend code!
+// Use src/frontend/lib/supabase.ts for browser-side Supabase client instead.
+// This file contains Node.js dependencies that will break browser builds.
+
 // Re-export from core infrastructure for backward compatibility
 export { supabase } from '../../core/infra/supabase';
 

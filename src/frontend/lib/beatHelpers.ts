@@ -1,4 +1,4 @@
-// src/react/lib/beatHelpers.ts
+// src/frontend/lib/beatHelpers.ts
 
 // ---------------------------------------------------------------------------
 // Helper utilities for World Beats

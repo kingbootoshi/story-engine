@@ -1,4 +1,4 @@
-import { supabase } from '../../shared/utils/supabase'
+import { supabase } from './supabase'
 
 const API_BASE = 'http://localhost:3001/api'
 
