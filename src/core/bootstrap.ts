@@ -40,6 +40,7 @@ export async function bootstrapModules(app: express.Express): Promise<void> {
         logger.success(`Module loaded: ${module.name}`);
       } catch (error) {
         logger.error(`Failed to load module at ${manifestPath}`, error);
+        throw error; // Fail fast
       }
     }
     
