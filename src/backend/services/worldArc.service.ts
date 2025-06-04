@@ -166,9 +166,15 @@ export class WorldArcService {
       const world = await supabaseService.getWorld(params.worldId);
       if (!world) throw new Error('World not found');
 
+      logger.debug('Passing world desc to AI', {
+        worldId: params.worldId,
+        descLen: world.description.length
+      });
+
       // Generate dynamic beat
       const dynamicBeat = await aiService.generateDynamicWorldBeat(
         world.name,
+        world.description,
         nextBeatIndex,
         previousBeats,
         nextAnchor,

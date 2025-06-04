@@ -18,6 +18,7 @@ The new beat must:
 
 export function buildDynamicBeatUserPrompt(
   worldName: string,
+  worldDescription: string,
   currentBeatIndex: number,
   previousBeatsSummary: string,
   nextAnchorSummary: string,
@@ -26,6 +27,7 @@ export function buildDynamicBeatUserPrompt(
   return `Generate the NEXT BEAT (Beat #${currentBeatIndex}) for this world's ongoing story:
 
 World Name: ${worldName}
+World Description: ${worldDescription}
 Current Beat Index: ${currentBeatIndex}
 
 ## PREVIOUS WORLD STATES:
@@ -38,4 +40,4 @@ ${nextAnchorSummary}
 ${recentEvents || 'No specific events recorded.'}
 
 Generate a compelling world beat that naturally incorporates the recent events while maintaining the arc's direction.`;
-} 
+}

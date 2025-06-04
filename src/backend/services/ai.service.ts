@@ -238,6 +238,7 @@ export class AIService {
 
   async generateDynamicWorldBeat(
     worldName: string,
+    worldDescription: string,
     currentBeatIndex: number,
     previousBeats: any[],
     nextAnchor: any,
@@ -252,8 +253,14 @@ export class AIService {
     const beatStructure = this.getWorldBeatStructure();
     const beatName = beatStructure[currentBeatIndex]?.beatName || 'World Event';
 
+    logger.debug('AI prompt context', {
+      beatIndex: currentBeatIndex,
+      worldSnippet: worldDescription.slice(0, 120)
+    });
+
     const userPrompt = buildDynamicBeatUserPrompt(
       worldName,
+      worldDescription,
       currentBeatIndex,
       previousBeatsSummary,
       nextAnchorSummary,
