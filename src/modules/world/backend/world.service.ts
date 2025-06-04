@@ -3,7 +3,7 @@ import { createLogger } from '../../../core/infra/logger';
 import { eventBus } from '../../../core/infra/eventBus';
 import * as worldRepo from './world.repo';
 import type { World, WorldArc, WorldBeat, WorldEvent } from './schema';
-import AIService from '../../../backend/services/ai.service';
+import AIService from '../../../core/ai/ai.service';
 
 const logger = createLogger('world.service');
 

@@ -1,5 +1,5 @@
-import { Express } from 'express';
-import { Container } from '../infra/container';
+import type { Express } from 'express';
+import type { Container } from '../infra/container';
 
 export type ID = string & { readonly brand: unique symbol };
 

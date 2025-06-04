@@ -1,4 +1,4 @@
-import { EngineModule } from '../../core/types';
+import type { EngineModule } from '../../core/types';
 import routes from './backend/world.routes';
 import WorldService from './backend/world.service';
 import path from 'path';

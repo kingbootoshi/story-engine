@@ -1,22 +1,26 @@
 import { EventEmitter } from 'eventemitter3';
-import { DomainEvent } from '../types';
+import type { DomainEvent } from '../types';
 
-class TypedEventBus extends EventEmitter {
+class TypedEventBus {
+  private emitter = new EventEmitter();
+  
   emit<T = any>(topic: string, payload: T): boolean {
     const event: DomainEvent<T> = {
       topic,
       payload,
       ts: new Date().toISOString()
     };
-    return super.emit(topic, event);
+    return this.emitter.emit(topic, event);
   }
 
   on<T = any>(topic: string, handler: (event: DomainEvent<T>) => void): this {
-    return super.on(topic, handler);
+    this.emitter.on(topic, handler);
+    return this;
   }
 
   off<T = any>(topic: string, handler: (event: DomainEvent<T>) => void): this {
-    return super.off(topic, handler);
+    this.emitter.off(topic, handler);
+    return this;
   }
 }
 

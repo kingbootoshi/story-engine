@@ -66,6 +66,18 @@ export async function createServer(): Promise<express.Application> {
   
   await bootstrapModules(app);
   
+  // Health check endpoint
+  app.get('/api/health', (_req, res) => {
+    res.json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      services: {
+        ai: !!process.env.OPENROUTER_API_KEY,
+        database: !!process.env.SUPABASE_URL || !!process.env.VITE_SUPABASE_URL
+      }
+    });
+  });
+  
   app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
     logger.error('Unhandled error', err, { 
       method: req.method, 

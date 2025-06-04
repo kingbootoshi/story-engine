@@ -5,13 +5,14 @@ import WorldService from './world.service';
 
 const logger = createLogger('world.controller');
 
-export const createWorld = async (req: Request, res: Response, next: NextFunction) => {
+export const createWorld = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const worldService = DI.resolve(WorldService);
     const { name, description } = req.body;
     
     if (!name || !description) {
-      return res.status(400).json({ error: 'Name and description are required' });
+      res.status(400).json({ error: 'Name and description are required' });
+      return;
     }
     
     const world = await worldService.createWorld(name, description);
@@ -22,7 +23,7 @@ export const createWorld = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
-export const getWorld = async (req: Request, res: Response, next: NextFunction) => {
+export const getWorld = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const worldService = DI.resolve(WorldService);
     const world = await worldService.getWorldState(req.params.worldId);
@@ -33,7 +34,7 @@ export const getWorld = async (req: Request, res: Response, next: NextFunction) 
   }
 };
 
-export const listWorlds = async (_req: Request, res: Response, next: NextFunction) => {
+export const listWorlds = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const worldService = DI.resolve(WorldService);
     const worlds = await worldService.listWorlds();
@@ -44,7 +45,7 @@ export const listWorlds = async (_req: Request, res: Response, next: NextFunctio
   }
 };
 
-export const createArc = async (req: Request, res: Response, next: NextFunction) => {
+export const createArc = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const worldService = DI.resolve(WorldService);
     const { worldId } = req.params;
@@ -52,7 +53,8 @@ export const createArc = async (req: Request, res: Response, next: NextFunction)
     
     const world = await worldService.getWorld(worldId);
     if (!world) {
-      return res.status(404).json({ error: 'World not found' });
+      res.status(404).json({ error: 'World not found' });
+      return;
     }
     
     const result = await worldService.createNewArc({
@@ -69,14 +71,15 @@ export const createArc = async (req: Request, res: Response, next: NextFunction)
   }
 };
 
-export const progressArc = async (req: Request, res: Response, next: NextFunction) => {
+export const progressArc = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const worldService = DI.resolve(WorldService);
     const { arcId } = req.params;
     const { worldId, recentEvents } = req.body;
     
     if (!worldId) {
-      return res.status(400).json({ error: 'worldId is required' });
+      res.status(400).json({ error: 'worldId is required' });
+      return;
     }
     
     const beat = await worldService.progressArc({
@@ -97,7 +100,7 @@ export const progressArc = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
-export const recordEvent = async (req: Request, res: Response, next: NextFunction) => {
+export const recordEvent = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const worldService = DI.resolve(WorldService);
     const { worldId } = req.params;
@@ -114,7 +117,7 @@ export const recordEvent = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
-export const completeArc = async (req: Request, res: Response, next: NextFunction) => {
+export const completeArc = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const worldService = DI.resolve(WorldService);
     const { worldId, arcId } = req.params;

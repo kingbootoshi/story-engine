@@ -7,8 +7,8 @@
     "dev": "concurrently \"vite\" \"npm run server\"",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "server": "tsx -r dotenv/config src/backend/index.ts",
-    "server:debug": "DEBUG=true tsx -r dotenv/config src/backend/index.ts",
+    "server": "tsx src/server.ts",
+    "server:debug": "DEBUG=true tsx src/server.ts",
     "dev:all": "concurrently \"vite\" \"npm run server\"",
     "dev:debug": "concurrently \"vite\" \"npm run server:debug\""
   },

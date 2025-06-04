@@ -17,7 +17,6 @@ interface WorldCardProps {
 }
 
 export function WorldCard({
-  id,
   name,
   description,
   createdAt,
