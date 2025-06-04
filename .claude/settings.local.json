@@ -8,7 +8,10 @@
       "Bash(grep:*)",
       "Bash(ls:*)",
       "Bash(rm:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(mv:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }
