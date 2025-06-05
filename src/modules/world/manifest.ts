@@ -1,9 +1,13 @@
 import type { EngineModule } from '../../core/types';
-import routes from './backend/world.routes';
-import WorldService from './backend/world.service';
+import { mountTrpcAsRest } from '../../core/trpc/expressBridge';
+import { worldRouter } from './delivery/trpc/router';
+import { WorldService } from './application/WorldService';
 import path from 'path';
 import { dirnameFromMeta } from '../../core/infra/esmPath';
 import { createLogger } from '../../core/infra/logger';
+
+// Import DI bindings to ensure they're registered
+import './infra';
 
 const logger = createLogger('world.manifest');
 const __dirname = dirnameFromMeta(import.meta.url);
@@ -13,8 +17,15 @@ const WorldModule: EngineModule = {
   name: 'world',
   migrations: [path.join(__dirname, 'backend', 'migrations')],
   register(app, di) {
+    // Register the service
     di.registerSingleton(WorldService);
-    app.use('/api/worlds', routes);
+    
+    // Mount REST routes via tRPC bridge
+    mountTrpcAsRest(app, {
+      router: worldRouter,
+      basePath: '/api/worlds',
+      exposeMetaRoute: true
+    });
   },
   subscriptions: [
     {

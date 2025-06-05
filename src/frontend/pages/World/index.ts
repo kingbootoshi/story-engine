@@ -1,1 +1,0 @@
-export { WorldDetail } from './WorldDetail'

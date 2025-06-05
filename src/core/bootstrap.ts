@@ -79,12 +79,41 @@ export async function createServer(): Promise<express.Application> {
     });
   });
   
-  app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    // Extract request ID if available
+    const reqId = req.headers['x-request-id'] as string;
+    
+    // Check if error has a status (from tRPC error formatter)
+    const status = err.status || err.statusCode || 500;
+    
     logger.error('Unhandled error', err, { 
       method: req.method, 
-      path: req.path 
+      path: req.path,
+      status,
+      reqId,
+      errorCode: err.code,
+      errorName: err.name
     });
-    res.status(500).json({ error: 'Internal server error' });
+    
+    // Return appropriate error response
+    if (err.issues) {
+      // Zod validation error
+      res.status(status).json({ 
+        error: 'Validation error',
+        issues: err.issues
+      });
+    } else if (err.code && typeof err.code === 'string') {
+      // tRPC or known error
+      res.status(status).json({ 
+        error: err.message || 'Request failed',
+        code: err.code
+      });
+    } else {
+      // Generic error
+      res.status(status).json({ 
+        error: err.message || 'Internal server error'
+      });
+    }
   });
   
   return app;

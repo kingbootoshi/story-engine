@@ -15,6 +15,8 @@ const EnvSchema = z.object({
   // OpenAI / Router / OpenPipe
   OPENROUTER_API_KEY: z.string(),
   OPENPIPE_API_KEY: z.string(),
+  APP_URL: z.string().url().optional(),
+  OPENPIPE_PROJECT: z.string().optional(),
 });
 
 type EnvVars = z.infer<typeof EnvSchema>;

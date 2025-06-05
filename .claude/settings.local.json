@@ -11,7 +11,16 @@
       "Bash(cat:*)",
       "Bash(mv:*)",
       "Bash(npx tsc:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(npm i:*)",
+      "Bash(npm run build:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(npm test:*)",
+      "Bash(npm run dev:all:*)",
+      "Bash(find:*)",
+      "Bash(pkill:*)",
+      "Bash(true)",
+      "Bash(cp:*)"
     ],
     "deny": []
   }
