@@ -3,118 +3,135 @@ description:
 globs: 
 alwaysApply: true
 ---
-# Logging Guidelines
+# Logging Guidelines (Story-Engine)
 
-## Philosophy
+This document defines *exactly* how and when to emit logs within the backend.
+The logger wrapper lives in `src/core/infra/logger.ts`; always obtain it via
+`createLogger('<module>')`.
 
-Effective logging is critical for monitoring application behavior, debugging issues, and understanding user workflows. In STORY ENGINE, we employ a comprehensive logging strategy that spans both the main and renderer processes of our Electron application.
+---
 
-Our logging philosophy centers on these principles:
-- **Consistency:** Use the same logging patterns and levels across the entire application
-- **Clarity:** Include relevant context with each log entry
-- **Completeness:** Log every significant application event and state transition
-- **Privacy:** Never log sensitive information (passwords, encryption keys, etc.)
-- **Performance:** Ensure logging doesn't impact application responsiveness
+## 1 Philosophy
 
-## Log Levels
+1. **Single source** – one Winston instance, many scoped children.
+2. **Action-oriented** – log verbs (`creating world`, `AI call failed`) not nouns.
+3. **Context first** – include IDs that let you stitch requests, AI calls and DB rows together.
+4. **Zero secrets** – never write passwords, keys, full prompt text, or user PII.
+5. **Cheap** – DEBUG stays off in prod unless you’re on a live incident.
 
-We use the following log levels, in order of severity:
+---
 
-| Level   | Description                                          | When to Use                                                      |
-|---------|------------------------------------------------------|------------------------------------------------------------------|
-| ERROR   | Critical failures requiring immediate attention       | Application crashes, data corruption, security breaches          |
-| WARN    | Issues that don't prevent operation but need attention| Deprecated functionality, potential issues, expected failures    |
-| INFO    | Important application events and state changes        | App startup/shutdown, user authentication, window creation       |
-| HTTP    | API and network communications                        | IPC communication, external API calls                            |
-| VERBOSE | Detailed information useful for understanding flow    | State transitions, component mounting/unmounting                 |
-| DEBUG   | Detailed technical information for debugging          | Variable values, function parameters, execution paths            |
-| SILLY   | Extremely detailed information                        | Used only during development for temporary debugging             |
+## 2 Supported Levels
 
-## What to Log
+* **error**  → fatal or user-visible failures.
+* **warn**   → unusual but non-fatal (“retry later”, “deprecated”).
+* **info**   → high-level state changes (startup, module loaded, arc created).
+* **http**   → one line per HTTP request *after* completion.
+* **debug**  → variable values, SQL, branch decisions.
+* **success** (wrapper around `info`) – use for positive milestones (“Arc completed”).
 
-### Always Log
+*Anything else is blocked in eslint-rules.*
 
-1. **Application Lifecycle Events**
-   - Startup and shutdown
-   - Version information
-   - Configuration details (non-sensitive)
-   - Process crashes
+---
 
-2. **User Authentication**
-   - Login attempts (success/failure, but never passwords)
-   - Logouts
-   - Permission changes
+## 3 Always Log
 
-3. **Database Operations**
-   - Connection established/lost
-   - Migration events
-   - Major data operations (creation, deletion)
+* Application startup and shutdown, including env capability flags.
+* Module bootstrap success or failure.
+* Every incoming HTTP request (`logger.http`) with method, path, status, duration.
+* AI calls: before & after – include `model`, `prompt_id`, `duration_ms`, token usage, and mandatory metadata.
+* Database writes and deletes (insert / update / delete).
+* Emitted or caught domain events.
+* Unhandled exceptions (with stack) and promise rejections.
 
-4. **Error Conditions**
-   - Exceptions (with stack traces)
-   - API failures
-   - Resource limitations
+---
 
-5. **Security Events**
-   - Authentication failures
-   - Access denied events
-   - Encryption/decryption operations (success/failure, but never keys)
+## 4 Never Log
 
-6. **Module Loading**
-   - Module initialization
-   - Module errors
+* Secrets: API keys, JWTs, encryption material.
+* Full AI prompt text (header info is fine).
+* Personally identifying user data or random payload dumps.
 
-7. **User Interactions** (high-level)
-   - Feature usage
-   - Navigation between main views
-   - Import/export operations
+---
 
-### Never Log
+## 5 Structured Meta Fields
 
-1. **Sensitive User Data**
-   - Passwords, even hashed
-   - Authentication tokens
-   - Personal information
+Every log method accepts a single `meta` object. Reserve keys:
 
-2. **Encryption Keys**
-   - Master passwords
-   - Key material
-   - Initialization vectors
+```
+correlation   – reqId / traceId (always include)
+module        – auto-filled by wrapper
+world_id      – when operating on a world
+arc_id        – when operating on an arc
+beat_index    – when generating a beat
+ai            – { model, prompt_id, usage }   // AI calls only
+duration_ms   – timing for the operation
+success       – true | false
+```
 
-3. **Full Content of User Data**
-   - Complete notes or documents
-   - Message contents
+Add more fields freely; avoid deeply nested structures.
 
-## Best Practices
+---
 
-1. **Be Consistent**
-   - Use the same logger throughout the application
-   - Follow consistent formatting and level usage
+## 6 Patterns & Examples
 
-2. **Include Context**
-   - Add relevant metadata to logs
-   - Include operation IDs to correlate related logs
+**6.1 HTTP middleware (already wired):**
 
-3. **Use Appropriate Levels**
-   - Don't log everything as 'info'
-   - Reserve 'error' for actual errors
+```ts
+app.use((req, _res, next) => {
+  logger.http(`${req.method} ${req.path}`, { correlation: reqId });
+  next();
+});
+```
 
-4. **Protect Privacy**
-   - Sanitize sensitive data
-   - Use parameter placeholders when logging
+**6.2 AI call wrapper (simplified):**
 
-5. **Don't Over-Log**
-   - Avoid excessive debug logging in production
-   - Don't log within tight loops
+```ts
+const start = Date.now();
+const completion = await chat({...});
+logger.info('AI call', {
+  ai: { model, prompt_id, usage: completion.usage },
+  duration_ms: Date.now() - start,
+  correlation: ctx.reqId,
+  world_id: params.worldId
+});
+```
 
-6. **Use Scoped Loggers**
-   - Create scoped loggers at the module level
-   - Name scopes after their module/component for easier filtering
+**6.3 Service operation:**
 
-7. **Log Start and End of Operations**
-   - Log at the beginning and end of significant operations
-   - Include duration for performance-sensitive operations
+```ts
+logger.info('Creating world', { name, correlation: ctx.reqId });
+try {
+  const world = await repo.createWorld({ name, description });
+  logger.success('World created', { world_id: world.id, correlation: ctx.reqId });
+} catch (err) {
+  logger.error('Failed to create world', err, { correlation: ctx.reqId });
+  throw err;
+}
+```
 
-8. **Structure Log Messages Consistently**
-   - Start with a verb (e.g., "Creating", "Loaded", "Failed to")
-   - Keep messages concise but descriptive 
+---
+
+## 7 Best Practices
+
+* Instantiate one scoped logger per file: `const log = createLogger('world.service');`.
+* Emit *start* and *end* log for any operation longer than 100 ms; attach `duration_ms`.
+* Use `debug` for data that changes per request; gate with `if (logLevel==='debug')` inside tight loops.
+* Log at the highest level that still allows silent success paths (no `info` for every `SELECT`).
+* Sanitize user-supplied strings if you absolutely must include them (max 120 characters).
+
+---
+
+## 8 CI Enforcement
+
+A pre-commit hook runs `scripts/lint-logs.ts` which:
+
+1. Blocks any `logger.log('info' …)` that omits `correlation`.
+2. Blocks any AI log without `ai.prompt_id`.
+3. Checks for forbidden substrings (`OPENROUTER_API_KEY`, `SUPABASE_ANON_KEY`, etc.).
+
+Keep your log calls compliant and CI will stay green.
+
+---
+
+Follow these rules and logs remain readable, queryable, and privacy-safe as the project scales.

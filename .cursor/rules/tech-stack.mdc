@@ -3,116 +3,115 @@ description:
 globs: 
 alwaysApply: true
 ---
-# Tech Stack Documentation
+# Tech-Stack Overview (Story-Engine – June 2025)
 
-## Overview
+A **backend-only** TypeScript application that exposes both **tRPC** and **REST**; the previous React UI has been removed to focus on a scalable API-first platform.
 
-The Story Engine is a full-stack TypeScript application built with modern web technologies. It uses a client-server architecture with a React frontend and Express backend, both sharing common TypeScript types and utilities.
+---
 
-## Core Technologies
-
-### Frontend
-- **React 19** - UI library with hooks and functional components
-- **Vite** - Build tool and dev server with HMR
-- **React Router v7** - Client-side routing
-- **Zustand** - Lightweight state management
-- **Framer Motion** - Animation library
-- **Tailwind CSS v4** - Utility-first CSS framework with custom theme
-- **Radix UI** - Accessible component primitives
-- **Lucide React** - Icon library
+## Core Runtime Libraries
 
 ### Backend
-- **Express 5** - Web server framework
-- **TypeScript** - Type safety across the stack
-- **OpenAI/OpenRouter** - AI narrative generation via OpenPipe SDK
-- **Supabase** - PostgreSQL database and authentication
-- **Winston** - Structured logging
-- **Zod** - Schema validation
+
+* **Express 5** – minimal HTTP surface; all routes mounted by `expressBridge`.
+* **tRPC 11** – typed RPC procedures that double as SDK generators.
+* **tsyringe** – lightweight dependency-injection container.
+* **OpenPipe SDK + OpenRouter** – proxy to Anthropic, GPT-4o-mini, etc.
+* **Supabase** – Postgres, auth, and Realtime pub/sub.
+* **Winston** – structured logging with colourised console + JSON files.
+* **Zod** – validation for DTOs and SQL round-trip types.
+* **EventEmitter 3** (pluggable) – in-process event bus; Redis/NATS adapter planned.
 
 ### Shared
-- **TypeScript** - Shared types between frontend and backend
-- **dotenv** - Environment variable management
-- **ESM Modules** - Modern JavaScript module system
 
-## Architecture Patterns
+* **TypeScript 5** – strict mode, ESM, decorators.
+* **dotenv** – unified env-file loader; same file consumed by local dev and CI.
+* **ES Modules** – no CommonJS, no transpiled build step (`tsx` runtime).
 
-### API Design
-- RESTful endpoints with clear resource hierarchy
-- Async/await pattern with error boundaries
-- Structured JSON responses
-- Request validation and error handling
+---
+
+## Architectural Patterns
+
+### API Surface
+
+* Author procedures once in *module*/delivery/trpc/**router.ts**.
+* `expressBridge` auto-creates REST routes for external clients.
+* JSON responses are camel-cased and schema-validated.
+
+### Module System
+
+* Vertical slices under `src/modules/*`; self-contained domain, service, infra and router.
+* `EngineModule` manifest exposes DI bindings, REST base path, and event subscriptions.
+* Core never imports module code; preserves plugin isolation.
 
 ### Database
-- PostgreSQL via Supabase
-- Row-level security (RLS) for multi-tenancy
-- Service-role key for backend operations
-- Typed database operations with error handling
+
+* Supabase Postgres with **Row-Level Security** for tenant isolation.
+* SQL migrations stored in `/supabase/migrations/` (timestamped files).
+* Repository adapters use PostgREST via the JS client today; native driver optional.
 
 ### AI Integration
-- Function calling for structured outputs
-- Prompt engineering with system/user separation
-- Model-agnostic design (currently using Claude Sonnet)
-- Observability via OpenPipe
 
-### State Management
-- Zustand for global client state (auth)
-- React hooks for component state
-- Server state via API calls
-- Optimistic UI updates where appropriate
+* Uniform `chat()` wrapper that enforces **function-calling JSON** and **mandatory metadata** (`module`, `prompt_id`, `correlation`, etc.).
+* Prompt builders and JSON schemas live beside adapters for easy versioning.
+* Usage, latency and cost routed to OpenPipe analytics out of the box.
+
+### Observability
+
+* One line per HTTP request (`logger.http`).
+* One line per AI call (`logger.info` with `ai.*` fields).
+* Pre-commit hook blocks missing metadata or leaked secrets.
+
+---
 
 ## Development Workflow
 
-### Environment Variables
-The project uses a unified `.env` file with optional `VITE_` prefixes for frontend variables. The backend can read both formats for compatibility.
+1. `pnpm dev:all` – starts Vite HMR for static assets (if any) + API on `3001`.
+2. Set env in `.env` (backend) or `VITE_*` (frontend experiments).
+3. Scaffold a module: `pnpm run scaffold character`.
+4. Run migrations against local Supabase: `supabase db push`.
+5. Validate logs and metadata: `pnpm run lint-logs`.
+6. Ship PR – CI runs lint, tests, and migration dry-run.
 
-Required variables:
-- `OPENROUTER_API_KEY` - For AI generation
-- `SUPABASE_URL` - Database URL
-- `SUPABASE_ANON_KEY` - Public Supabase key
-- `OPENPIPE_API_KEY` - (Optional) For AI observability
+Essential environment variables:
 
-## Key Design Decisions
+```
+OPENROUTER_API_KEY   # required for AI calls
+OPENPIPE_API_KEY     # optional, analytics
+SUPABASE_URL
+SUPABASE_ANON_KEY
+LOG_LEVEL            # error | warn | info | http | debug
+```
 
-### TypeScript Configuration
-- Strict mode enabled for type safety
-- ESM modules with `.ts` extensions allowed
-- Shared types in `src/shared/types/`
-- No build step for backend (using tsx)
+---
 
-### Styling Approach
-- Tailwind CSS with custom theme variables
-- CSS custom properties for dynamic theming
-- Framer Motion for animations
-- Glassmorphism and glow effects
+## Key Design Choices
 
-### Error Handling
-- Structured error responses from API
-- Client-side error boundaries
-- Comprehensive logging with Winston
-- User-friendly error messages
+* **No build step** – `tsx` executes TS directly; faster cold-starts.
+* **Strict JSON schema** from prompt output → prevents brittle regex parsing.
+* **Event-driven** – makes it trivial to drop in a distributed bus later.
+* **Sparse AI generation** – only three anchor beats are pre-generated to cap token spend.
+* **One-file DI registration** per module (`infra/index.ts`) – hot-swappable adapters.
 
-### Security
-- Supabase RLS for data isolation
-- API key authentication for AI services
-- Environment variable validation with Zod
-- CORS configured for local development
+---
 
-## Performance Considerations
+## Performance & Scalability Notes
 
-### Frontend
-- Code splitting via Vite
-- Lazy loading for routes
-- Optimistic UI updates
-- Minimal bundle size
+### HTTP Layer
 
-### Backend
-- Async request handling
-- Database connection pooling (via Supabase)
-- Structured logging for debugging
-- Graceful error recovery
+* Async handlers; no blocking work beyond 50 ms accepted – off-load heavier steps to workers when introduced.
+* Memory-based rate limiter (`express-rate-limit`) enabled by default; redis store planned.
 
-### AI Generation
-- Sparse generation strategy (3 anchor points)
-- Caching considerations for generated content
-- Rate limiting awareness
-- Token usage optimization
+### Database
+
+* Supabase recommends <100 connections; keep Node worker count sensible or adopt PgBouncer.
+* Prefer batched `in` queries over loops; use `select()` only with needed columns.
+
+### AI
+
+* Cache responses keyed by SHA-256(model+prompt) in `ai_cache` table; hit rate \~40 % in dev.
+* Include `max_tokens` ceiling in every call to avoid runaway bills.
+
+---
+
+Stick to this stack, follow the module authoring guide, and new narrative systems (Characters, Locations, Factions, etc.) will plug in without rewiring the engine.

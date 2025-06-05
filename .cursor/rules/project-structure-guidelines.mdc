@@ -3,168 +3,130 @@ description:
 globs: 
 alwaysApply: true
 ---
-# GHOST Project Structure
+# Story-Engine Project Structure
 
-## Overview
+*Single-API backend designed for unlimited narrative modules*
 
-GHOST is an Electron-based desktop application utilizing TypeScript, Vite for bundling, and a modular architecture. This document outlines the project's structure, key components, and guidelines for adding new code or features.
+---
 
-## Directory Structure
+## 1 Repository Layout (top level)
 
 ```
-GHOST/
-├── .claude/                # Claude AI integration configuration
-├── .vite/                  # Vite build artifacts (generated)
-├── docs/                   # Project documentation
-├── src/                    # Source code
-│   ├── main/               # Electron main process code
-│   ├── modules/            # Application modules
-│   ├── preload/            # Electron preload scripts
-│   ├── renderer/           # Electron renderer process (UI)
-│   │   ├── hooks/          # React hooks
-│   │   └── views/          # React views/components
-│   └── types/              # TypeScript type definitions
-└── [Configuration Files]   # Various configuration files in the root
+story-engine/
+├─ .claude/         private Claude settings
+├─ .cursor/         dev-container & linting rules
+├─ docs/            all project documentation
+├─ public/          static assets (videos, images)
+├─ scripts/         cli helpers (scaffolding, lint checks)
+├─ src/             production source
+│  ├─ core/         framework kernel (boot, logger, DI, TRPC bridge)
+│  ├─ modules/      domain feature slices (world, character, …)
+│  ├─ shared/       cross-cutting types & config
+│  └─ server.ts     http entrypoint
+├─ supabase/        SQL schema + migrations
+└─ ‹config files›   tsconfig.json, package.json, vite.config.ts…
 ```
 
-## Key Components
+Everything that reaches runtime lives under `src/`.  No exceptions.
 
-### 1. Main Process (`src/main/`)
+---
 
-**Purpose:** Contains the Electron main process code that runs in a Node.js environment.
+## 2 Core Layer (`src/core`)
 
-**Responsibilities:**
-- Application lifecycle management
-- Native API access
-- Window management
-- IPC (Inter-Process Communication) handling
-- System integration (shortcuts, notifications, etc.)
-- Database operations
-- Module loading and management
-- Security features (encryption, authentication)
+Purpose: application‐agnostic services reused by *every* module.
 
-**Placement:** Place all main process code here, organized into logical modules based on functionality.
+* `bootstrap.ts` discovers modules, mounts routers, wires error middleware.
+* `infra/` logging wrapper, DI container, event bus, Supabase client.
+* `ai/` thin wrapper around `openpipe/openai`, includes `buildMetadata`.
+* `trpc/` shared initialiser, Express-bridge that turns a tRPC router into REST.
+* `types/` `EngineModule` interface, generic `DomainEvent`, helpers.
 
-### 2. Preload Scripts (`src/preload/`)
+Core never imports module code; modules import core.
 
-**Purpose:** Bridge between main process and renderer process, exposing safe APIs to the renderer.
+---
 
-**Responsibilities:**
-- Creating secure bridges between Node.js and browser environments
-- Exposing selected APIs from the main process to the renderer process
-- Handling IPC communication
+## 3 Module Layer (`src/modules`)
 
-**Placement:** Keep preload scripts minimal and focused on creating safe bridges.
+Each folder is a **vertical slice** with exactly five sub-areas:
 
-### 3. Renderer Process (`src/renderer/`)
+```
+modules/character/
+├─ domain/        schema.ts • ports.ts • events.ts
+├─ application/   CharacterService.ts
+├─ infra/         ai/ • persistence/ • index.ts (DI registrations)
+├─ delivery/      trpc/router.ts
+└─ manifest.ts    exported EngineModule
+```
 
-**Purpose:** Contains the application UI code that runs in the Chromium browser environment.
+Rules:
 
-**Responsibilities:**
-- User interface components and logic
-- Frontend state management
-- UI event handling
-- Communication with the main process via IPC
+1. The manifest is the **only** file touched by `bootstrap.ts`.
+2. Cross-module communication uses `eventBus`; no direct imports between modules.
+3. Adapters (`infra/`) fulfil the interfaces defined in `domain/ports.ts`.
 
-**Structure:**
-- `hooks/` - React hooks for state management and logic
-- `views/` - React components organized by application views/screens
+Follow this shape for *worlds*, *locations*, *factions*, and future features.
 
-**Placement:** All UI-related code should go here, following React best practices.
+---
 
-### 4. Modules (`src/modules/`)
+## 4 Shared Layer (`src/shared`)
 
-**Purpose:** Pluggable functionality modules that can be loaded by the application.
+`shared/config/env.ts` validated environment variables.
+`shared/types/` coarse-grained types reused by multiple modules (auth, errors).
 
-**Responsibilities:**
-- Self-contained features or integrations
-- Providing specific functionality to the main application
-- Following a consistent API for integration
+Avoid placing business logic here.
 
-**Placement:** Each module should have its own directory with a clear entry point and necessary components.
+---
 
-### 5. Types (`src/types/`)
+## 5 Docs Folder (`/docs`)
 
-**Purpose:** TypeScript type definitions shared across different parts of the application.
+* `system-overview.md` high-level primer for newcomers.
+* `module-authoring.md` step-by-step guide to create a new module (generated earlier).
+* `ai-integration.md` mandatory metadata and prompt conventions.
+* `logging-guidelines.md` logging contract for contributors.
 
-**Responsibilities:**
-- Defining interfaces, types, and enums used throughout the codebase
-- Ensuring type safety across process boundaries
+Keep docs short and source-controlled; no Google Docs drift.
 
-**Placement:** Place shared types here; component-specific types can be co-located with their components.
+---
 
-### 6. Documentation (`docs/`)
+## 6 Supabase (`/supabase`)
 
-**Purpose:** Project documentation for developers and users.
+* `schema.sql` canonical schema snapshot.
+* `migrations/` timestamped SQL files; migrations run automatically in CI.
+  Name every file `YYYYMMDDHHMM_description.sql`.
 
-**Content:**
-- Architecture overviews
-- API documentation
-- Development guides
-- User documentation
-- Security information
+---
 
-**Placement:** Organize by topic with clear, descriptive filenames.
+## 7 Scripts (`/scripts`)
 
-## Adding New Features
+* `create-module.js` scaffolds a fresh module skeleton.
+* `lint-logs.ts` CI guardrail enforcing metadata and secret redaction.
+* `validate-schema.ts` optional e2e Zod ↔ SQL sync check.
 
-### 1. Core Application Features
+Scripts must be idempotent and runnable on any dev machine.
 
-For features that extend the core application:
+---
 
-- **Main Process Logic:** Add to `src/main/` in an appropriate module
-- **UI Components:** Add to `src/renderer/views/` or create a new view directory
-- **Shared Types:** Add to `src/types/` if used across processes
-- **Configuration:** Update relevant config files if needed
+## 8 Adding a New Module (quick route)
 
-### 2. Pluggable Modules
+1. `pnpm run scaffold <name>` creates `src/modules/<name>/` with TODOs.
+2. Fill in `domain/schema.ts` and `ports.ts` first.
+3. Implement adapters in `infra/`.
+4. Register adapters in `infra/index.ts`.
+5. Expose a tRPC router under `delivery/trpc/router.ts`.
+6. Complete `manifest.ts` – register service, mount router, subscribe to events.
+7. Write migration SQL in `/supabase/migrations/`.
+8. Run `pnpm test && pnpm run lint-logs`.
 
-For features that should be pluggable or independently loadable:
+When tests and hooks are green, open a PR; no other files need touching.
 
-- Create a new directory in `src/modules/[module-name]/`
-- Include a clear entry point (e.g., `index.js` or `index.ts`)
-- Follow the module interface pattern used by existing modules
-- Document the module in `docs/`
+---
 
-## Best Practices
+## 9 Best-practice reminders
 
-1. **Process Separation:** Respect the separation between main and renderer processes
-   - Main process: Node.js APIs, system access, heavy computation
-   - Renderer process: UI rendering, user interaction
+* **Single responsibility** per module: world logic stays in *world*, dialogue in *character*, etc.
+* Never bypass DI or call Supabase outside a `*Repo`.
+* Always include `correlation` id in logs and AI metadata.
+* Function-calling JSON for every AI response; parse once in the adapter.
+* Keep `debug` logs silent by default; toggle via `LOG_LEVEL=debug` when needed.
 
-2. **IPC Communication:** Use the established IPC patterns for cross-process communication
-   - Keep IPC messages well-defined and typed
-   - Document IPC channels in comments
-
-3. **Security First:** 
-   - Never expose unnecessary Node.js APIs to the renderer
-   - Validate all inputs, especially from IPC calls
-   - Follow the principle of least privilege
-
-4. **Modularity:**
-   - Keep modules self-contained
-   - Use clear interfaces between components
-   - Avoid tight coupling between unrelated features
-
-5. **TypeScript Usage:**
-   - Use proper typing for all components
-   - Avoid `any` types where possible
-   - Leverage interfaces for better code documentation
-
-6. **Documentation:**
-   - Document new features in the `docs/` directory
-   - Include JSDoc comments for public APIs and interfaces
-   - Update this structure document when making significant architectural changes
-
-## Configuration Files
-
-Several important configuration files exist in the root directory:
-
-- `forge.config.ts` - Electron Forge build configuration
-- `vite.main.config.ts` - Vite configuration for the main process
-- `vite.preload.config.ts` - Vite configuration for preload scripts
-- `vite.renderer.config.ts` - Vite configuration for the renderer process
-- `tsconfig.json` - TypeScript compiler configuration
-- `package.json` - Project dependencies and scripts
-
-Make sure to update these files appropriately when adding new features or dependencies. 
+Adhere to this structure and new functionality will integrate seamlessly without refactoring the engine.

@@ -1,0 +1,66 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Unit-Testing Rules
+
+## 1 Philosophy
+* **Pure unit tests** – never touch network, file-system, or Supabase.  
+* **Contract coverage over branch coverage** – verify public behaviour, not private lines.  
+* **One AAAr** – Arrange-Act-Assert; no side effects outside `Act`.
+
+## 2 Stack
+* **Vitest** – Jest interface, TS-native, fast watch mode.  
+* **@vitest/spy** – function spies & timers.  
+* **tsyringe** test-container (`import { container } from 'tsyringe'`).  
+* **sinon-fake-timers** only when time travel is essential.
+
+## 3 Mocking Strategy
+* **Repos** – Provide an in-memory implementation that uses Maps; register it in the test DI container.  
+* **AI adapters** – stub `chat()` to return canned tool-call JSON. Export helper `makeFakeChat(returnValue)`.  
+* **Event bus** – use the real in-process EventEmitter; clear listeners between tests.
+
+```ts
+// test/helpers/mockChat.ts
+export function makeFakeChat(payload: unknown) {
+  return vi.fn().mockResolvedValue({
+    choices: [{ message: { tool_calls: [{ function: { arguments: JSON.stringify(payload) } }] } }],
+    usage: { prompt_tokens: 10, completion_tokens: 10 }
+  });
+}
+```
+
+## 4 Test Layout
+```
+tests/
+├─ world/
+│  ├─ WorldService.createWorld.spec.ts
+│  ├─ prompts/
+│  │   ├─ anchorPrompt.spec.ts
+│  │   └─ dynamicBeatPrompt.spec.ts
+└─ core/
+   └─ logger.spec.ts
+```
+
+Co-locate helpers under `tests/_shared`.
+
+## 5 Coverage Targets
+* ≥ 90 % of **services** (application layer).  
+* **Prompt builders** – every required variable appears in output.  
+* **Logging wrapper** – emits expected meta fields (use spy transport).  
+* **ExpressBridge mapping** – smoke test that routes are created (no HTTP server).
+
+## 6 Anti-patterns
+* Don’t `await supabase`.  
+* Don’t mock internals of a unit under test – mock collaborators only.  
+* Don’t assert on _private_ properties.
+
+## 7 How to register mocks
+```ts
+beforeEach(() => {
+  container.reset();
+  container.register('WorldRepo', { useClass: InMemoryWorldRepo });
+  container.register('WorldAI',   { useValue: { generateAnchors: vi.fn(), … } });
+});
+```

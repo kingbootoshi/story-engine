@@ -1,0 +1,20 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Continuous-Integration Pipeline
+
+| Stage | Tool | Fails on… |
+|-------|------|-----------|
+| **1 Lint** | `eslint --max-warnings 0` | any error or warning |
+| **2 Type-check** | `tsc --noEmit` | type errors |
+| **3 Unit-tests** | `vitest run --coverage` | failing tests or < 90 % lines in `/src` |
+| **4 Rules audit** | `pnpm run lint-logs` & `scripts/validate-metadata.ts` | missing meta / leaked secrets |
+| **5 Migrations check** | `scripts/validate-schema.ts` | DTO ↔ SQL drift |
+| **6 Build** | `tsx src/server.ts --dry-run` | runtime import errors |
+
+## Notes
+* All stages run offline – no external services.  
+* Caches `node_modules` and Vitest coverage to speed up subsequent jobs.  
+* Step 3 sets `OPENROUTER_API_KEY=fake` to ensure accidental network calls blow up quickly.
