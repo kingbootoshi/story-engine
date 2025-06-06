@@ -7,7 +7,7 @@ You are about to modify code that powers dynamic self-evolving game-world narrat
 
 ## 0 Mission-Critical Reading Order
 
-1. **RULES** (mandatory – read every session)  
+1. **RULES** (mandatory – read every session BEFORE coding)  
    * `.cursor/rules/commenting-guidelines.mdc`  
    * `.cursor/rules/styling-guidelines.mdc`  
    * `.cursor/rules/logging-guidelines.mdc`  

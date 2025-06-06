@@ -3,64 +3,136 @@ description:
 globs: 
 alwaysApply: true
 ---
-# Unit-Testing Rules
+# Story-Engine · Extended Testing Rules Guide
+_Last updated 2025-06-06_
+
+> **TL;DR**  
+> *All* tests are offline, deterministic, and revolve around two pillars:  
+> 1. **Prompt-surface contracts** (every variable makes it into the text we hand to the LLM).  
+> 2. **Observable behaviour** of services (beats created, events emitted, logs written).  
+> There is **zero tolerance** for network calls in Vitest.
+
+---
 
 ## 1 Philosophy
-* **Pure unit tests** – never touch network, file-system, or Supabase.  
-* **Contract coverage over branch coverage** – verify public behaviour, not private lines.  
-* **One AAAr** – Arrange-Act-Assert; no side effects outside `Act`.
 
-## 2 Stack
-* **Vitest** – Jest interface, TS-native, fast watch mode.  
-* **@vitest/spy** – function spies & timers.  
-* **tsyringe** test-container (`import { container } from 'tsyringe'`).  
-* **sinon-fake-timers** only when time travel is essential.
+| Principle | Rationale |
+|-----------|-----------|
+| **Pure unit tests** | Fast (sub-second) feedback and CI parallelism. |
+| **Contract over coverage** | We care that prompts contain the right data & services emit the right events—not that we tick every `if` branch. |
+| **Deterministic AI** | Real LLM calls are non-deterministic, expensive, and require secrets. We stub _once_ and assert input/output shape. |
+| **One AAA** | _Arrange–Act–Assert_: each `it()` block contains exactly one behaviour under test. |
 
-## 3 Mocking Strategy
-* **Repos** – Provide an in-memory implementation that uses Maps; register it in the test DI container.  
-* **AI adapters** – stub `chat()` to return canned tool-call JSON. Export helper `makeFakeChat(returnValue)`.  
-* **Event bus** – use the real in-process EventEmitter; clear listeners between tests.
+---
+
+## 2 Runtime Stack
+
+| Tool | Why we chose it |
+|------|-----------------|
+| **Vitest** | Jest-compatible, TS-native, blazing watch mode. |
+| **tsyringe** | DI container makes swapping real adapters for fakes trivial. |
+| **`tests/_shared` fakes** | Map-backed repo, stubbed `eventBus`, stubbed `chat()`, silent mock logger. |
+| **Winston stubs** | CI doesn’t need to touch the filesystem for log files. |
+
+No Docker, no Supabase container, no OpenRouter key required.
+
+---
+
+## 3 Required Fakes
+
+| Interface | Fake | Key Behaviour |
+|-----------|------|---------------|
+| `WorldRepo` | **`InMemoryWorldRepo`** | Stores worlds/arcs/beats/events in Maps & exposes helper `clear()`. |
+| `eventBus` | **`MockEventBus`** | Records `emit/on` calls so we can assert side-effects. |
+| `chat()` | **`makeFakeChat(payload)`** | Returns a canned tool-call JSON envelope identical to the real OpenAI format. |
+| `Logger` | **`createMockLogger()`** | Silences console noise but tracks every log-method invocation. |
+
+> **Never** stub *inside* the unit—you inject fakes at the DI boundary.
+
+---
+
+## 4 Prompt-Contract Testing
+
+Prompt builders are first-class citizens.
+
+1. **System prompt check** – assert non-negotiable phrasing remains (e.g. “REAL player actions”).  
+2. **User prompt check** – call `buildXUserPrompt()` with both minimal and edge-case inputs; confirm every variable is present and correctly wrapped in markup (`<world_description>`, etc.).  
+3. If you change a prompt, **bump the `prompt_id@vX`** and update its tests in the same PR.
+
+### Skeleton
 
 ```ts
-// test/helpers/mockChat.ts
-export function makeFakeChat(payload: unknown) {
-  return vi.fn().mockResolvedValue({
-    choices: [{ message: { tool_calls: [{ function: { arguments: JSON.stringify(payload) } }] } }],
-    usage: { prompt_tokens: 10, completion_tokens: 10 }
+import { describe, it, expect } from 'vitest';
+import { DYNAMIC_BEAT_SYSTEM_PROMPT, buildDynamicBeatUserPrompt } from '@/modules/world/…';
+
+describe('Dynamic beat prompt', () => {
+  it('preserves core guidance', () => {
+    expect(DYNAMIC_BEAT_SYSTEM_PROMPT).toMatch(/SYSTEMIC changes/);
   });
-}
-```
 
-## 4 Test Layout
-```
-tests/
-├─ world/
-│  ├─ WorldService.createWorld.spec.ts
-│  ├─ prompts/
-│  │   ├─ anchorPrompt.spec.ts
-│  │   └─ dynamicBeatPrompt.spec.ts
-└─ core/
-   └─ logger.spec.ts
-```
-
-Co-locate helpers under `tests/_shared`.
-
-## 5 Coverage Targets
-* ≥ 90 % of **services** (application layer).  
-* **Prompt builders** – every required variable appears in output.  
-* **Logging wrapper** – emits expected meta fields (use spy transport).  
-* **ExpressBridge mapping** – smoke test that routes are created (no HTTP server).
-
-## 6 Anti-patterns
-* Don’t `await supabase`.  
-* Don’t mock internals of a unit under test – mock collaborators only.  
-* Don’t assert on _private_ properties.
-
-## 7 How to register mocks
-```ts
-beforeEach(() => {
-  container.reset();
-  container.register('WorldRepo', { useClass: InMemoryWorldRepo });
-  container.register('WorldAI',   { useValue: { generateAnchors: vi.fn(), … } });
+  it('injects all placeholders', () => {
+    const p = buildDynamicBeatUserPrompt('Eldoria', 'Fantasy realm', 5, 'prev', 'next', 'events');
+    ['Eldoria', 'Fantasy realm', 'Beat #5', 'prev', 'next', 'events'].forEach(txt =>
+      expect(p).toContain(txt)
+    );
+  });
 });
-```
+````
+
+---
+
+## 5 Service-Layer Testing Pattern
+
+1. `beforeEach`
+
+   ```ts
+   DI.reset();
+   container.register('WorldRepo', { useValue: new InMemoryWorldRepo() });
+   container.register('WorldAI',   { useValue: mockAI });
+   ```
+2. **Seed** minimal state (e.g. world + anchor beats).
+3. **Act** by calling the public method (`WorldService.progressArc`).
+4. **Assert** on:
+
+   * return DTO shape
+   * repo mutations (beats inserted, arc status)
+   * emitted events (`MockEventBus.emit` spy)
+   * AI stub called with the expected context object.
+
+---
+
+## 6 Coverage Targets
+
+| Layer                            | Line %           | Notes                                   |
+| -------------------------------- | ---------------- | --------------------------------------- |
+| Services & Prompt builders       | ≥ 90 %           | Prompt builder tests count as coverage. |
+| Logging wrapper & Express bridge | smoke-tests only | Verify meta-fields and route list.      |
+
+*CI currently enforces 50 % project-wide until we finish back-filling tests; we ratchet up every sprint.*
+
+---
+
+## 7 CI Guardrails
+
+1. **Lint** (`eslint --max-warnings 0`).
+2. **Type-check** (`tsc --noEmit`).
+3. **Tests + coverage** (`vitest run --coverage`).
+4. **`lint-logs.ts`** — blocks missing `correlation` or AI metadata.
+5. **`validate-schema.ts`** — DTO ↔ SQL drift.
+
+A PR with a failing step never merges.
+
+---
+
+## 8 FAQ
+
+> **Q:** I need to test time-dependent code.
+> **A:** Use `@vitest/spy`’s fake timers or `sinon-fake-timers`. Never `Date.now()` patching.
+
+> **Q:** My new module needs its own fake repo—where does it go?
+> **A:** `tests/_shared/fakes/YourModuleRepo.ts`. Register it exactly like `InMemoryWorldRepo` in tests.
+
+> **Q:** Should I snapshot prompts?
+> **A:** No snapshots; explicit `expect(prompt).toContain()` is clearer and survives minor text edits.
+
+Happy testing—and remember: **the narrative lives or dies by your prompt contracts**.
