@@ -19,7 +19,7 @@ You are about to modify code that powers dynamic self-evolving game-world narrat
 
 2. **CONTEXT DOCS** (read only what you touch)  
    * `docs/ai.md` – AI adapter + metadata contract  
-   * `docs/creating_modules.md` – module authoring walkthrough  
+   * `docs/creating_modules.md` – module authoring walkthrough when making new modules
    * `docs/modules/<domain>/*` – domain-specific narrative design & API cheatsheet  
    * `docs/modules/worlds/api-reference.md` – example of a complete module doc
 

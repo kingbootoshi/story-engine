@@ -10,20 +10,34 @@
     "server": "tsx src/server.ts",
     "server:debug": "DEBUG=true tsx src/server.ts",
     "dev:all": "concurrently \"vite\" \"npm run server\"",
-    "dev:debug": "concurrently \"vite\" \"npm run server:debug\""
+    "dev:debug": "concurrently \"vite\" \"npm run server:debug\"",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "validate-schema": "ts-node scripts/validate-schema.ts",
+    "lint-logs": "ts-node scripts/lint-logs.ts"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.8",
     "@types/cors": "^2.8.18",
     "@types/express": "^5.0.2",
+    "@types/jest": "^29.5.14",
     "@types/node": "^22.15.29",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.5",
+    "@types/sinon": "^17.0.4",
+    "@vitest/coverage-v8": "^3.2.1",
+    "@vitest/spy": "^3.2.1",
     "concurrently": "^9.1.2",
+    "sinon": "^20.0.0",
     "tailwindcss": "^4.1.8",
+    "ts-node": "^10.9.2",
     "tsx": "^4.19.4",
     "typescript": "~5.8.3",
-    "vite": "^6.3.5"
+    "vite": "^6.3.5",
+    "vitest": "^3.2.1"
   },
   "dependencies": {
     "@octokit/rest": "^20.0.2",

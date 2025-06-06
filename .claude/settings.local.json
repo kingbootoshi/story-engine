@@ -20,7 +20,9 @@
       "Bash(find:*)",
       "Bash(pkill:*)",
       "Bash(true)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(pnpm add:*)",
+      "Bash(rg:*)"
     ],
     "deny": []
   }

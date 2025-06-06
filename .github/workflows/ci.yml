@@ -1,0 +1,33 @@
+name: ci
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies
+        run: npm install --frozen-lockfile
+      
+      - name: Run linting
+        run: npm run lint
+      
+      - name: Run type checking
+        run: npm run typecheck
+      
+      - name: Run tests with coverage
+        run: npm run coverage
+      
+      - name: Validate database schema
+        run: npm run validate-schema
+        continue-on-error: true  # Allow to fail for now since scripts don't exist yet
+      
+      - name: Check log compliance
+        run: npm run lint-logs
+        continue-on-error: true  # Allow to fail for now since scripts don't exist yet

@@ -33,6 +33,7 @@ modules/
    ├─ delivery/
    │  └─ trpc/router.ts   # procedures only
    └─ manifest.ts         # EngineModule definition
+   └─ index.ts            # Entry point for module exports
 ```
 
 Duplicate this structure for *character*, *location*, *faction*, etc.

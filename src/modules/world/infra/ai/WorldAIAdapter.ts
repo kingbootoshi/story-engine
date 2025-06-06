@@ -170,7 +170,13 @@ export class WorldAIAdapter implements WorldAI {
     }
 
     const args = JSON.parse(toolCall.function.arguments);
-    log.info('AI success', { usage: completion.usage });
+    log.info('AI success', { 
+      ai: { 
+        model: this.MODEL, 
+        prompt_id: 'generate_world_arc_anchors', 
+        usage: completion.usage 
+      } 
+    });
     log.info('Generated anchors', { worldName: ctx.worldName, anchorCount: args.anchors.length });
     
     return args.anchors;
@@ -214,7 +220,13 @@ export class WorldAIAdapter implements WorldAI {
     }
 
     const args = JSON.parse(toolCall.function.arguments);
-    log.info('AI success', { usage: completion.usage });
+    log.info('AI success', { 
+      ai: { 
+        model: this.MODEL, 
+        prompt_id: 'generate_dynamic_world_beat', 
+        usage: completion.usage 
+      } 
+    });
     log.info('Generated beat', { worldName: ctx.worldName, beatIndex: ctx.currentBeatIndex });
     
     return args;
@@ -242,7 +254,13 @@ export class WorldAIAdapter implements WorldAI {
     }
 
     const args = JSON.parse(toolCall.function.arguments);
-    log.info('AI success', { usage: completion.usage });
+    log.info('AI success', { 
+      ai: { 
+        model: this.MODEL, 
+        prompt_id: 'generate_arc_summary', 
+        usage: completion.usage 
+      } 
+    });
     log.info('Generated arc summary', { arcName: ctx.arcName });
     
     return args.summary;
