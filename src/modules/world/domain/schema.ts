@@ -44,8 +44,9 @@ export type WorldBeat = z.infer<typeof WorldBeat>;
 export const WorldEvent = z.object({
   id: z.string().uuid(),
   world_id: z.string().uuid(),
-  arc_id: z.string().uuid().nullable().optional(),
-  beat_id: z.string().uuid().nullable().optional(),
+  /** Arc and beat will be auto-resolved by the backend to the *current* beat */
+  arc_id: z.string().uuid(),
+  beat_id: z.string().uuid(),
   event_type: z.enum(['player_action', 'system_event', 'world_event']),
   description: z.string(),
   impact_level: z.enum(['minor', 'moderate', 'major']),

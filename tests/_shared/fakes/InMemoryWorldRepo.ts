@@ -16,6 +16,7 @@ export class InMemoryWorldRepo implements WorldRepo {
       description: data.description,
       created_at: new Date().toISOString(),
       current_arc_id: null,
+      updated_at: null,
     };
     this.worlds.set(id, world);
     // Logging is handled by the service layer in tests
@@ -41,8 +42,10 @@ export class InMemoryWorldRepo implements WorldRepo {
     const arc: WorldArc = {
       id,
       world_id: worldId,
+      arc_number: this.getNextArcNumber(worldId),
       story_name: storyName,
       story_idea: storyIdea,
+      status: 'active',
       created_at: new Date().toISOString(),
       completed_at: null,
       summary: null,
@@ -64,6 +67,12 @@ export class InMemoryWorldRepo implements WorldRepo {
     if (!arc) throw new Error(`Arc ${arcId} not found`);
     arc.completed_at = new Date().toISOString();
     arc.summary = summary;
+    arc.status = 'completed';
+  }
+
+  private getNextArcNumber(worldId: string): number {
+    const arcsForWorld = Array.from(this.arcs.values()).filter(a => a.world_id === worldId);
+    return arcsForWorld.length + 1;
   }
 
   async createBeat(

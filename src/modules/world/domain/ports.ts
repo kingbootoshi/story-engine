@@ -77,4 +77,5 @@ export interface WorldRepo {
   // Event operations
   createEvent(event: CreateEvent): Promise<WorldEvent>;
   getRecentEvents(worldId: string, limit?: number): Promise<WorldEvent[]>;
+  getBeatEvents(beatId: string): Promise<WorldEvent[]>;
 }

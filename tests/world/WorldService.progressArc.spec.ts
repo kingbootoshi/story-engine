@@ -214,6 +214,8 @@ describe('WorldService.progressArc', () => {
     // Arrange - Create some events
     await worldRepo.createEvent({
       world_id: testWorld.id,
+      arc_id: testArc.id,
+      beat_id: anchorBeats[0].id,
       event_type: 'world_event',
       description: 'A major earthquake',
       impact_level: 'major',

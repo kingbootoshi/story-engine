@@ -4,21 +4,9 @@ import { eventBus } from '../../../core/infra/eventBus';
 import type { WorldRepo, WorldAI } from '../domain/ports';
 import type { World, WorldArc, WorldBeat, WorldEvent } from '../domain/schema';
 import type * as Events from '../domain/events';
+import type { WorldArcCreationParams, BeatProgressionParams } from './types';
 
 const logger = createLogger('world.service');
-
-export interface WorldArcCreationParams {
-  worldId: string;
-  worldName: string;
-  worldDescription: string;
-  storyIdea?: string;
-}
-
-export interface BeatProgressionParams {
-  worldId: string;
-  arcId: string;
-  recentEvents?: string;
-}
 
 @injectable()
 export class WorldService {
@@ -253,9 +241,12 @@ export class WorldService {
         current_arc_id: undefined
       });
 
+      const lastBeat = beats.sort((a, b) => b.beat_index - a.beat_index)[0];
+
       await this.repo.createEvent({
         world_id: worldId,
         arc_id: arcId,
+        beat_id: lastBeat?.id ?? beats[0].id,
         event_type: 'system_event',
         description: `World arc completed: ${arc.story_name}. ${summary}`,
         impact_level: 'major'
@@ -275,17 +266,37 @@ export class WorldService {
     }
   }
 
-  async recordWorldEvent(event: Omit<WorldEvent, 'id' | 'created_at'>): Promise<WorldEvent> {
-    const savedEvent = await this.repo.createEvent(event);
-    
+  /**
+   * Record a world event **always** attached to the current beat of the active arc.
+   * The caller only needs to provide `world_id`, `event_type`, `impact_level`, `description`.
+   */
+  async recordWorldEvent(event: Pick<WorldEvent, 'world_id' | 'event_type' | 'impact_level' | 'description'>): Promise<WorldEvent> {
+    const currentBeat = await this.getCurrentBeat(event.world_id);
+    if (!currentBeat) {
+      throw new Error('No current beat found – cannot record event');
+    }
+
+    const savedEvent = await this.repo.createEvent({
+      world_id: event.world_id,
+      arc_id: currentBeat.arc_id,
+      beat_id: currentBeat.id,
+      event_type: event.event_type,
+      impact_level: event.impact_level,
+      description: event.description
+    });
+
     eventBus.emit<Events.WorldEventLoggedEvent>('world.eventLogged', {
       worldId: event.world_id,
       eventId: savedEvent.id,
-      eventType: event.event_type,
-      impactLevel: event.impact_level
+      eventType: savedEvent.event_type,
+      impactLevel: savedEvent.impact_level
     });
-    
+
     return savedEvent;
+  }
+
+  async getBeatEvents(beatId: string): Promise<WorldEvent[]> {
+    return this.repo.getBeatEvents(beatId);
   }
 
   async getWorldState(worldId: string): Promise<{
@@ -317,16 +328,6 @@ export class WorldService {
     };
   }
 
-  async handleCharacterDeath(characterId: string, worldId: string): Promise<void> {
-    logger.info('Handling character death in world', { characterId, worldId });
-    
-    await this.recordWorldEvent({
-      world_id: worldId,
-      event_type: 'world_event',
-      description: `A significant character has died`,
-      impact_level: 'major'
-    });
-  }
 
   private async getPreviousArcSummaries(worldId: string): Promise<string[]> {
     const arcs = await this.repo.getWorldArcs(worldId);
@@ -349,5 +350,18 @@ export class WorldService {
     });
 
     return summary || 'Arc completed without significant world changes.';
+  }
+
+  /**
+   * Returns the latest beat of the world's active arc or null if none.
+   */
+  async getCurrentBeat(worldId: string): Promise<WorldBeat | null> {
+    const world = await this.repo.getWorld(worldId);
+    if (!world || !world.current_arc_id) return null;
+
+    const beats = await this.repo.getArcBeats(world.current_arc_id);
+    if (beats.length === 0) return null;
+
+    return beats.sort((a, b) => b.beat_index - a.beat_index)[0];
   }
 }

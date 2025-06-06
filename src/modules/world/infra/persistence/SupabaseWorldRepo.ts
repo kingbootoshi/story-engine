@@ -231,4 +231,22 @@ export class SupabaseWorldRepo implements WorldRepo {
     
     return data || [];
   }
+
+  /**
+   * Returns every event attached to the provided beat.
+   */
+  async getBeatEvents(beatId: string): Promise<WorldEvent[]> {
+    const { data, error } = await supabase
+      .from('world_events')
+      .select('*')
+      .eq('beat_id', beatId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      repoLog.error('Failed to get events for beat', error, { beatId });
+      throw error;
+    }
+
+    return data || [];
+  }
 }

@@ -6,7 +6,7 @@ import type { AIMetadata } from './metadata';
 
 const client = new OpenAI({
   apiKey: env.OPENROUTER_API_KEY,
-  baseURL: 'https://api.openrouter.ai/api/v1',
+  baseURL: 'https://openrouter.ai/api/v1',
   defaultHeaders: {
     'X-Title': 'Story Engine',
   },

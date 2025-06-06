@@ -57,11 +57,18 @@ export const worldRouter = router({
     }),
 
   recordWorldEvent: publicProcedure
-    .input(S.CreateEvent)
+    .input(
+      S.CreateEvent.pick({
+        world_id: true,
+        event_type: true,
+        impact_level: true,
+        description: true
+      })
+    )
     .output(S.WorldEvent)
     .mutation(async ({ input }) => {
       const worldService = container.resolve(WorldService);
-      return worldService.recordWorldEvent(input);
+      return worldService.recordWorldEvent(input as any);
     }),
 
   getWorldState: publicProcedure
@@ -86,5 +93,21 @@ export const worldRouter = router({
       const worldService = container.resolve(WorldService);
       await worldService.completeArc(input.worldId, input.arcId);
       return { message: 'Arc completed successfully' };
-    })
+    }),
+
+  getBeatEvents: publicProcedure
+    .input(z.string().uuid())
+    .output(S.WorldEvent.array())
+    .query(async ({ input }) => {
+      const worldService = container.resolve(WorldService);
+      return worldService.getBeatEvents(input);
+    }),
+
+  getCurrentBeat: publicProcedure
+    .input(z.string().uuid())
+    .output(S.WorldBeat.nullable())
+    .query(async ({ input }) => {
+      const worldService = container.resolve(WorldService);
+      return worldService.getCurrentBeat(input);
+    }),
 });

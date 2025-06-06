@@ -15,7 +15,7 @@ export function WorldDetail() {
   
   const [world, setWorld] = useState<World | null>(null);
   const [currentArc, setCurrentArc] = useState<Arc | null>(null);
-  const [recentEvents, setRecentEvents] = useState<WorldEvent[]>([]);
+  const [beatEvents, setBeatEvents] = useState<WorldEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [showCreateArc, setShowCreateArc] = useState(false);
@@ -25,14 +25,16 @@ export function WorldDetail() {
 
   // Event form state
   const [newEvent, setNewEvent] = useState({
-    eventType: 'character_arrives',
-    description: '',
-    characterName: '',
-    characterDescription: '',
-    locationName: '',
-    itemName: '',
-    itemDescription: ''
+    eventType: 'player_action' as 'player_action' | 'system_event' | 'world_event',
+    impactLevel: 'minor' as 'minor' | 'moderate' | 'major',
+    description: ''
   });
+
+  /** Holds every beat (anchor + dynamic) for the currently active arc */
+  const [beats, setBeats] = useState<WorldState['currentBeats']>([]);
+
+  /** When the user clicks a beat in the list we keep it here so we can render the details */
+  const [selectedBeat, setSelectedBeat] = useState<WorldState['currentBeats'][number] | null>(null);
 
   useEffect(() => {
     if (worldId) {
@@ -45,7 +47,15 @@ export function WorldDetail() {
       const worldState = await trpc.world.getWorldState.query(worldId!);
       setWorld(worldState.world);
       setCurrentArc(worldState.currentArc);
-      setRecentEvents(worldState.recentEvents);
+
+      setBeats(worldState.currentBeats);
+
+      // Ask backend for the authoritative current beat
+      const currentBeat = await trpc.world.getCurrentBeat.query(worldId!);
+      if (currentBeat) {
+        setSelectedBeat(currentBeat);
+        await fetchBeatEvents(currentBeat.id);
+      }
     } catch (err) {
       console.error('[WorldDetail] Failed to fetch world:', err);
       setError('Failed to load world details');
@@ -82,43 +92,34 @@ export function WorldDetail() {
     if (!world) return;
 
     try {
-      const eventData: any = {
-        world_id: world.id,
-        event_type: newEvent.eventType,
-        description: newEvent.description
-      };
-
-      // Add specific data based on event type
-      if (newEvent.eventType === 'character_arrives' || newEvent.eventType === 'character_leaves') {
-        eventData.data = {
-          characterName: newEvent.characterName,
-          characterDescription: newEvent.characterDescription
-        };
-      } else if (newEvent.eventType === 'location_discovered') {
-        eventData.data = {
-          locationName: newEvent.locationName
-        };
-      } else if (newEvent.eventType === 'item_found' || newEvent.eventType === 'item_lost') {
-        eventData.data = {
-          itemName: newEvent.itemName,
-          itemDescription: newEvent.itemDescription
-        };
+      if (!currentArc || beats.length === 0) {
+        alert('No current beat to attach the event to. Generate a beat first.');
+        return;
       }
 
-      await trpc.world.recordWorldEvent.mutate(eventData);
+      // Determine the beat to attach to – the one the user selected or the latest.
+      const beat = selectedBeat ?? beats[beats.length - 1];
+
+      await trpc.world.recordWorldEvent.mutate({
+        world_id: world.id,
+        event_type: newEvent.eventType,
+        impact_level: newEvent.impactLevel,
+        description: newEvent.description
+      });
       
-      console.debug('[WorldDetail] Recorded event:', eventData);
+      console.debug('[WorldDetail] Recorded event:', {
+        world_id: world.id,
+        event_type: newEvent.eventType,
+        impact_level: newEvent.impactLevel,
+        description: newEvent.description
+      });
       setShowAddEvent(false);
       setNewEvent({
-        eventType: 'character_arrives',
-        description: '',
-        characterName: '',
-        characterDescription: '',
-        locationName: '',
-        itemName: '',
-        itemDescription: ''
+        eventType: 'player_action',
+        impactLevel: 'minor',
+        description: ''
       });
-      await fetchWorldDetails();
+      await fetchBeatEvents(beat.id);
     } catch (err) {
       console.error('[WorldDetail] Failed to record event:', err);
       setError('Failed to record event');
@@ -133,7 +134,7 @@ export function WorldDetail() {
       const result = await trpc.world.progressArc.mutate({
         worldId: world.id,
         arcId: currentArc.id,
-        recentEvents: JSON.stringify(recentEvents.slice(0, 5))
+        recentEvents: JSON.stringify(beatEvents.slice(0, 5))
       });
 
       console.debug('[WorldDetail] Arc progressed:', result);
@@ -151,6 +152,22 @@ export function WorldDetail() {
       setIsProgressing(false);
     }
   };
+
+  const fetchBeatEvents = async (beatId: string) => {
+    try {
+      const events = await trpc.world.getBeatEvents.query(beatId);
+      setBeatEvents(events);
+    } catch (err) {
+      console.error('[WorldDetail] Failed to fetch beat events:', err);
+    }
+  };
+
+  // Whenever the user clicks a beat update events list
+  useEffect(() => {
+    if (selectedBeat) {
+      fetchBeatEvents(selectedBeat.id);
+    }
+  }, [selectedBeat]);
 
   if (isLoading) {
     return (
@@ -220,7 +237,13 @@ export function WorldDetail() {
                     style={{
                       backgroundColor: '#4CAF50',
                       height: '100%',
-                      width: '0%',
+                      /**
+                       * The arc always tops out at 15 beats (0-14). We derive completion % directly
+                       * from the amount of beats that exist so far. This value animates via the
+                       * CSS transition declared below for a pleasant visual cue whenever a new beat
+                       * is created.
+                       */
+                      width: `${(beats.length / 15) * 100}%`,
                       transition: 'width 0.3s'
                     }}
                   />
@@ -360,18 +383,28 @@ export function WorldDetail() {
                   <select
                     id="eventType"
                     value={newEvent.eventType}
-                    onChange={(e) => setNewEvent({ ...newEvent, eventType: e.target.value })}
+                    onChange={(e) => setNewEvent({ ...newEvent, eventType: e.target.value as 'player_action' | 'system_event' | 'world_event' })}
                     style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
                   >
-                    <option value="character_arrives">Character Arrives</option>
-                    <option value="character_leaves">Character Leaves</option>
-                    <option value="location_discovered">Location Discovered</option>
-                    <option value="item_found">Item Found</option>
-                    <option value="item_lost">Item Lost</option>
-                    <option value="quest_started">Quest Started</option>
-                    <option value="quest_completed">Quest Completed</option>
-                    <option value="conflict_started">Conflict Started</option>
-                    <option value="conflict_resolved">Conflict Resolved</option>
+                    <option value="player_action">Player Action</option>
+                    <option value="world_event">World Event</option>
+                    <option value="system_event">System Event</option>
+                  </select>
+                </div>
+
+                <div style={{ marginBottom: '1rem' }}>
+                  <label htmlFor="impactLevel" style={{ display: 'block', marginBottom: '0.5rem' }}>
+                    Impact Level
+                  </label>
+                  <select
+                    id="impactLevel"
+                    value={newEvent.impactLevel}
+                    onChange={(e) => setNewEvent({ ...newEvent, impactLevel: e.target.value as 'minor' | 'moderate' | 'major' })}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  >
+                    <option value="minor">Minor</option>
+                    <option value="moderate">Moderate</option>
+                    <option value="major">Major</option>
                   </select>
                 </div>
 
@@ -389,82 +422,6 @@ export function WorldDetail() {
                     style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
                   />
                 </div>
-
-                {(newEvent.eventType === 'character_arrives' || newEvent.eventType === 'character_leaves') && (
-                  <>
-                    <div style={{ marginBottom: '1rem' }}>
-                      <label htmlFor="characterName" style={{ display: 'block', marginBottom: '0.5rem' }}>
-                        Character Name
-                      </label>
-                      <input
-                        id="characterName"
-                        type="text"
-                        value={newEvent.characterName}
-                        onChange={(e) => setNewEvent({ ...newEvent, characterName: e.target.value })}
-                        required
-                        style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                      />
-                    </div>
-                    <div style={{ marginBottom: '1rem' }}>
-                      <label htmlFor="characterDescription" style={{ display: 'block', marginBottom: '0.5rem' }}>
-                        Character Description
-                      </label>
-                      <input
-                        id="characterDescription"
-                        type="text"
-                        value={newEvent.characterDescription}
-                        onChange={(e) => setNewEvent({ ...newEvent, characterDescription: e.target.value })}
-                        style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                      />
-                    </div>
-                  </>
-                )}
-
-                {newEvent.eventType === 'location_discovered' && (
-                  <div style={{ marginBottom: '1rem' }}>
-                    <label htmlFor="locationName" style={{ display: 'block', marginBottom: '0.5rem' }}>
-                      Location Name
-                    </label>
-                    <input
-                      id="locationName"
-                      type="text"
-                      value={newEvent.locationName}
-                      onChange={(e) => setNewEvent({ ...newEvent, locationName: e.target.value })}
-                      required
-                      style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                    />
-                  </div>
-                )}
-
-                {(newEvent.eventType === 'item_found' || newEvent.eventType === 'item_lost') && (
-                  <>
-                    <div style={{ marginBottom: '1rem' }}>
-                      <label htmlFor="itemName" style={{ display: 'block', marginBottom: '0.5rem' }}>
-                        Item Name
-                      </label>
-                      <input
-                        id="itemName"
-                        type="text"
-                        value={newEvent.itemName}
-                        onChange={(e) => setNewEvent({ ...newEvent, itemName: e.target.value })}
-                        required
-                        style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                      />
-                    </div>
-                    <div style={{ marginBottom: '1rem' }}>
-                      <label htmlFor="itemDescription" style={{ display: 'block', marginBottom: '0.5rem' }}>
-                        Item Description
-                      </label>
-                      <input
-                        id="itemDescription"
-                        type="text"
-                        value={newEvent.itemDescription}
-                        onChange={(e) => setNewEvent({ ...newEvent, itemDescription: e.target.value })}
-                        style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                      />
-                    </div>
-                  </>
-                )}
 
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <button
@@ -499,7 +456,7 @@ export function WorldDetail() {
           )}
 
           <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
-            {recentEvents.length === 0 ? (
+            {beatEvents.length === 0 ? (
               <div style={{
                 backgroundColor: '#f5f5f5',
                 padding: '2rem',
@@ -511,7 +468,7 @@ export function WorldDetail() {
                 No events recorded yet
               </div>
             ) : (
-              recentEvents.map((event) => (
+              beatEvents.map((event) => (
                 <div
                   key={event.id}
                   style={{
@@ -535,6 +492,86 @@ export function WorldDetail() {
           </div>
         </div>
       </div>
+
+      {/*
+        ─────────────────────────────────────────────────────────────────────
+        Beats list – clicking a beat reveals its full details underneath.
+        We purposely keep the styling simple (plain <ul>/<li>) because the
+        current frontend is meant purely for manual QA.
+       */}
+
+      {currentArc && (
+        <div style={{ marginTop: '2rem' }}>
+          <h3 style={{ marginTop: 0 }}>Beats</h3>
+          {beats.length === 0 ? (
+            <p style={{ color: '#666' }}>No beats generated yet.</p>
+          ) : (
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+              {beats
+                .sort((a, b) => a.beat_index - b.beat_index)
+                .map((beat) => (
+                  <li
+                    key={beat.id}
+                    onClick={() => setSelectedBeat(beat)}
+                    style={{
+                      cursor: 'pointer',
+                      marginBottom: '0.25rem',
+                      padding: '0.5rem',
+                      backgroundColor: selectedBeat?.id === beat.id ? '#e0f7fa' : '#fff',
+                      border: '1px solid #ddd',
+                      borderLeft: `6px solid ${beat.beat_type === 'anchor' ? '#FF9800' : '#2196F3'}`
+                    }}
+                  >
+                    <strong style={{ marginRight: '0.25rem' }}>Beat {beat.beat_index}</strong>
+                    — {beat.beat_name} {beat.beat_type === 'anchor' && ' (Anchor)'}
+                  </li>
+                ))}
+            </ul>
+          )}
+
+          {/* Detailed view for the selected beat */}
+          {selectedBeat && (
+            <div style={{
+              marginTop: '1.5rem',
+              backgroundColor: '#fff',
+              padding: '1rem',
+              border: '1px solid #ddd',
+              borderRadius: '6px'
+            }}>
+              <h4 style={{ marginTop: 0 }}>{selectedBeat.beat_name}{' '}
+                {selectedBeat.beat_type === 'anchor' && <span style={{ color: '#FF9800' }}>(Anchor)</span>}
+              </h4>
+              <p style={{ whiteSpace: 'pre-line', color: '#555' }}>{selectedBeat.description}</p>
+
+              <div style={{ marginTop: '1rem' }}>
+                <strong>World Directives</strong>
+                {selectedBeat.world_directives.length === 0 ? (
+                  <p style={{ color: '#777' }}>—</p>
+                ) : (
+                  <ul style={{ marginTop: '0.25rem' }}>
+                    {selectedBeat.world_directives.map((d) => (
+                      <li key={d}>{d}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div style={{ marginTop: '1rem' }}>
+                <strong>Emergent Storylines</strong>
+                {selectedBeat.emergent_storylines.length === 0 ? (
+                  <p style={{ color: '#777' }}>—</p>
+                ) : (
+                  <ul style={{ marginTop: '0.25rem' }}>
+                    {selectedBeat.emergent_storylines.map((s) => (
+                      <li key={s}>{s}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
