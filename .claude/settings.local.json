@@ -22,7 +22,9 @@
       "Bash(true)",
       "Bash(cp:*)",
       "Bash(pnpm add:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash([ -f .env ])",
+      "Bash(npm run typecheck:*)"
     ],
     "deny": []
   }

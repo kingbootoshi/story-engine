@@ -1,13 +1,24 @@
 import { z } from 'zod';
 
+/**
+ * A date string that can be parsed by `Date.parse()`.
+ * Accepts any RFC-3339 / ISO-8601 subset (e.g. `+00` or `Z` timezone, with or without
+ * milliseconds). We can't rely on Zod's built-in `datetime()` because Supabase uses
+ * the `+00` suffix which fails that regex. By using a `refine` we keep strictness
+ * while accommodating the actual payload produced by Postgres.
+ */
+export const ISODateString = z.string().refine((val) => !Number.isNaN(Date.parse(val)), {
+  message: 'Invalid ISO-date string'
+});
+
 // World entity
 export const World = z.object({
   id: z.string().uuid(),
   name: z.string().min(1),
   description: z.string(),
   current_arc_id: z.string().uuid().nullable().optional(),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime().optional()
+  created_at: ISODateString,
+  updated_at: ISODateString.optional()
 });
 export type World = z.infer<typeof World>;
 
@@ -20,8 +31,8 @@ export const WorldArc = z.object({
   story_idea: z.string(),
   status: z.enum(['active', 'completed']),
   summary: z.string().nullable().optional(),
-  created_at: z.string().datetime(),
-  completed_at: z.string().datetime().nullable().optional()
+  created_at: ISODateString,
+  completed_at: ISODateString.nullable().optional()
 });
 export type WorldArc = z.infer<typeof WorldArc>;
 
@@ -35,7 +46,7 @@ export const WorldBeat = z.object({
   description: z.string(),
   world_directives: z.array(z.string()),
   emergent_storylines: z.array(z.string()),
-  created_at: z.string().datetime()
+  created_at: ISODateString
 });
 export type WorldBeat = z.infer<typeof WorldBeat>;
 
@@ -48,7 +59,7 @@ export const WorldEvent = z.object({
   event_type: z.enum(['player_action', 'system_event', 'world_event']),
   description: z.string(),
   impact_level: z.enum(['minor', 'moderate', 'major']),
-  created_at: z.string().datetime()
+  created_at: ISODateString
 });
 export type WorldEvent = z.infer<typeof WorldEvent>;
 

@@ -28,7 +28,7 @@ export class WorldService {
   ) {}
 
   async createWorld(name: string, description: string): Promise<World> {
-    logger.info('Creating world', { name });
+    logger.info('Creating world', { name, descLen: description.length });
     const world = await this.repo.createWorld({ name, description });
     
     eventBus.emit<Events.WorldCreatedEvent>('world.created', { 

@@ -5,6 +5,9 @@ import { DI } from './infra/container';
 import { eventBus } from './infra/eventBus';
 import { logger } from './infra/logger';
 import type { EngineModule } from './types';
+import { createExpressMiddleware } from '@trpc/server/adapters/express';
+import { appRouter } from './trpc/rootRouter';
+import { createContext as buildTrpcContext } from './trpc/context';
 
 export async function bootstrapModules(app: express.Express): Promise<void> {
   logger.info('🚀 Starting module bootstrap');
@@ -55,6 +58,23 @@ export async function createServer(): Promise<express.Application> {
   const app = express();
   
   app.use(express.json());
+  
+  // Mount native tRPC batch handler BEFORE module bootstrap so that
+  // `/api/trpc` is resolved prior to any 404 middleware.
+  app.use(
+    '/api/trpc',
+    createExpressMiddleware({
+      router: appRouter,
+      createContext: ({ req, res }) => buildTrpcContext(req, res),
+    }),
+  );
+  logger.info('🔗 Mounted native tRPC handler at /api/trpc');
+  
+  app.use((req, _res, next) => {
+    const auth = req.headers.authorization;
+    if (auth?.startsWith('Bearer ')) req.headers['x-supabase-auth'] = auth.slice(7);
+    next();
+  });
   
   app.use((req, _res, next) => {
     logger.http(`${req.method} ${req.path}`, { 

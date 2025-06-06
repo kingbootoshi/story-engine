@@ -147,14 +147,18 @@ If these ten steps pass, the module is production-ready.
 
 ---
 
-## 4 tRPC ⇆ REST Mapping Cheat Sheet
+## 4 tRPC ⇆ REST Mapping Cheat Sheet
 
-*No extra work necessary.*
-`publicProcedure.query()` ➜ `GET /api/<module>/<proc>`
-`publicProcedure.mutation()` ➜
-  *no path params* → `POST /api/<module>`
-  *`:id` param*   → `PUT|DELETE /api/<module>/:id`
-Override specifics in `expressBridge` map only when the default is insufficient.
+**See [tRPC Integration Guide](./TRPC.md) for complete details.**
+
+Quick reference:
+- `list` procedures → `GET /api/<module>`
+- `get` procedures → `GET /api/<module>/:id`  
+- `create` procedures → `POST /api/<module>`
+- `update` procedures → `PUT /api/<module>/:id`
+- Custom procedures → defined in `expressBridge` mappings
+
+The Express Bridge automatically creates RESTful endpoints—no manual routing needed.
 
 ---
 
@@ -207,7 +211,51 @@ Always return strict JSON; parse inside the adapter, never downstream.
 
 ---
 
-## 7 Quality Checklist Before Commit
+## 7 Frontend Type Safety
+
+**Never define types manually in the frontend.** Always derive them from the backend `AppRouter`.
+
+### ✅ Correct Pattern
+```ts
+// frontend/pages/CharacterList.tsx
+import type { inferRouterOutputs, inferRouterInputs } from '@trpc/server';
+import type { AppRouter } from '../../core/trpc/rootRouter';
+
+type RouterOutputs = inferRouterOutputs<AppRouter>;
+type RouterInputs = inferRouterInputs<AppRouter>;
+type Character = RouterOutputs['character']['list'][number];
+type CreateCharacterInput = RouterInputs['character']['create'];
+```
+
+### ❌ Wrong Pattern
+```ts
+// DON'T DO THIS - creates duplication
+interface Character {
+  id: string;
+  name: string;
+  // ... manually maintained
+}
+```
+
+### Making Type-Safe Calls
+```ts
+// All calls are fully typed with IntelliSense
+const characters = await trpc.character.list.query({ worldId });
+const character = await trpc.character.create.mutate({
+  name: 'Aragorn',
+  role: 'protagonist',
+  world_id: worldId
+});
+
+// TypeScript catches errors at compile time
+// ❌ trpc.character.create.mutate({ invalid: 'field' });  // Compiler error!
+```
+
+For complete frontend integration details, see [tRPC Integration Guide](./TRPC.md).
+
+---
+
+## 8 Quality Checklist Before Commit
 
 * All entities & DTOs validated by Zod.
 * No direct Supabase calls outside `*Repo`.

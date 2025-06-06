@@ -9,7 +9,7 @@ const repoLog = createLogger('world.repo');
 @injectable()
 export class SupabaseWorldRepo implements WorldRepo {
   async createWorld(data: { name: string; description: string }): Promise<World> {
-    repoLog.info('Creating world', { name: data.name });
+    repoLog.info('Creating world', { name: data.name, descLen: data.description.length });
     const { data: row, error } = await supabase
       .from('worlds')
       .insert(data)

@@ -9,13 +9,33 @@ const supabaseUrl: string | undefined = isBrowser
   ? (import.meta as any).env.VITE_SUPABASE_URL
   : process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 
-const supabaseAnonKey: string | undefined = isBrowser
+/**
+ * Resolve the most privileged Supabase key available **for server-side usage**.
+ *
+ * Priority order (server only):
+ * 1. `SUPABASE_SERVICE_ROLE_KEY` – bypasses RLS, suitable for trusted backend only
+ * 2. `SUPABASE_ANON_KEY`        – falls back to anon role when service key absent
+ *
+ * For browser builds we **always** use the vite-exposed anon key because shipping the
+ * service role key to the client would defeat the whole purpose of RLS.
+ */
+const supabaseKey: string | undefined = isBrowser
   ? (import.meta as any).env.VITE_SUPABASE_ANON_KEY
-  : process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+  : process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_ANON_KEY
 
-if (!supabaseUrl || !supabaseAnonKey) {
+if (!supabaseUrl || !supabaseKey) {
   logger.error('[Supabase] Missing credentials – make sure the appropriate ' +
                 'environment variables are set in your .env and/or Vite config');
 }
 
-export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
+// ---------------------------------------------------------------------------
+// Supabase client – server gets service key (if available), browser gets anon.
+// IMPORTANT: Do **NOT** log the key value; we only log which role is in use.
+// ---------------------------------------------------------------------------
+
+const roleInUse = isBrowser ? 'anon (browser)' : (process.env.SUPABASE_SERVICE_ROLE_KEY ? 'service' : 'anon');
+
+logger.debug(`[Supabase] Initialising client with ${roleInUse} key`);
+
+export const supabase = createClient(supabaseUrl || '', supabaseKey || '');
