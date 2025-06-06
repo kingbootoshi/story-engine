@@ -7,8 +7,15 @@ import { WorldsList } from './pages/WorldsList';
 import { WorldDetail } from './pages/WorldDetail';
 
 function PrivateRoute() {
-  const { user } = useAuth();
+  const { user, isInitialized } = useAuth();
   
+  // Until the auth context has finished resolving persisted session data we
+  // render *nothing*. This prevents a flash-of-redirect to the login page when
+  // the user actually still has a valid session stored in `localStorage`.
+  if (!isInitialized) {
+    return null; // Optionally, replace with a loading spinner component.
+  }
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }

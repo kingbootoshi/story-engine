@@ -1,15 +1,5 @@
 import { z } from 'zod';
-
-/**
- * A date string that can be parsed by `Date.parse()`.
- * Accepts any RFC-3339 / ISO-8601 subset (e.g. `+00` or `Z` timezone, with or without
- * milliseconds). We can't rely on Zod's built-in `datetime()` because Supabase uses
- * the `+00` suffix which fails that regex. By using a `refine` we keep strictness
- * while accommodating the actual payload produced by Postgres.
- */
-export const ISODateString = z.string().refine((val) => !Number.isNaN(Date.parse(val)), {
-  message: 'Invalid ISO-date string'
-});
+import { ISODateString } from '../../../shared/utils/validation';
 
 // World entity
 export const World = z.object({
@@ -18,7 +8,7 @@ export const World = z.object({
   description: z.string(),
   current_arc_id: z.string().uuid().nullable().optional(),
   created_at: ISODateString,
-  updated_at: ISODateString.optional()
+  updated_at: ISODateString.nullable().optional()
 });
 export type World = z.infer<typeof World>;
 

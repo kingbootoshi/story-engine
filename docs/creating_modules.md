@@ -51,18 +51,45 @@ Duplicate this structure for *character*, *location*, *faction*, etc.
 
 2. **Model the domain** (`domain/schema.ts`)
 
+   **IMPORTANT: Use shared validation helpers for consistency and compatibility.**
+
    ```ts
+   import { z } from 'zod';
+   import { ISODateString, UUIDString, NonEmptyString } from '../../../shared/utils/validation';
+
    export const Character = z.object({
-     id: z.string().uuid(),
-     world_id: z.string().uuid(),
-     name: z.string(),
+     id: UUIDString,
+     world_id: UUIDString,
+     name: NonEmptyString,
      role: z.string(),
-     location_id: z.string().uuid().nullable(),
+     location_id: UUIDString.nullable(),
      personality: z.array(z.string()),
-     created_at: z.string().datetime()
+     created_at: ISODateString,
+     updated_at: ISODateString.optional()
    });
    export type Character = z.infer<typeof Character>;
-   export const CreateCharacter = Character.omit({ id:true, created_at:true });
+   export const CreateCharacter = Character.omit({ 
+     id: true, 
+     created_at: true, 
+     updated_at: true 
+   });
+   ```
+
+   **Why use `ISODateString` instead of `z.string().datetime()`?**
+   
+   Zod's built-in `datetime()` validator uses a strict RFC-3339 regex that **rejects** the 
+   `+00` timezone format (without `:00`) that Postgres/Supabase commonly emits. This causes 
+   "Output validation failed" errors when tRPC procedures return database entities.
+   
+   Our `ISODateString` accepts all real-world ISO formats while maintaining type safety:
+   ```ts
+   // ✅ All of these pass validation:
+   "2025-06-06T12:38:07.387093+00"  // Postgres default
+   "2025-06-06T12:38:07.387Z"       // ISO standard  
+   "2025-06-06T12:38:07+00:00"      // RFC-3339 compliant
+   
+   // ❌ Invalid dates still fail:
+   "not-a-date"                     // Error: Invalid ISO date string
    ```
 
 3. **Declare ports** (`domain/ports.ts`)
@@ -255,9 +282,30 @@ For complete frontend integration details, see [tRPC Integration Guide](./TRPC.m
 
 ---
 
-## 8 Quality Checklist Before Commit
+## 8 Shared Validation Utilities Reference
 
-* All entities & DTOs validated by Zod.
+Always import validation helpers from `src/shared/utils/validation.ts`:
+
+| Validator | Use Case | Example |
+|-----------|----------|---------|
+| `ISODateString` | Database timestamps | `created_at: ISODateString` |
+| `UUIDString` | Entity IDs, foreign keys | `id: UUIDString` |
+| `NonEmptyString` | Required text fields | `name: NonEmptyString` |
+| `PositiveInt` | Counts, indexes, limits | `beat_index: PositiveInt` |
+| `OptionalNullableString` | Optional DB text fields | `summary: OptionalNullableString` |
+
+**Why centralized validation?**
+- **Consistency** across all modules (same error messages, same edge case handling)
+- **Compatibility** with real-world database formats (especially timestamps)
+- **Maintainability** – fix validation logic once, applies everywhere
+- **Type safety** – prevents "Output validation failed" tRPC errors
+
+---
+
+## 9 Quality Checklist Before Commit
+
+* All entities & DTOs validated by Zod using **shared validation utilities**.
+* Database timestamps use `ISODateString`, UUIDs use `UUIDString`.
 * No direct Supabase calls outside `*Repo`.
 * No Express logic outside the router bridge.
 * All cross-module coordination via `eventBus`; no service imports.
