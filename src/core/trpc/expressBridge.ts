@@ -195,10 +195,10 @@ export function mountTrpcAsRest<TRouter extends AnyRouter>(
             input: undefined,
             ctx,
             shape: {
-              code: error.code,
+              code: error.code as any,
               message: error.message,
               data: {
-                code: error.code,
+                code: error.code as any,
                 httpStatus: 500,
                 path: procedureName,
               },

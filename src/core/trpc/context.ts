@@ -30,9 +30,35 @@ export function createContext(req: Request, _res: Response): TrpcCtx {
     }
   });
   
+  // ---------------------------------------------------------------------
+  // Token extraction – expects standard `Bearer <jwt>` header from Supabase
+  // We purposely avoid *verifying* the signature here to keep the context
+  // creation synchronous. Full verification (and authz checks) happen in
+  // `authedProcedure` middleware where async calls are allowed.
+  // ---------------------------------------------------------------------
+
+  const authHeader = req.headers['authorization'];
+  let user: { id: string } | undefined;
+
+  if (typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    const [, payload] = token.split('.');
+    if (payload) {
+      try {
+        const decoded = Buffer.from(payload.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+        const json = JSON.parse(decoded.toString('utf8'));
+        if (json.sub) {
+          user = { id: json.sub };
+        }
+      } catch (err) {
+        logger.warn('Failed to parse JWT payload', { err: (err as Error).message });
+      }
+    }
+  }
+
   return {
     logger,
     reqId,
-    // user will be populated from auth middleware later
+    user,
   };
 }

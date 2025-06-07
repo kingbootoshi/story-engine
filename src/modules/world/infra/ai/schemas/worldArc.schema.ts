@@ -13,6 +13,7 @@ export const WorldArcAnchorSchema = z.object({
 
 export const GenerateWorldArcAnchorsSchema = z.object({
   anchors: z.array(WorldArcAnchorSchema).length(3),
+  arcDetailedDescription: z.string(),
 });
 
 export type WorldArcAnchorsPayload = z.infer<typeof GenerateWorldArcAnchorsSchema>; 

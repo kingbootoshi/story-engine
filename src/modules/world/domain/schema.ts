@@ -4,6 +4,8 @@ import { ISODateString } from '../../../shared/utils/validation';
 // World entity
 export const World = z.object({
   id: z.string().uuid(),
+  /** Owner of this world – Supabase auth user id */
+  user_id: z.string().uuid(),
   name: z.string().min(1),
   description: z.string(),
   current_arc_id: z.string().uuid().nullable().optional(),
@@ -21,6 +23,8 @@ export const WorldArc = z.object({
   story_idea: z.string(),
   status: z.enum(['active', 'completed']),
   summary: z.string().nullable().optional(),
+  detailed_description: z.string().default('').optional(),
+  current_beat_id: z.string().uuid().nullable().optional(),
   created_at: ISODateString,
   completed_at: ISODateString.nullable().optional()
 });

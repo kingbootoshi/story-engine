@@ -1,23 +1,23 @@
 import { z } from 'zod';
 import { container } from 'tsyringe';
-import { router, publicProcedure } from '../../../../core/trpc/init';
+import { router, publicProcedure, authedProcedure } from '../../../../core/trpc/init';
 import { WorldService } from '../../application/WorldService';
 import * as S from '../../domain/schema';
 
 export const worldRouter = router({
-  list: publicProcedure
+  list: authedProcedure
     .output(S.World.array())
-    .query(async () => {
+    .query(async ({ ctx }) => {
       const worldService = container.resolve(WorldService);
-      return worldService.listWorlds();
+      return worldService.listWorlds(ctx.user.id);
     }),
 
-  create: publicProcedure
+  create: authedProcedure
     .input(S.CreateWorld)
     .output(S.World)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const worldService = container.resolve(WorldService);
-      return worldService.createWorld(input.name, input.description);
+      return worldService.createWorld(input.name, input.description, ctx.user.id);
     }),
 
   get: publicProcedure

@@ -45,16 +45,32 @@ export function WorldDetail() {
   const fetchWorldDetails = async () => {
     try {
       const worldState = await trpc.world.getWorldState.query(worldId!);
+      console.debug('[WorldDetail] Loaded world state', {
+        worldId: worldState.world.id,
+        arcId: worldState.currentArc?.id,
+        currentBeatId: worldState.currentArc?.current_beat_id,
+        beatCount: worldState.currentBeats.length
+      });
+      
       setWorld(worldState.world);
       setCurrentArc(worldState.currentArc);
 
       setBeats(worldState.currentBeats);
 
-      // Ask backend for the authoritative current beat
-      const currentBeat = await trpc.world.getCurrentBeat.query(worldId!);
-      if (currentBeat) {
-        setSelectedBeat(currentBeat);
-        await fetchBeatEvents(currentBeat.id);
+      // Find the current beat using the arc's current_beat_id
+      if (worldState.currentArc?.current_beat_id) {
+        const currentBeat = worldState.currentBeats.find(
+          beat => beat.id === worldState.currentArc!.current_beat_id
+        );
+        if (currentBeat) {
+          console.debug('[WorldDetail] Found current beat', {
+            beatId: currentBeat.id,
+            beatIndex: currentBeat.beat_index,
+            beatName: currentBeat.beat_name
+          });
+          setSelectedBeat(currentBeat);
+          await fetchBeatEvents(currentBeat.id);
+        }
       }
     } catch (err) {
       console.error('[WorldDetail] Failed to fetch world:', err);
@@ -133,8 +149,7 @@ export function WorldDetail() {
     try {
       const result = await trpc.world.progressArc.mutate({
         worldId: world.id,
-        arcId: currentArc.id,
-        recentEvents: JSON.stringify(beatEvents.slice(0, 5))
+        arcId: currentArc.id
       });
 
       console.debug('[WorldDetail] Arc progressed:', result);
@@ -223,6 +238,21 @@ export function WorldDetail() {
             }}>
               <h3 style={{ marginTop: 0 }}>{currentArc.story_name}</h3>
               <p>{currentArc.story_idea}</p>
+              {currentArc.detailed_description && (
+                <div style={{ 
+                  marginTop: '1rem', 
+                  padding: '1rem',
+                  backgroundColor: '#e8f5e9',
+                  borderRadius: '4px',
+                  fontSize: '0.95rem',
+                  lineHeight: '1.6'
+                }}>
+                  <strong>Arc Overview:</strong>
+                  <p style={{ marginTop: '0.5rem', marginBottom: 0 }}>
+                    {currentArc.detailed_description}
+                  </p>
+                </div>
+              )}
               <div style={{ marginTop: '1rem' }}>
                 <div style={{ marginBottom: '0.5rem' }}>
                   Arc #{currentArc.arc_number} — Status: {currentArc.status}

@@ -76,7 +76,8 @@ describe('WorldService.progressArc', () => {
     testArc = await worldRepo.createArc(
       testWorld.id,
       'Test Arc',
-      'An arc for testing progression'
+      'An arc for testing progression',
+      'This is a detailed description of the test arc that provides context for beat generation.'
     );
 
     // Create anchor beats (at indices 0, 7, 14)
@@ -239,7 +240,61 @@ describe('WorldService.progressArc', () => {
     // Assert
     expect(worldAI.generateBeat).toHaveBeenCalledWith(
       expect.objectContaining({
-        recentEvents: expect.stringContaining('[major] A major earthquake'),
+        recentEvents: expect.stringContaining('[MAJOR'),
+      })
+    );
+  });
+
+  it('should update arc current_beat_id when creating beat', async () => {
+    // Arrange
+    const mockBeatDTO: BeatDTO = {
+      beatName: 'Dynamic Beat 1',
+      description: 'First dynamic beat',
+      worldDirectives: ['New directive'],
+      emergingConflicts: ['Conflict 1'],
+      environmentalChanges: null,
+    };
+    (worldAI.generateBeat as any).mockResolvedValueOnce(mockBeatDTO);
+
+    // Act
+    const result = await worldService.progressArc({
+      worldId: testWorld.id,
+      arcId: testArc.id,
+    });
+
+    // Assert beat was created
+    expect(result).toBeDefined();
+    
+    // Check that arc's current_beat_id was updated
+    const arc = await worldRepo.getArc(testArc.id);
+    expect(arc?.current_beat_id).toBe(result!.id);
+    
+    // Verify getCurrentBeat returns the new beat
+    const currentBeat = await worldRepo.getCurrentBeat(testArc.id);
+    expect(currentBeat?.id).toBe(result!.id);
+  });
+
+  it('should pass arc detailed description to AI', async () => {
+    // Arrange
+    const mockBeatDTO: BeatDTO = {
+      beatName: 'Contextual Beat',
+      description: 'Beat with arc context',
+      worldDirectives: [],
+      emergingConflicts: [],
+      environmentalChanges: null,
+    };
+    (worldAI.generateBeat as any).mockResolvedValueOnce(mockBeatDTO);
+
+    // Act
+    await worldService.progressArc({
+      worldId: testWorld.id,
+      arcId: testArc.id,
+    });
+
+    // Assert
+    expect(worldAI.generateBeat).toHaveBeenCalledWith(
+      expect.objectContaining({
+        arcDetailedDescription: 'This is a detailed description of the test arc that provides context for beat generation.',
       })
     );
   });
@@ -248,7 +303,7 @@ describe('WorldService.progressArc', () => {
 
   it('should handle missing next anchor gracefully', async () => {
     // Arrange - Remove the next anchor beat
-    await worldRepo.clear();
+    worldRepo.clear();
     testWorld = await worldRepo.createWorld({
       name: 'Test World',
       description: 'Test description',

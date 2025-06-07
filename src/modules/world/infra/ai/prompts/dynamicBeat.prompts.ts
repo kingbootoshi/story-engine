@@ -23,6 +23,7 @@ export function buildDynamicBeatUserPrompt(
   previousBeatsSummary: string,
   nextAnchorSummary: string,
   recentEvents: string,
+  arcDetailedDescription?: string,
 ): string {
   return `Generate the NEXT BEAT (Beat #${currentBeatIndex}) for this world's ongoing story:
 
@@ -35,6 +36,7 @@ ${previousBeatsSummary}
 
 ## NEXT ANCHOR POINT:
 ${nextAnchorSummary}
+${arcDetailedDescription ? `\n## ARC OVERVIEW:\n${arcDetailedDescription}` : ''}
 
 ## RECENT WORLD EVENTS:
 ${recentEvents || 'No specific events recorded.'}

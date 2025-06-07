@@ -11,6 +11,7 @@ export interface AnchorContext {
 export interface BeatContext {
   worldName: string;
   worldDescription: string;
+  arcDetailedDescription?: string;
   currentBeatIndex: number;
   previousBeats: WorldBeat[];
   nextAnchor: WorldBeat;
@@ -41,7 +42,7 @@ export interface BeatDTO {
 }
 
 export interface WorldAI {
-  generateAnchors(ctx: AnchorContext): Promise<AnchorDTO[]>;
+  generateAnchors(ctx: AnchorContext): Promise<{ anchors: AnchorDTO[]; arcDetailedDescription: string }>;
   generateBeat(ctx: BeatContext): Promise<BeatDTO>;
   summarizeArc(ctx: SummaryContext): Promise<string>;
 }
@@ -49,13 +50,13 @@ export interface WorldAI {
 // Repository port interfaces
 export interface WorldRepo {
   // World operations
-  createWorld(data: { name: string; description: string }): Promise<World>;
+  createWorld(data: { name: string; description: string; user_id?: string }): Promise<World>;
   getWorld(id: string): Promise<World | null>;
-  listWorlds(): Promise<World[]>;
+  listWorlds(userId?: string): Promise<World[]>;
   updateWorld(id: string, data: Partial<World>): Promise<void>;
   
   // Arc operations
-  createArc(worldId: string, storyName: string, storyIdea: string): Promise<WorldArc>;
+  createArc(worldId: string, storyName: string, storyIdea: string, detailedDescription?: string): Promise<WorldArc>;
   getArc(arcId: string): Promise<WorldArc | null>;
   getWorldArcs(worldId: string): Promise<WorldArc[]>;
   completeArc(arcId: string, summary: string): Promise<void>;
@@ -73,9 +74,14 @@ export interface WorldRepo {
     }
   ): Promise<WorldBeat>;
   getArcBeats(arcId: string): Promise<WorldBeat[]>;
+  getCurrentBeat(arcId: string): Promise<WorldBeat | null>;
+  getBeat(beatId: string): Promise<WorldBeat | null>;
   
   // Event operations
   createEvent(event: CreateEvent): Promise<WorldEvent>;
   getRecentEvents(worldId: string, limit?: number): Promise<WorldEvent[]>;
   getBeatEvents(beatId: string): Promise<WorldEvent[]>;
+  
+  // Helper operations
+  getArcByWorld(worldId: string): Promise<WorldArc | null>;
 }

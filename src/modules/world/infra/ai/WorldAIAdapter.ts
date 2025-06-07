@@ -56,9 +56,13 @@ const WORLD_ARC_ANCHORS_SCHEMA = {
           },
           minItems: 3,
           maxItems: 3
+        },
+        arcDetailedDescription: {
+          type: "string",
+          description: "A detailed 2-3 paragraph description of the arc's overall narrative theme and trajectory"
         }
       },
-      required: ["anchors"],
+      required: ["anchors", "arcDetailedDescription"],
       additionalProperties: false
     },
     strict: true
@@ -148,7 +152,7 @@ export class WorldAIAdapter implements WorldAI {
   private readonly MODEL = 'anthropic/claude-sonnet-4';
   private readonly MODULE = 'world';
 
-  async generateAnchors(ctx: AnchorContext): Promise<AnchorDTO[]> {
+  async generateAnchors(ctx: AnchorContext): Promise<{ anchors: AnchorDTO[]; arcDetailedDescription: string }> {
     log.debug('AI call', { promptId: 'generate_world_arc_anchors', model: this.MODEL });
     
     const completion = await chat({
@@ -177,9 +181,16 @@ export class WorldAIAdapter implements WorldAI {
         usage: completion.usage 
       } 
     });
-    log.info('Generated anchors', { worldName: ctx.worldName, anchorCount: args.anchors.length });
+    log.info('Generated anchors', { 
+      worldName: ctx.worldName, 
+      anchorCount: args.anchors.length,
+      descriptionLength: args.arcDetailedDescription?.length || 0 
+    });
     
-    return args.anchors;
+    return {
+      anchors: args.anchors,
+      arcDetailedDescription: args.arcDetailedDescription || ''
+    };
   }
 
   async generateBeat(ctx: BeatContext): Promise<BeatDTO> {
@@ -201,7 +212,8 @@ export class WorldAIAdapter implements WorldAI {
           ctx.currentBeatIndex,
           previousBeatsSummary,
           nextAnchorSummary,
-          ctx.recentEvents
+          ctx.recentEvents,
+          ctx.arcDetailedDescription
         )}
       ],
       tools: [DYNAMIC_WORLD_BEAT_SCHEMA],

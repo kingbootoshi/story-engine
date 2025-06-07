@@ -8,7 +8,7 @@ const repoLog = createLogger('world.repo');
 
 @injectable()
 export class SupabaseWorldRepo implements WorldRepo {
-  async createWorld(data: { name: string; description: string }): Promise<World> {
+  async createWorld(data: { name: string; description: string; user_id?: string }): Promise<World> {
     repoLog.info('Creating world', { name: data.name, descLen: data.description.length });
     const { data: row, error } = await supabase
       .from('worlds')
@@ -52,11 +52,14 @@ export class SupabaseWorldRepo implements WorldRepo {
     }
   }
 
-  async listWorlds(): Promise<World[]> {
-    const { data, error } = await supabase
-      .from('worlds')
-      .select('*')
-      .order('created_at', { ascending: false });
+  async listWorlds(userId?: string): Promise<World[]> {
+    let query = supabase.from('worlds').select('*').order('created_at', { ascending: false });
+
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+
+    const { data, error } = await query;
       
     if (error) {
       repoLog.error('Failed to list worlds', error);
@@ -66,7 +69,7 @@ export class SupabaseWorldRepo implements WorldRepo {
     return data || [];
   }
 
-  async createArc(worldId: string, storyName: string, storyIdea: string): Promise<WorldArc> {
+  async createArc(worldId: string, storyName: string, storyIdea: string, detailedDescription?: string): Promise<WorldArc> {
     repoLog.info('Creating arc', { worldId, storyName });
     
     const { data: maxArc } = await supabase
@@ -86,7 +89,8 @@ export class SupabaseWorldRepo implements WorldRepo {
         arc_number: arcNumber,
         story_name: storyName,
         story_idea: storyIdea,
-        status: 'active'
+        status: 'active',
+        detailed_description: detailedDescription || ''
       })
       .select()
       .single();
@@ -157,7 +161,19 @@ export class SupabaseWorldRepo implements WorldRepo {
       emergent_storylines: string[];
     }
   ): Promise<WorldBeat> {
-    repoLog.info('insert beat', { beatId: arcId, index: beatIndex });
+    // ---------------------------------------------------------------------
+    // Insert a new beat record for the given arc.  By contract we must only
+    // update `world_arcs.current_beat_id` when we are (a) inserting the very
+    // first *anchor* (index 0) or (b) inserting ANY *dynamic* beat.  All
+    // subsequent anchor inserts (index 7, 14, ...) MUST **NOT** overwrite the
+    // pointer, otherwise story progression would start from the wrong place.
+    // ---------------------------------------------------------------------
+
+    repoLog.info('insert beat', {
+      arcId,
+      beatIndex,
+      beatType,
+    });
     
     const beatData = {
       arc_id: arcId,
@@ -178,6 +194,35 @@ export class SupabaseWorldRepo implements WorldRepo {
     if (error) {
       repoLog.error('Failed to create beat', error, { arcId, beatIndex });
       throw error;
+    }
+    
+    // Decide whether we should shift the arc pointer according to the
+    // business rule defined in 2025-06-07 contract amendment.
+    const shouldSetCurrent =
+      beatType === 'dynamic' || (beatType === 'anchor' && beatIndex === 0);
+
+    repoLog.debug('Arc pointer condition', {
+      arcId,
+      beatIndex,
+      beatType,
+      shouldSetCurrent,
+    });
+
+    if (shouldSetCurrent) {
+      const { error: updateError } = await supabase
+        .from('world_arcs')
+        .update({ current_beat_id: beat.id })
+        .eq('id', arcId);
+
+      if (updateError) {
+        repoLog.error('Failed to update arc current_beat_id', updateError, {
+          arcId,
+          beatId: beat.id,
+        });
+        throw updateError;
+      }
+
+      repoLog.debug('Arc pointer updated', { arcId, beatId: beat.id });
     }
     
     repoLog.success('Beat created', { beatId: beat.id, beatIndex });
@@ -248,5 +293,70 @@ export class SupabaseWorldRepo implements WorldRepo {
     }
 
     return data || [];
+  }
+
+  async getCurrentBeat(arcId: string): Promise<WorldBeat | null> {
+    // First get the arc to find current_beat_id
+    const { data: arc, error: arcError } = await supabase
+      .from('world_arcs')
+      .select('current_beat_id')
+      .eq('id', arcId)
+      .single();
+      
+    if (arcError) {
+      if (arcError.code === 'PGRST116') return null;
+      repoLog.error('Failed to get arc for current beat', arcError, { arcId });
+      throw arcError;
+    }
+    
+    if (!arc?.current_beat_id) return null;
+    
+    // Then get the beat
+    const { data: beat, error: beatError } = await supabase
+      .from('world_beats')
+      .select('*')
+      .eq('id', arc.current_beat_id)
+      .single();
+      
+    if (beatError) {
+      if (beatError.code === 'PGRST116') return null;
+      repoLog.error('Failed to get current beat', beatError, { arcId, beatId: arc.current_beat_id });
+      throw beatError;
+    }
+    
+    return beat;
+  }
+
+  async getBeat(beatId: string): Promise<WorldBeat | null> {
+    const { data, error } = await supabase
+      .from('world_beats')
+      .select('*')
+      .eq('id', beatId)
+      .single();
+      
+    if (error && error.code !== 'PGRST116') {
+      repoLog.error('Failed to get beat', error, { beatId });
+      throw error;
+    }
+    
+    return data;
+  }
+
+  async getArcByWorld(worldId: string): Promise<WorldArc | null> {
+    const { data, error } = await supabase
+      .from('world_arcs')
+      .select('*')
+      .eq('world_id', worldId)
+      .eq('status', 'active')
+      .order('arc_number', { ascending: false })
+      .limit(1)
+      .single();
+      
+    if (error && error.code !== 'PGRST116') {
+      repoLog.error('Failed to get active arc for world', error, { worldId });
+      throw error;
+    }
+    
+    return data;
   }
 }

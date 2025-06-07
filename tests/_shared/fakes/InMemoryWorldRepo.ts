@@ -8,10 +8,11 @@ export class InMemoryWorldRepo implements WorldRepo {
   private beats = new Map<string, WorldBeat>();
   private events = new Map<string, WorldEvent>();
 
-  async createWorld(data: { name: string; description: string }): Promise<World> {
+  async createWorld(data: { name: string; description: string; user_id?: string }): Promise<World> {
     const id = randomUUID();
     const world: World = {
       id,
+      user_id: data.user_id ?? randomUUID(),
       name: data.name,
       description: data.description,
       created_at: new Date().toISOString(),
@@ -27,8 +28,9 @@ export class InMemoryWorldRepo implements WorldRepo {
     return this.worlds.get(id) || null;
   }
 
-  async listWorlds(): Promise<World[]> {
-    return Array.from(this.worlds.values());
+  async listWorlds(userId?: string): Promise<World[]> {
+    const allWorlds = Array.from(this.worlds.values());
+    return userId ? allWorlds.filter(w => w.user_id === userId) : allWorlds;
   }
 
   async updateWorld(id: string, data: Partial<World>): Promise<void> {
@@ -37,7 +39,7 @@ export class InMemoryWorldRepo implements WorldRepo {
     Object.assign(world, data);
   }
 
-  async createArc(worldId: string, storyName: string, storyIdea: string): Promise<WorldArc> {
+  async createArc(worldId: string, storyName: string, storyIdea: string, detailedDescription?: string): Promise<WorldArc> {
     const id = randomUUID();
     const arc: WorldArc = {
       id,
@@ -49,6 +51,8 @@ export class InMemoryWorldRepo implements WorldRepo {
       created_at: new Date().toISOString(),
       completed_at: null,
       summary: null,
+      detailed_description: detailedDescription || '',
+      current_beat_id: null,
     };
     this.arcs.set(id, arc);
     return arc;
@@ -99,6 +103,23 @@ export class InMemoryWorldRepo implements WorldRepo {
       created_at: new Date().toISOString(),
     };
     this.beats.set(id, beat);
+
+    // -------------------------------------------------------------------
+    // Pointer update follows the same business rule as the Supabase repo:
+    //   • first anchor (index 0) → set pointer
+    //   • subsequent anchors      → leave pointer untouched
+    //   • dynamic beats           → always advance pointer
+    // -------------------------------------------------------------------
+
+    const arc = this.arcs.get(arcId);
+
+    const shouldSetCurrent =
+      beatType === 'dynamic' || (beatType === 'anchor' && beatIndex === 0);
+
+    if (arc && shouldSetCurrent) {
+      arc.current_beat_id = id;
+    }
+
     return beat;
   }
 
@@ -124,6 +145,29 @@ export class InMemoryWorldRepo implements WorldRepo {
       .filter(event => event.world_id === worldId)
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, limit);
+  }
+
+  async getBeatEvents(beatId: string): Promise<WorldEvent[]> {
+    return Array.from(this.events.values())
+      .filter(event => event.beat_id === beatId)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }
+
+  async getCurrentBeat(arcId: string): Promise<WorldBeat | null> {
+    const arc = this.arcs.get(arcId);
+    if (!arc?.current_beat_id) return null;
+    return this.beats.get(arc.current_beat_id) || null;
+  }
+
+  async getBeat(beatId: string): Promise<WorldBeat | null> {
+    return this.beats.get(beatId) || null;
+  }
+
+  async getArcByWorld(worldId: string): Promise<WorldArc | null> {
+    const arcs = Array.from(this.arcs.values())
+      .filter(arc => arc.world_id === worldId && arc.status === 'active')
+      .sort((a, b) => b.arc_number - a.arc_number);
+    return arcs[0] || null;
   }
 
   // Test helper methods

@@ -6,6 +6,11 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Worlds table: represents different game worlds or story universes
 CREATE TABLE worlds (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  /*
+   * Owner of this world – links to Supabase auth.users so that Row-Level
+   * Security policies can restrict access to the rightful tenant.
+   */
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
   description TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -26,6 +31,8 @@ CREATE TABLE world_arcs (
   completed_at TIMESTAMP WITH TIME ZONE,
   summary TEXT,
   metadata JSONB DEFAULT '{}'::jsonb,
+  current_beat_id UUID,
+  detailed_description TEXT,
   UNIQUE(world_id, arc_number)
 );
 
@@ -61,6 +68,7 @@ CREATE TABLE world_events (
 -- Indexes for performance
 CREATE INDEX idx_world_arcs_world_id ON world_arcs(world_id);
 CREATE INDEX idx_world_arcs_status ON world_arcs(status);
+CREATE INDEX idx_world_arcs_current_beat_id ON world_arcs(current_beat_id);
 CREATE INDEX idx_world_beats_arc_id ON world_beats(arc_id);
 CREATE INDEX idx_world_beats_beat_index ON world_beats(beat_index);
 CREATE INDEX idx_world_events_world_id ON world_events(world_id);
@@ -71,6 +79,11 @@ CREATE INDEX idx_world_events_impact_level ON world_events(impact_level);
 ALTER TABLE worlds
 ADD CONSTRAINT fk_current_arc
 FOREIGN KEY (current_arc_id) REFERENCES world_arcs(id) ON DELETE SET NULL;
+
+-- Add foreign key constraint for current_beat_id after world_beats table is created
+ALTER TABLE world_arcs
+ADD CONSTRAINT fk_current_beat
+FOREIGN KEY (current_beat_id) REFERENCES world_beats(id) ON DELETE SET NULL;
 
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()

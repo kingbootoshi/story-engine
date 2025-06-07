@@ -37,5 +37,7 @@ ${previousArcs.length ? `\nIMPORTANT WORLD HISTORY:\nThis world has experienced 
 ## STORY INPUT SEED:
 ${storyIdea ? `Story idea: <story_idea>${storyIdea}</story_idea>` : "Based on the world's current state, generate an appropriate and engaging story arc."}
 
-Generate exactly 3 anchor beats at indices 0, 7, and 14. Each beat should include all required fields.`;
+Generate exactly 3 anchor beats at indices 0, 7, and 14. Each beat should include all required fields.
+
+Also provide an "arcDetailedDescription" field that expands upon the arc's overall narrative theme and trajectory in 2-3 paragraphs, describing the world's transformation journey.`;
 } 

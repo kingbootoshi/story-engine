@@ -24,7 +24,8 @@
       "Bash(pnpm add:*)",
       "Bash(rg:*)",
       "Bash([ -f .env ])",
-      "Bash(npm run typecheck:*)"
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run lint:*)"
     ],
     "deny": []
   }

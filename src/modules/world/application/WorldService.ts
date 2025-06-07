@@ -5,6 +5,8 @@ import type { WorldRepo, WorldAI } from '../domain/ports';
 import type { World, WorldArc, WorldBeat, WorldEvent } from '../domain/schema';
 import type * as Events from '../domain/events';
 import type { WorldArcCreationParams, BeatProgressionParams } from './types';
+import { randomUUID } from 'crypto';
+import { formatEvent } from '../../../shared/utils/formatEvent';
 
 const logger = createLogger('world.service');
 
@@ -15,9 +17,10 @@ export class WorldService {
     @inject('WorldAI') private ai: WorldAI,
   ) {}
 
-  async createWorld(name: string, description: string): Promise<World> {
-    logger.info('Creating world', { name, descLen: description.length });
-    const world = await this.repo.createWorld({ name, description });
+  async createWorld(name: string, description: string, ownerId?: string): Promise<World> {
+    const resolvedOwnerId = ownerId ?? randomUUID();
+    logger.info('Creating world', { name, descLen: description.length, ownerId: resolvedOwnerId });
+    const world = await this.repo.createWorld({ name, description, user_id: resolvedOwnerId });
     
     eventBus.emit<Events.WorldCreatedEvent>('world.created', { 
       worldId: world.id, 
@@ -32,8 +35,8 @@ export class WorldService {
     return await this.repo.getWorld(id);
   }
 
-  async listWorlds(): Promise<World[]> {
-    return await this.repo.listWorlds();
+  async listWorlds(ownerId?: string): Promise<World[]> {
+    return await this.repo.listWorlds(ownerId);
   }
 
   async createNewArc(params: WorldArcCreationParams): Promise<{ arc: WorldArc; anchors: WorldBeat[] }> {
@@ -50,41 +53,43 @@ export class WorldService {
         arcCount: previousArcs.length 
       });
       
-      const anchors = await this.ai.generateAnchors({
+      const result = await this.ai.generateAnchors({
         worldName: params.worldName,
         worldDescription: params.worldDescription,
         storyIdea: params.storyIdea,
         previousArcs
       });
 
-      if (!anchors || anchors.length !== 3) {
-        logger.error('Invalid anchor points generated', null, { anchors });
+      if (!result.anchors || result.anchors.length !== 3) {
+        logger.error('Invalid anchor points generated', null, { anchors: result.anchors });
         throw new Error('Failed to generate valid anchor points');
       }
       
       logger.info('Successfully generated anchor points', {
-        anchorNames: anchors.map(a => a.beatName)
+        anchorNames: result.anchors.map(a => a.beatName),
+        descriptionLength: result.arcDetailedDescription?.length || 0
       });
 
       const arc = await this.repo.createArc(
         params.worldId,
-        anchors[0].beatName || 'Untitled World Arc',
-        params.storyIdea || 'Auto-generated world story arc'
+        result.anchors[0].beatName || 'Untitled World Arc',
+        params.storyIdea || 'Auto-generated world story arc',
+        result.arcDetailedDescription
       );
 
       const anchorIndices = [0, 7, 14];
       const savedAnchors: WorldBeat[] = [];
 
-      for (let i = 0; i < anchors.length; i++) {
+      for (let i = 0; i < result.anchors.length; i++) {
         const beat = await this.repo.createBeat(
           arc.id,
           anchorIndices[i],
           'anchor',
           {
-            beat_name: anchors[i].beatName,
-            description: anchors[i].description,
-            world_directives: anchors[i].worldDirectives || [],
-            emergent_storylines: anchors[i].emergentStorylines || []
+            beat_name: result.anchors[i].beatName,
+            description: result.anchors[i].description,
+            world_directives: result.anchors[i].worldDirectives || [],
+            emergent_storylines: result.anchors[i].emergentStorylines || []
           }
         );
         savedAnchors.push(beat);
@@ -158,22 +163,25 @@ export class WorldService {
       let recentEventsContext = params.recentEvents || '';
       if (!recentEventsContext) {
         const events = await this.repo.getRecentEvents(params.worldId, 5);
-        recentEventsContext = events
-          .map(e => `[${e.impact_level}] ${e.description}`)
-          .join('\n');
+        recentEventsContext = events.map(formatEvent).join('\n');
       }
 
       const world = await this.repo.getWorld(params.worldId);
       if (!world) throw new Error('World not found');
+      
+      const arc = await this.repo.getArc(params.arcId);
+      if (!arc) throw new Error('Arc not found');
 
       logger.debug('Passing world desc to AI', {
         worldId: params.worldId,
-        descLen: world.description.length
+        descLen: world.description.length,
+        arcDescLen: arc.detailed_description?.length || 0
       });
 
       const dynamicBeat = await this.ai.generateBeat({
         worldName: world.name,
         worldDescription: world.description,
+        arcDetailedDescription: arc.detailed_description,
         currentBeatIndex: nextBeatIndex,
         previousBeats,
         nextAnchor,
@@ -271,19 +279,21 @@ export class WorldService {
    * The caller only needs to provide `world_id`, `event_type`, `impact_level`, `description`.
    */
   async recordWorldEvent(event: Pick<WorldEvent, 'world_id' | 'event_type' | 'impact_level' | 'description'>): Promise<WorldEvent> {
-    const currentBeat = await this.getCurrentBeat(event.world_id);
-    if (!currentBeat) {
+    const arc = await this.repo.getArcByWorld(event.world_id);
+    if (!arc?.current_beat_id) {
       throw new Error('No current beat found – cannot record event');
     }
 
     const savedEvent = await this.repo.createEvent({
       world_id: event.world_id,
-      arc_id: currentBeat.arc_id,
-      beat_id: currentBeat.id,
+      arc_id: arc.id,
+      beat_id: arc.current_beat_id,
       event_type: event.event_type,
       impact_level: event.impact_level,
       description: event.description
     });
+
+    logger.debug('Event attached', { beatId: arc.current_beat_id });
 
     eventBus.emit<Events.WorldEventLoggedEvent>('world.eventLogged', {
       worldId: event.world_id,
@@ -353,15 +363,49 @@ export class WorldService {
   }
 
   /**
-   * Returns the latest beat of the world's active arc or null if none.
+   * Returns the current beat of the world's active arc or null if none.
    */
   async getCurrentBeat(worldId: string): Promise<WorldBeat | null> {
-    const world = await this.repo.getWorld(worldId);
-    if (!world || !world.current_arc_id) return null;
+    const arc = await this.repo.getArcByWorld(worldId);
+    return arc?.current_beat_id
+      ? await this.repo.getBeat(arc.current_beat_id)
+      : null;
+  }
 
-    const beats = await this.repo.getArcBeats(world.current_arc_id);
-    if (beats.length === 0) return null;
+  /**
+   * Handles the `character.died` domain event.
+   *
+   * NOTE: The initial MVP does not adjust world state based on the character's
+   * death – we simply log the event and persist a world event so that future
+   * systems (faction reputation, relationship webs, etc.) can react. When the
+   * character module gains deeper integrations we will revisit this method to
+   * update references or trigger follow-up events.
+   */
+  async handleCharacterDeath(characterId: string, worldId: string): Promise<void> {
+    logger.info('Character death received', { characterId, worldId });
 
-    return beats.sort((a, b) => b.beat_index - a.beat_index)[0];
+    try {
+      await this.repo.createEvent({
+        world_id: worldId,
+        // Character death may happen outside the context of an arc/beat.
+        arc_id: randomUUID(),
+        beat_id: randomUUID(),
+        event_type: 'system_event',
+        impact_level: 'major',
+        description: `Character ${characterId} has died`,
+      });
+
+      eventBus.emit('world.characterDeathRecorded', {
+        worldId,
+        characterId,
+      });
+
+      logger.success('Character death recorded', { characterId, worldId });
+    } catch (error) {
+      logger.error('Failed to record character death', error as Error, {
+        characterId,
+        worldId,
+      });
+    }
   }
 }
