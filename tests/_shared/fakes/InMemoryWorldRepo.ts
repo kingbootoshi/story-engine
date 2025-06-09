@@ -89,11 +89,15 @@ export class InMemoryWorldRepo implements WorldRepo {
       world_directives: string[];
       emergent_storylines: string[];
     }
-  ): Promise<WorldBeat> {
+  ): Promise<WorldBeat & { world_id: string }> {
     const id = randomUUID();
-    const beat: WorldBeat = {
+    const arc = this.arcs.get(arcId);
+    if (!arc) throw new Error(`Arc ${arcId} not found`);
+    
+    const beat: WorldBeat & { world_id: string } = {
       id,
       arc_id: arcId,
+      world_id: arc.world_id,
       beat_index: beatIndex,
       beat_type: beatType,
       beat_name: data.beat_name,
@@ -111,12 +115,10 @@ export class InMemoryWorldRepo implements WorldRepo {
     //   • dynamic beats           → always advance pointer
     // -------------------------------------------------------------------
 
-    const arc = this.arcs.get(arcId);
-
     const shouldSetCurrent =
       beatType === 'dynamic' || (beatType === 'anchor' && beatIndex === 0);
 
-    if (arc && shouldSetCurrent) {
+    if (shouldSetCurrent) {
       arc.current_beat_id = id;
     }
 

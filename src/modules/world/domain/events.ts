@@ -31,3 +31,22 @@ export interface WorldEventLoggedEvent {
   eventType: 'player_action' | 'system_event' | 'world_event';
   impactLevel: 'minor' | 'moderate' | 'major';
 }
+
+export interface WorldEventLogged {
+  v: 1;
+  worldId: string;
+  eventId: string;
+  impact: 'minor' | 'moderate' | 'major' | 'catastrophic';
+  description: string;
+  _hop?: number;
+}
+
+export interface StoryBeatCreated {
+  v: 1;
+  worldId: string;
+  beatId: string;
+  beatIndex: number;
+  directives: string[];
+  emergent: string[];
+  _hop?: number;
+}

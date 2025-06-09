@@ -305,6 +305,47 @@ export class WorldService {
     return savedEvent;
   }
 
+  /**
+   * Log a world event and emit to eventBus.
+   * Replaces recordWorldEvent with new event-driven approach.
+   */
+  async logEvent(data: Pick<WorldEvent, 'world_id' | 'event_type' | 'impact_level' | 'description'>): Promise<WorldEvent> {
+    const arc = await this.repo.getArcByWorld(data.world_id);
+    if (!arc?.current_beat_id) {
+      throw new Error('No current beat found – cannot record event');
+    }
+
+    const savedEvent = await this.repo.createEvent({
+      world_id: data.world_id,
+      arc_id: arc.id,
+      beat_id: arc.current_beat_id,
+      event_type: data.event_type,
+      impact_level: data.impact_level,
+      description: data.description
+    });
+
+    logger.http('[world] event logged', { 
+      eventId: savedEvent.id,
+      worldId: data.world_id,
+      impact: data.impact_level
+    });
+
+    logger.debug('📝 world.event.logged', { 
+      id: savedEvent.id, 
+      impact: data.impact_level 
+    });
+
+    eventBus.emit<Events.WorldEventLogged>('world.event.logged', {
+      v: 1,
+      worldId: data.world_id,
+      eventId: savedEvent.id,
+      impact: data.impact_level as 'minor' | 'moderate' | 'major' | 'catastrophic',
+      description: data.description
+    });
+
+    return savedEvent;
+  }
+
   async getBeatEvents(beatId: string): Promise<WorldEvent[]> {
     return this.repo.getBeatEvents(beatId);
   }

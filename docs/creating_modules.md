@@ -1,10 +1,10 @@
-# Story-Engine Module Authoring Guide
+# Story-Engine Module Authoring Guide
 
 *Create a new API module in minutes—no rewrites later.*
 
 ---
 
-## 1 Foundational Principles
+## 1 Foundational Principles
 
 * **Vertical slice** – keep *domain → application → infra → delivery → manifest* in a single folder.
 * **Ports first** – define interfaces (`*Repo`, `*AI`) before coding adapters.
@@ -15,7 +15,7 @@
 
 ---
 
-## 2 Reference Layout (mirrored by every module)
+## 2 Reference Layout (mirrored by every module)
 
 ```
 modules/
@@ -40,7 +40,7 @@ Duplicate this structure for *character*, *location*, *faction*, etc.
 
 ---
 
-## 3 End-to-End Workflow
+## 3 End-to-End Workflow
 
 1. **Scaffold**
 
@@ -189,25 +189,87 @@ The Express Bridge automatically creates RESTful endpoints—no manual routing n
 
 ---
 
-## 5 Event Bus Usage
+## 5 Event Bus Usage & The Golden Rule
 
-emit:
+### Core Events (Required Reading)
+
+The Story Engine follows the **Golden Rule**: Every action → Event → Beat → Reactions → More Events
+
+All modules must understand two fundamental events:
+
+#### 1. Listening for Story Beats
+
+```ts
+// In your manifest.ts or service constructor
+import type { StoryBeatCreated } from '../world/domain/events';
+
+eventBus.on<StoryBeatCreated>('world.beat.created', (event) => {
+  const { worldId, beatId, directives, emergent } = event.payload;
+  
+  // React to world directives
+  directives.forEach(directive => {
+    if (directive.includes('your-module-keyword')) {
+      // Take appropriate action
+    }
+  });
+  
+  // Consider emergent storylines
+  emergent.forEach(storyline => {
+    // Spawn new content, adjust behaviors, etc.
+  });
+});
+```
+
+#### 2. Emitting World Events
+
+When your module does something significant, emit a `world.event.logged`:
+
+```ts
+import type { WorldEventLogged } from '../world/domain/events';
+import { randomUUID } from 'crypto';
+
+// After any meaningful action
+eventBus.emit<WorldEventLogged>('world.event.logged', {
+  v: 1,
+  worldId: affectedWorldId,
+  eventId: randomUUID(),
+  impact: 'moderate', // minor | moderate | major | catastrophic
+  description: 'The merchant guild established a new trade route'
+});
+```
+
+**Impact Level Guidelines:**
+- `minor`: Routine activities, individual NPC actions
+- `moderate`: Local changes, small group activities  
+- `major`: Region-affecting events, significant plot developments
+- `catastrophic`: World-shaking events, major character deaths
+
+### Module-Specific Events
+
+Your module can still emit its own events for internal use:
 
 ```ts
 eventBus.emit<CharacterMoved>('character.moved', { characterId, to: loc });
 ```
 
-listen:
+And listen to other modules' events:
 
 ```ts
-eventBus.on<CharacterMoved>('character.moved', handler);
+eventBus.on<FactionDisbanded>('faction.disbanded', handler);
 ```
+
+### Event Safety
+
+The event bus automatically:
+- Tracks event hops (max 8 to prevent infinite loops)
+- Enforces size limits (50KB max payload)
+- Adds debug logging for all emissions
 
 The current backend is an in-process `EventEmitter`; swapping to Redis/NATS later requires **zero module changes**.
 
 ---
 
-## 6 AI Adapter Pattern
+## 6 AI Adapter Pattern
 
 ```ts
 @injectable()
