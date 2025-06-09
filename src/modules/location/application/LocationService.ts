@@ -118,7 +118,9 @@ export class LocationService {
           type: region.type,
           status: 'stable' as LocationStatus,
           description: region.description,
-          tags: region.tags
+          tags: region.tags,
+          relative_x: region.relative_position.x,
+          relative_y: region.relative_position.y
         }))
       );
 
@@ -139,7 +141,9 @@ export class LocationService {
           type: child.type,
           status: 'stable' as LocationStatus,
           description: child.description,
-          tags: child.tags
+          tags: child.tags,
+          relative_x: child.relative_position.x,
+          relative_y: child.relative_position.y
         } as CreateLocation;
       });
 

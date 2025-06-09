@@ -18,13 +18,8 @@ probably important to do in the future:
 - intakes ALL current locations as core system prompt from supabase for world generation and to progress beats
 
 ## locations
-- create
 - i want to have a world map that gets created especially since we provide the x/y coordinates of locations 
-
-
-### TESTING LOCATIONS:
-- Creating a new world successfully generated the initial locations and regions with claude sonnet 4
-- Locations succesfully connect to the parent regions in the supabase database
+- we need to save the x/y coordinates of locations
 
 ## factions
 - create

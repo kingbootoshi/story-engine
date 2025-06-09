@@ -45,7 +45,19 @@ export const Location = z.object({
   historical_events: z.array(HistoricalEvent).default([]),
   last_significant_change: ISODateString.optional(),
   created_at: ISODateString,
-  updated_at: ISODateString
+  updated_at: ISODateString,
+  /**
+   * Relative X coordinate (0-100) used for map visualisation.
+   * Stored as a simple numeric column to keep querying lightweight while
+   * remaining easy to reconstruct a `RelativePosition` object on the client.
+   */
+  relative_x: z.number().min(0).max(100).nullable().optional().default(null),
+
+  /**
+   * Relative Y coordinate (0-100) used for map visualisation.
+   * See `relative_x` for rationale on storage strategy.
+   */
+  relative_y: z.number().min(0).max(100).nullable().optional().default(null)
 });
 export type Location = z.infer<typeof Location>;
 
