@@ -25,7 +25,9 @@
       "Bash(rg:*)",
       "Bash([ -f .env ])",
       "Bash(npm run typecheck:*)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "Bash(git push:*)",
+      "Bash(npm run test:*)"
     ],
     "deny": []
   }

@@ -22,6 +22,7 @@ export function WorldDetail() {
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [storyIdea, setStoryIdea] = useState('');
   const [isProgressing, setIsProgressing] = useState(false);
+  const [locationsSummary, setLocationsSummary] = useState<{total: number, byType: Record<string, number>} | null>(null);
 
   // Event form state
   const [newEvent, setNewEvent] = useState({
@@ -39,6 +40,7 @@ export function WorldDetail() {
   useEffect(() => {
     if (worldId) {
       fetchWorldDetails();
+      fetchLocationsSummary();
     }
   }, [worldId]);
 
@@ -177,6 +179,22 @@ export function WorldDetail() {
     }
   };
 
+  const fetchLocationsSummary = async () => {
+    try {
+      const locations = await trpc.location.list.query({ worldId: worldId! });
+      const summary = {
+        total: locations.length,
+        byType: locations.reduce((acc, loc) => {
+          acc[loc.type] = (acc[loc.type] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>)
+      };
+      setLocationsSummary(summary);
+    } catch (err) {
+      console.error('[WorldDetail] Failed to fetch locations summary:', err);
+    }
+  };
+
   // Whenever the user clicks a beat update events list
   useEffect(() => {
     if (selectedBeat) {
@@ -211,6 +229,21 @@ export function WorldDetail() {
         <div style={{ marginTop: '0.5rem', color: '#999' }}>
           Created {new Date(world.created_at).toLocaleDateString()}
         </div>
+        <div style={{ marginTop: '1rem' }}>
+          <Link 
+            to={`/worlds/${worldId}/locations`}
+            style={{
+              padding: '0.5rem 1rem',
+              backgroundColor: '#9C27B0',
+              color: 'white',
+              borderRadius: '4px',
+              textDecoration: 'none',
+              display: 'inline-block'
+            }}
+          >
+            View Locations
+          </Link>
+        </div>
       </header>
 
       {error && (
@@ -223,6 +256,34 @@ export function WorldDetail() {
           color: '#c62828'
         }}>
           {error}
+        </div>
+      )}
+
+      {/* Locations Summary */}
+      {locationsSummary && locationsSummary.total > 0 && (
+        <div style={{
+          backgroundColor: '#f3e5f5',
+          padding: '1rem',
+          borderRadius: '8px',
+          marginBottom: '2rem',
+          border: '1px solid #ce93d8'
+        }}>
+          <h3 style={{ marginTop: 0, marginBottom: '0.5rem' }}>Locations Overview</h3>
+          <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
+            <div>
+              <strong style={{ fontSize: '1.5rem' }}>{locationsSummary.total}</strong> Total Locations
+            </div>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              {Object.entries(locationsSummary.byType).map(([type, count]) => (
+                <div key={type} style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{count}</div>
+                  <div style={{ fontSize: '0.875rem', textTransform: 'capitalize' }}>
+                    {type}{count !== 1 ? 's' : ''}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 

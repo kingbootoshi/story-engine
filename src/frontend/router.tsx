@@ -5,6 +5,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Playground } from './pages/Playground';
 import { WorldsList } from './pages/WorldsList';
 import { WorldDetail } from './pages/WorldDetail';
+import { Locations } from './pages/Locations';
 
 function PrivateRoute() {
   const { user, isInitialized } = useAuth();
@@ -47,6 +48,10 @@ export const router = createBrowserRouter([
       {
         path: 'worlds/:worldId',
         element: <WorldDetail />,
+      },
+      {
+        path: 'worlds/:worldId/locations',
+        element: <Locations />,
       },
     ],
   },

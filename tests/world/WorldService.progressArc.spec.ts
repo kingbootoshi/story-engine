@@ -2,25 +2,11 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { DI as container } from '../../src/core/infra/container';
 import { InMemoryWorldRepo } from '../_shared/fakes/InMemoryWorldRepo';
 import { createLogger } from '../../src/core/infra/logger';
+import { eventBus } from '../../src/core/infra/eventBus';
 import type { WorldAI, AnchorDTO, BeatDTO } from '../../src/modules/world/domain/ports';
 import type { World, WorldArc, WorldBeat } from '../../src/modules/world/domain/schema';
 
-// Use vi.hoisted to ensure mocks are available before imports
-const { mockEventBus } = vi.hoisted(() => {
-  return {
-    mockEventBus: {
-      emit: vi.fn(() => true),
-      on: vi.fn(),
-      off: vi.fn(),
-    }
-  };
-});
-
-vi.mock('../../src/core/infra/eventBus', () => ({
-  eventBus: mockEventBus,
-}));
-
-// Now import WorldService after mocks are set up
+// Now import WorldService after setting up spies
 import { WorldService } from '../../src/modules/world/application/WorldService';
 
 describe('WorldService.progressArc', () => {
@@ -28,6 +14,7 @@ describe('WorldService.progressArc', () => {
   let worldRepo: InMemoryWorldRepo;
   let worldAI: WorldAI;
   let mockLogger: any;
+  let emitSpy: ReturnType<typeof vi.spyOn>;
   
   // Test data
   let testWorld: World;
@@ -100,10 +87,14 @@ describe('WorldService.progressArc', () => {
 
     // Update world with current arc
     await worldRepo.updateWorld(testWorld.id, { current_arc_id: testArc.id });
+
+    // Spy on eventBus emit
+    emitSpy = vi.spyOn(eventBus as any, 'emit');
   });
 
   afterEach(() => {
     vi.clearAllMocks();
+    emitSpy.mockRestore();
   });
 
   it('should progress arc by creating a dynamic beat', async () => {
@@ -148,7 +139,7 @@ describe('WorldService.progressArc', () => {
     });
 
     // Assert
-    expect(mockEventBus.emit).toHaveBeenCalledWith('world.beatCreated', {
+    expect(emitSpy).toHaveBeenCalledWith('world.beatCreated', {
       worldId: testWorld.id,
       arcId: testArc.id,
       beatId: beat!.id,

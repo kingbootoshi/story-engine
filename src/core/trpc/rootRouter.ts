@@ -1,5 +1,6 @@
 import { router } from './init';
 import { worldRouter } from '../../modules/world/delivery/trpc/router';
+import { locationRouter } from '../../modules/location/delivery/trpc/router';
 
 /**
  * Application-wide tRPC router.
@@ -17,6 +18,7 @@ export const appRouter = router({
   // Extend this object with `{ newModule: newModuleRouter }` as you add more
   // vertical slices to `src/modules`.
   world: worldRouter,
+  location: locationRouter,
 });
 
 /**

@@ -2,24 +2,10 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { DI as container } from '../../src/core/infra/container';
 import { InMemoryWorldRepo } from '../_shared/fakes/InMemoryWorldRepo';
 import { createLogger } from '../../src/core/infra/logger';
+import { eventBus } from '../../src/core/infra/eventBus';
 import type { WorldAI } from '../../src/modules/world/domain/ports';
 
-// Use vi.hoisted to ensure mocks are available before imports
-const { mockEventBus } = vi.hoisted(() => {
-  return {
-    mockEventBus: {
-      emit: vi.fn(() => true),
-      on: vi.fn(),
-      off: vi.fn(),
-    }
-  };
-});
-
-vi.mock('../../src/core/infra/eventBus', () => ({
-  eventBus: mockEventBus,
-}));
-
-// Now import WorldService after mocks are set up
+// Now import WorldService after setting up spies
 import { WorldService } from '../../src/modules/world/application/WorldService';
 
 describe('WorldService.createWorld', () => {
@@ -27,6 +13,7 @@ describe('WorldService.createWorld', () => {
   let worldRepo: InMemoryWorldRepo;
   let worldAI: WorldAI;
   let mockLogger: any;
+  let emitSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     // Reset container
@@ -60,10 +47,14 @@ describe('WorldService.createWorld', () => {
     if (serviceLoggerCall) {
       mockLogger = loggerMock.mock.results[calls.indexOf(serviceLoggerCall)]?.value;
     }
+
+    // Spy on the real event bus emit method
+    emitSpy = vi.spyOn(eventBus as any, 'emit');
   });
 
   afterEach(() => {
     vi.clearAllMocks();
+    emitSpy.mockRestore();
   });
 
   it('should create a world with name and description', async () => {
@@ -94,8 +85,8 @@ describe('WorldService.createWorld', () => {
     const world = await worldService.createWorld('Eldoria', 'High fantasy world');
 
     // Assert
-    expect(mockEventBus.emit).toHaveBeenCalledTimes(1);
-    expect(mockEventBus.emit).toHaveBeenCalledWith('world.created', {
+    expect(emitSpy).toHaveBeenCalledTimes(1);
+    expect(emitSpy).toHaveBeenCalledWith('world.created', {
       worldId: world.id,
       name: 'Eldoria',
       description: 'High fantasy world',
