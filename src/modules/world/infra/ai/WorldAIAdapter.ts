@@ -149,7 +149,11 @@ const ARC_SUMMARY_SCHEMA = {
 
 @injectable()
 export class WorldAIAdapter implements WorldAI {
-  private readonly MODEL = 'anthropic/claude-sonnet-4';
+  /** 
+   * Primary AI model for world generation and narrative progression.
+   * Using OpenAI GPT-4.1 Nano for efficient world state management and beat generation.
+   */
+  private readonly MODEL = 'openai/gpt-4.1-nano';
   private readonly MODULE = 'world';
 
   async generateAnchors(ctx: AnchorContext): Promise<{ anchors: AnchorDTO[]; arcDetailedDescription: string }> {

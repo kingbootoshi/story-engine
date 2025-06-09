@@ -3,8 +3,13 @@ interface Model {
   default: boolean;
 }
 
+/**
+ * Registry of available AI models with their configuration.
+ * Models are prioritized based on performance, cost, and capabilities.
+ */
 const MODELS: Model[] = [
-  { name: 'anthropic/claude-sonnet-4', default: true },
+  { name: 'openai/gpt-4.1-nano', default: true },
+  { name: 'anthropic/claude-sonnet-4', default: false },
   { name: 'openai/gpt-4o-mini', default: false },
 ];
 

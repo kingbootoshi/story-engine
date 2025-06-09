@@ -80,7 +80,7 @@ Add freely; they cost nothing and pay dividends in dashboards.
 ```ts
 @injectable()
 export class CharacterAIAdapter implements CharacterAI {
-  private readonly MODEL = 'anthropic/claude-sonnet-4';
+  private readonly MODEL = 'openai/gpt-4.1-nano';
   private readonly MOD   = 'character';
 
   async generateDialogue(ctx: DialogueCtx, trace: TrpcCtx) {
