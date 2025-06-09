@@ -26,17 +26,7 @@ const WorldModule: EngineModule = {
       basePath: '/api/worlds',
       exposeMetaRoute: true
     });
-  },
-  subscriptions: [
-    {
-      topic: 'character.died',
-      handler: async (event, di) => {
-        const worldService = di.resolve(WorldService);
-        const { characterId, worldId } = event.payload;
-        await worldService.handleCharacterDeath(characterId, worldId);
-      }
-    }
-  ]
+  }
 };
 
 export default WorldModule;

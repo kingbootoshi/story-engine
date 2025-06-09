@@ -371,41 +371,4 @@ export class WorldService {
       ? await this.repo.getBeat(arc.current_beat_id)
       : null;
   }
-
-  /**
-   * Handles the `character.died` domain event.
-   *
-   * NOTE: The initial MVP does not adjust world state based on the character's
-   * death – we simply log the event and persist a world event so that future
-   * systems (faction reputation, relationship webs, etc.) can react. When the
-   * character module gains deeper integrations we will revisit this method to
-   * update references or trigger follow-up events.
-   */
-  async handleCharacterDeath(characterId: string, worldId: string): Promise<void> {
-    logger.info('Character death received', { characterId, worldId });
-
-    try {
-      await this.repo.createEvent({
-        world_id: worldId,
-        // Character death may happen outside the context of an arc/beat.
-        arc_id: randomUUID(),
-        beat_id: randomUUID(),
-        event_type: 'system_event',
-        impact_level: 'major',
-        description: `Character ${characterId} has died`,
-      });
-
-      eventBus.emit('world.characterDeathRecorded', {
-        worldId,
-        characterId,
-      });
-
-      logger.success('Character death recorded', { characterId, worldId });
-    } catch (error) {
-      logger.error('Failed to record character death', error as Error, {
-        characterId,
-        worldId,
-      });
-    }
-  }
 }
