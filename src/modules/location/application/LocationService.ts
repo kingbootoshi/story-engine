@@ -1,3 +1,5 @@
+/// <reference types="node" />
+
 import { injectable, inject } from 'tsyringe';
 import { eventBus } from '../../../core/infra/eventBus';
 import { createLogger } from '../../../core/infra/logger';
@@ -86,90 +88,57 @@ export class LocationService {
    */
   async seedInitialMap(event: WorldCreatedEvent): Promise<void> {
     const startTime = Date.now();
-    logger.info('Seeding initial map for world', { 
+    logger.info('Seeding initial map for world', {
       worldId: event.worldId,
-      correlation: event.worldId 
+      correlation: event.worldId
     });
 
+    const staged = process.env.USE_MAP_PLANNER !== 'false';
+
     try {
-      const mapResult = await this.ai.buildWorldMap({
-        worldName: event.name,
-        worldDescription: event.description
-      });
-
-      if (mapResult.locations.length < 8 || mapResult.locations.length > 15) {
-        throw new Error(`Invalid location count: ${mapResult.locations.length}. Expected 8-15 locations.`);
+      if (!staged) {
+        // Legacy bulk generation
+        const mapResult = await this.ai.buildWorldMap({ worldName: event.name, worldDescription: event.description });
+        // Use existing legacy flow
+        await this.persistLocations(event.worldId, mapResult.locations);
+        logger.success('Legacy world map seeded', { worldId: event.worldId });
+        return;
       }
 
-      logger.debug('AI generated world map', {
+      // ---------------- Stage 1: Regions -----------------
+      const regions = await this.ai.generateRegions({ worldName: event.name, worldDescription: event.description });
+      await this.persistLocations(event.worldId, regions);
+
+      const regionEntities = await this.repo.findByWorldId(event.worldId);
+      const regionLocations = regionEntities.filter(l => l.type === 'region');
+
+      // ---------------- Stage 2: Wilderness --------------
+      const wilderness = await this.ai.generateWilderness({ worldName: event.name, regions });
+      await this.persistLocations(event.worldId, wilderness, regionLocations);
+
+      const wildernessEntities = await this.repo.findByWorldId(event.worldId);
+      const wildernessLocations = wildernessEntities.filter(l => l.type === 'wilderness');
+
+      // ---------------- Stage 3: Landmarks --------------
+      const landmarks = await this.ai.generateLandmarks({ worldName: event.name, regions, wilderness });
+      await this.persistLocations(event.worldId, landmarks, regionLocations.concat(wildernessLocations));
+
+      const landmarkEntities = await this.repo.findByWorldId(event.worldId);
+      const landmarkLocations = landmarkEntities.filter(l => l.type === 'landmark');
+
+      // ---------------- Stage 4: Cities -----------------
+      const cities = await this.ai.generateCities({ worldName: event.name, regions, wilderness, landmarks });
+      await this.persistLocations(event.worldId, cities, regionLocations);
+
+      const totalCount = (regions.length + wilderness.length + landmarks.length + cities.length);
+      logger.success('Staged world map seeded', {
         worldId: event.worldId,
-        locationCount: mapResult.locations.length,
-        hasMapSvg: !!mapResult.mapSvg,
-        correlation: event.worldId
-      });
-
-      const regions = mapResult.locations.filter(loc => loc.type === 'region');
-      const regionMap = new Map<string, string>();
-
-      const savedRegions = await this.repo.createBulk(
-        regions.map(region => ({
-          world_id: event.worldId,
-          parent_location_id: null,
-          name: region.name,
-          type: region.type,
-          status: 'stable' as LocationStatus,
-          description: region.description,
-          tags: region.tags,
-          relative_x: region.relative_position.x,
-          relative_y: region.relative_position.y
-        }))
-      );
-
-      savedRegions.forEach(region => {
-        regionMap.set(region.name, region.id);
-      });
-
-      const childLocations = mapResult.locations.filter(loc => loc.type !== 'region');
-      const childrenToCreate = childLocations.map(child => {
-        const parentId = child.parent_region_name 
-          ? regionMap.get(child.parent_region_name) || null
-          : null;
-
-        return {
-          world_id: event.worldId,
-          parent_location_id: parentId,
-          name: child.name,
-          type: child.type,
-          status: 'stable' as LocationStatus,
-          description: child.description,
-          tags: child.tags,
-          relative_x: child.relative_position.x,
-          relative_y: child.relative_position.y
-        } as CreateLocation;
-      });
-
-      const savedChildren = await this.repo.createBulk(childrenToCreate);
-      const allLocations = [...savedRegions, ...savedChildren];
-
-      for (const location of allLocations) {
-        const locationEvent: LocationCreatedEvent = {
-          v: 1,
-          worldId: event.worldId,
-          locationId: location.id,
-          name: location.name,
-          type: location.type,
-          parentId: location.parent_location_id || undefined
-        };
-        eventBus.emit('location.created', locationEvent);
-      }
-
-      logger.info('Successfully created locations for world', {
-        worldId: event.worldId,
-        locationCount: allLocations.length,
-        regionCount: savedRegions.length,
-        childCount: savedChildren.length,
-        duration_ms: Date.now() - startTime,
-        correlation: event.worldId
+        regions: regions.length,
+        wilderness: wilderness.length,
+        landmarks: landmarks.length,
+        cities: cities.length,
+        total: totalCount,
+        duration_ms: Date.now() - startTime
       });
 
     } catch (error) {
@@ -178,6 +147,40 @@ export class LocationService {
         correlation: event.worldId
       });
       throw error;
+    }
+  }
+
+  /** Helper to persist generated locations */
+  private async persistLocations(worldId: string, generated: any[], existingParents?: Location[]) {
+    const regionMapByName = new Map(existingParents?.map(p => [p.name, p.id]));
+
+    const toCreate: CreateLocation[] = generated.map((loc) => {
+      const parentId = loc.parent_region_name ? regionMapByName.get(loc.parent_region_name) || null : null;
+      return {
+        world_id: worldId,
+        parent_location_id: parentId,
+        name: loc.name,
+        type: loc.type,
+        status: 'stable',
+        description: loc.description,
+        tags: loc.tags,
+        relative_x: loc.relative_position?.x ?? null,
+        relative_y: loc.relative_position?.y ?? null
+      } as CreateLocation;
+    });
+
+    const saved = await this.repo.createBulk(toCreate);
+
+    for (const location of saved) {
+      const ev: LocationCreatedEvent = {
+        v: 1,
+        worldId,
+        locationId: location.id,
+        name: location.name,
+        type: location.type,
+        parentId: location.parent_location_id || undefined
+      };
+      eventBus.emit('location.created', ev);
     }
   }
 

@@ -19,6 +19,22 @@ import {
   buildLocationMutationPrompt, 
   LOCATION_MUTATION_SCHEMA 
 } from './prompts/locationMutation.prompts';
+import { 
+  REGION_GENERATION_SCHEMA, 
+  buildRegionPrompt 
+} from './prompts/region.prompts';
+import { 
+  WILDERNESS_GENERATION_SCHEMA, 
+  buildWildernessPrompt 
+} from './prompts/wilderness.prompts';
+import { 
+  LANDMARK_GENERATION_SCHEMA, 
+  buildLandmarkPrompt 
+} from './prompts/landmark.prompts';
+import { 
+  CITY_GENERATION_SCHEMA, 
+  buildCityPrompt 
+} from './prompts/city.prompts';
 
 const logger = createLogger('location.ai');
 
@@ -229,6 +245,69 @@ Provide an enriched description that:
       });
       throw error;
     }
+  }
+
+  /** Generate regions */
+  async generateRegions(ctx: MapGenerationContext): Promise<any[]> {
+    const messages = buildRegionPrompt(ctx as any);
+    const completion = await chat({
+      messages,
+      tools: [{ type: 'function', function: REGION_GENERATION_SCHEMA }],
+      tool_choice: { type: 'function', function: { name: 'generate_regions' } },
+      temperature: 0.8,
+      metadata: buildMetadata('location', 'generate_regions@v1', { world_name: ctx.worldName })
+    });
+
+    const toolCall = completion.choices[0]?.message?.tool_calls?.[0];
+    if (!toolCall) throw new Error('No regions tool call');
+    const { regions } = JSON.parse(toolCall.function.arguments);
+    return regions;
+  }
+
+  /** Generate wilderness */
+  async generateWilderness(ctx: any): Promise<any[]> {
+    const messages = buildWildernessPrompt(ctx);
+    const completion = await chat({
+      messages,
+      tools: [{ type: 'function', function: WILDERNESS_GENERATION_SCHEMA }],
+      tool_choice: { type: 'function', function: { name: 'generate_wilderness' } },
+      temperature: 0.8,
+      metadata: buildMetadata('location', 'generate_wilderness@v1', { world_name: ctx.worldName })
+    });
+    const toolCall = completion.choices[0]?.message?.tool_calls?.[0];
+    if (!toolCall) throw new Error('No wilderness tool call');
+    const { wilderness } = JSON.parse(toolCall.function.arguments);
+    return wilderness;
+  }
+
+  async generateLandmarks(ctx: any): Promise<any[]> {
+    const messages = buildLandmarkPrompt(ctx);
+    const completion = await chat({
+      messages,
+      tools: [{ type: 'function', function: LANDMARK_GENERATION_SCHEMA }],
+      tool_choice: { type: 'function', function: { name: 'generate_landmarks' } },
+      temperature: 0.8,
+      metadata: buildMetadata('location', 'generate_landmarks@v1', { world_name: ctx.worldName })
+    });
+    const toolCall = completion.choices[0]?.message?.tool_calls?.[0];
+    if (!toolCall) throw new Error('No landmarks tool call');
+    const { landmarks } = JSON.parse(toolCall.function.arguments);
+    return landmarks;
+  }
+
+  async generateCities(ctx: any): Promise<any[]> {
+    const messages = buildCityPrompt(ctx);
+    const completion = await chat({
+      messages,
+      tools: [{ type: 'function', function: CITY_GENERATION_SCHEMA }],
+      tool_choice: { type: 'function', function: { name: 'generate_cities' } },
+      temperature: 0.8,
+      metadata: buildMetadata('location', 'generate_cities@v1', { world_name: ctx.worldName })
+    });
+    const toolCall = completion.choices[0]?.message?.tool_calls?.[0];
+    if (!toolCall) throw new Error('No cities tool call');
+    const { cities } = JSON.parse(toolCall.function.arguments);
+    return cities;
   }
 }
 

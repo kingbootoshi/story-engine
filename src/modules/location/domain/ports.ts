@@ -132,13 +132,42 @@ export interface EnrichmentContext {
 }
 
 /**
+ * Stage contexts
+ */
+export interface RegionGenerationContext extends MapGenerationContext {}
+
+export interface WildernessGenerationContext {
+  worldName: string;
+  regions: LocationWithPosition[];
+}
+
+export interface LandmarkGenerationContext {
+  worldName: string;
+  regions: LocationWithPosition[];
+  wilderness: LocationWithPosition[];
+}
+
+export interface CityGenerationContext {
+  worldName: string;
+  regions: LocationWithPosition[];
+  wilderness: LocationWithPosition[];
+  landmarks: LocationWithPosition[];
+}
+
+/**
  * AI adapter interface for location-related AI operations
  */
 export interface LocationAI {
   /**
-   * Generate initial world map with 8-15 locations
+   * Generate initial world map with 8-15 locations (legacy)
    */
   buildWorldMap(context: MapGenerationContext): Promise<MapGenerationResult>;
+  
+  /** Stage-wise generation */
+  generateRegions(ctx: RegionGenerationContext): Promise<LocationWithPosition[]>;
+  generateWilderness(ctx: WildernessGenerationContext): Promise<LocationWithPosition[]>;
+  generateLandmarks(ctx: LandmarkGenerationContext): Promise<LocationWithPosition[]>;
+  generateCities(ctx: CityGenerationContext): Promise<LocationWithPosition[]>;
   
   /**
    * Analyze beat and determine location mutations
