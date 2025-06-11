@@ -14,7 +14,8 @@ import type {
   LocationStatusChangedEvent, 
   LocationDiscoveredEvent 
 } from '../domain/events';
-import type { WorldCreatedEvent, StoryBeatCreated } from '../../world/domain/events';
+import { match } from 'ts-pattern';
+import type { WorldCreated, StoryBeatCreated } from '../../world/domain/events';
 
 const logger = createLogger('location.service');
 
@@ -34,15 +35,26 @@ export class LocationService {
    * Subscribe to world events
    */
   private subscribeToEvents() {
-    eventBus.on('world.created', (event) => this.handleWorldCreated(event.payload));
-    eventBus.on('world.beat.created', (event) => this.handleBeatCreated(event.payload));
+    eventBus.on('world.created', (event) => {
+      logger.debug('[recv] world.created', { hop: event.payload._hop });
+      match(event.payload)
+        .with({ kind: 'world.created' }, (p: WorldCreated) => this.handleWorldCreated(p))
+        .otherwise(() => {});
+    });
+
+    eventBus.on('world.beat.created', (event) => {
+      logger.debug('[recv] world.beat.created', { hop: event.payload._hop });
+      match(event.payload)
+        .with({ kind: 'world.beat.created' }, (p: StoryBeatCreated) => this.handleBeatCreated(p))
+        .otherwise(() => {});
+    });
     logger.info('LocationService subscribed to events');
   }
 
   /**
    * Handle world creation by generating initial locations
    */
-  private async handleWorldCreated(event: WorldCreatedEvent) {
+  private async handleWorldCreated(event: WorldCreated) {
     logger.info('Handling world.created event', { 
       worldId: event.worldId,
       correlation: event.worldId 
@@ -83,7 +95,7 @@ export class LocationService {
   /**
    * Generate initial world map with 8-15 locations
    */
-  async seedInitialMap(event: WorldCreatedEvent): Promise<void> {
+  async seedInitialMap(event: WorldCreated): Promise<void> {
     const startTime = Date.now();
     logger.info('Seeding initial map for world', { 
       worldId: event.worldId,
