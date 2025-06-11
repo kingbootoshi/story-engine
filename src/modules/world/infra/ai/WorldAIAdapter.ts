@@ -163,7 +163,7 @@ export class WorldAIAdapter implements WorldAI {
       model: this.MODEL,
       messages: [
         { role: 'system', content: ANCHOR_SYSTEM_PROMPT },
-        { role: 'user', content: buildAnchorUserPrompt(ctx.worldName, ctx.worldDescription, ctx.storyIdea, ctx.previousArcs) }
+        { role: 'user', content: buildAnchorUserPrompt(ctx.worldName, ctx.worldDescription, ctx.storyIdea, ctx.previousArcs, ctx.currentLocations) }
       ],
       tools: [WORLD_ARC_ANCHORS_SCHEMA],
       tool_choice: { type: 'function', function: { name: 'generate_world_arc_anchors' } },
@@ -217,7 +217,8 @@ export class WorldAIAdapter implements WorldAI {
           previousBeatsSummary,
           nextAnchorSummary,
           ctx.recentEvents,
-          ctx.arcDetailedDescription
+          ctx.arcDetailedDescription,
+          ctx.currentLocations
         )}
       ],
       tools: [DYNAMIC_WORLD_BEAT_SCHEMA],

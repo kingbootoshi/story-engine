@@ -437,48 +437,4 @@ const discovered = await locationService.createFromBeat(
 // AI extracts location details and creates with appropriate tags
 ```
 
-## Implementation Roadmap
-
-### Phase 1: Core Module (Week 1)
-- [ ] Database schema and migrations
-- [ ] Domain models and events
-- [ ] Basic CRUD operations
-- [ ] Repository implementation
-
-### Phase 2: AI Integration (Week 2)
-- [ ] Location enrichment prompts
-- [ ] State mutation prompts
-- [ ] Beat parsing for locations
-- [ ] AI adapter implementation
-
-### Phase 3: Advanced Features (Week 3)
-- [ ] Historical tracking system
-- [ ] Hierarchical queries
-- [ ] Search functionality
-- [ ] Event subscriptions
-
-### Phase 4: Testing & Polish (Week 4)
-- [ ] Unit tests (>90% coverage)
-- [ ] Integration tests
-- [ ] Documentation
-- [ ] Performance optimization
-
-## Success Metrics
-
-1. **Consistency**: 95% of beats reference existing locations
-2. **Richness**: Average description length >200 words
-3. **Performance**: Location queries <50ms
-4. **Coverage**: >90% test coverage
-5. **Integration**: Zero cross-module dependencies
-
-## Future Enhancements
-
-1. **Visual Mapping**: Export location data for map generation
-2. **Climate System**: Seasonal changes affect descriptions
-3. **Trade Routes**: Connections between locations
-4. **Population Dynamics**: Rough population tracking in metadata
-5. **Cultural Regions**: Grouping locations by culture/language
-
----
-
 This design provides a solid foundation for the Location module that integrates seamlessly with Story Engine while preparing for future expansions like factions and character modules.

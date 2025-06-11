@@ -7,6 +7,8 @@ import type * as Events from '../domain/events';
 import type { WorldArcCreationParams, BeatProgressionParams } from './types';
 import { randomUUID } from 'crypto';
 import { formatEvent } from '../../../shared/utils/formatEvent';
+import { formatLocationsForAI } from '../../../shared/utils/formatLocationContext';
+import type { LocationRepository } from '../../location/domain/ports';
 
 const logger = createLogger('world.service');
 
@@ -15,6 +17,7 @@ export class WorldService {
   constructor(
     @inject('WorldRepo') private repo: WorldRepo,
     @inject('WorldAI') private ai: WorldAI,
+    @inject('LocationRepository') private locationRepo: LocationRepository
   ) {}
 
   async createWorld(name: string, description: string, ownerId?: string): Promise<World> {
@@ -53,11 +56,15 @@ export class WorldService {
         arcCount: previousArcs.length 
       });
       
+      const locations = await this.locationRepo.findByWorldId(params.worldId);
+      const locationsContext = formatLocationsForAI(locations);
+      
       const result = await this.ai.generateAnchors({
         worldName: params.worldName,
         worldDescription: params.worldDescription,
         storyIdea: params.storyIdea,
-        previousArcs
+        previousArcs,
+        currentLocations: locationsContext
       });
 
       if (!result.anchors || result.anchors.length !== 3) {
@@ -178,6 +185,9 @@ export class WorldService {
         arcDescLen: arc.detailed_description?.length || 0
       });
 
+      const locations = await this.locationRepo.findByWorldId(params.worldId);
+      const locationsContext = formatLocationsForAI(locations);
+
       const dynamicBeat = await this.ai.generateBeat({
         worldName: world.name,
         worldDescription: world.description,
@@ -185,7 +195,8 @@ export class WorldService {
         currentBeatIndex: nextBeatIndex,
         previousBeats,
         nextAnchor,
-        recentEvents: recentEventsContext
+        recentEvents: recentEventsContext,
+        currentLocations: locationsContext
       });
 
       const savedBeat = await this.repo.createBeat(

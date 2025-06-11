@@ -15,11 +15,9 @@ probably important to do in the future:
 
 # modules to do:
 ## worlds
-- intakes ALL current locations as core system prompt from supabase for world generation and to progress beats
 
 ## locations
 - i want to have a world map that gets created especially since we provide the x/y coordinates of locations 
-- we need to save the x/y coordinates of locations
 
 ## factions
 - create

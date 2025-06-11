@@ -7,6 +7,8 @@ import type { WorldBeat } from '../domain/schema';
 import type { WorldEventLogged, StoryBeatCreated } from '../domain/events';
 import type { DomainEvent } from '../../../core/types';
 import { formatEvent } from '../../../shared/utils/formatEvent';
+import { formatLocationsForAI } from '../../../shared/utils/formatLocationContext';
+import type { LocationRepository } from '../../location/domain/ports';
 
 const logger = createLogger('story.ai.service');
 
@@ -18,7 +20,8 @@ export class StoryAIService {
 
   constructor(
     @inject('WorldRepo') private repo: WorldRepo,
-    @inject('WorldAI') private ai: WorldAI
+    @inject('WorldAI') private ai: WorldAI,
+    @inject('LocationRepository') private locationRepo: LocationRepository
   ) {
     eventBus.on<WorldEventLogged>('world.event.logged', (event: DomainEvent<WorldEventLogged>) => {
       this.handleEvent(event.payload).catch(error => {
@@ -147,6 +150,9 @@ export class StoryAIService {
       .map(formatEvent)
       .join('\n');
 
+    const locations = await this.locationRepo.findByWorldId(worldId);
+    const locationsContext = formatLocationsForAI(locations);
+
     const dynamicBeat = await this.ai.generateBeat({
       worldName: world.name,
       worldDescription: world.description,
@@ -154,7 +160,8 @@ export class StoryAIService {
       currentBeatIndex: nextBeatIndex,
       previousBeats,
       nextAnchor,
-      recentEvents
+      recentEvents,
+      currentLocations: locationsContext
     });
 
     const savedBeat = await this.repo.createBeat(

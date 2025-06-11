@@ -17,6 +17,14 @@ export async function bootstrapModules(app: express.Express): Promise<void> {
       absolute: true
     });
     
+    // Ensure deterministic, alphabetical loading order so that modules
+    // with shared dependencies are initialised in a predictable manner.
+    // This prevents situations where a downstream module eagerly resolves
+    // a service that depends on a token registered by another module that
+    // has not been loaded yet (see: StoryAIService depends on
+    // `LocationRepository`).
+    manifestPaths.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    
     logger.info(`Found ${manifestPaths.length} module(s)`);
     
     for (const manifestPath of manifestPaths) {

@@ -266,7 +266,9 @@ export class LocationService {
           type: discovery.type as any,
           status: 'stable',
           description: discovery.description,
-          tags: discovery.tags
+          tags: discovery.tags,
+          relative_x: null,
+          relative_y: null
         };
 
         const saved = await this.repo.create(newLocation);

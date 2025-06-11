@@ -8,6 +8,7 @@ When creating world arcs, follow these critical guidelines:
 3. Write world directives in clear, systemic terms that affect all entities
 4. Create a framework that can RESPOND to collective player actions rather than prescribing specific outcomes
 5. Anchor points should establish THEMATIC direction while leaving specific developments open
+6. Refer to the provided list of CURRENT WORLD LOCATIONS to ensure narrative consistency. Your story should directly affect or be influenced by these places. The state of these locations (e.g., ruined, thriving) is critical context
 
 The world will evolve based on ACTUAL:
 - Collective player decisions and actions
@@ -26,11 +27,15 @@ export function buildAnchorUserPrompt(
   worldDescription: string,
   storyIdea?: string,
   previousArcs: string[] = [],
+  currentLocations: string = 'No locations currently exist in this world.'
 ): string {
   return `Generate the THREE anchor points (beginning, middle, end) for a world story arc following the Save the Cat framework adapted for world-building:
 
 World Name: ${worldName}
 World Description: <world_description>${worldDescription}</world_description>
+
+## CURRENT WORLD LOCATIONS:
+${currentLocations}
 
 ${previousArcs.length ? `\nIMPORTANT WORLD HISTORY:\nThis world has experienced previous story arcs that should inform this new era. Review this history to ensure continuity:\n\n${previousArcs.join('\n\n')}\n\nThe new arc should acknowledge and build upon this world history, showing meaningful evolution and consequences rather than resetting.\n` : ''}
 

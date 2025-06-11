@@ -6,6 +6,7 @@ export interface AnchorContext {
   worldDescription: string;
   storyIdea?: string;
   previousArcs?: string[];
+  currentLocations: string;
 }
 
 export interface BeatContext {
@@ -16,6 +17,7 @@ export interface BeatContext {
   previousBeats: WorldBeat[];
   nextAnchor: WorldBeat;
   recentEvents: string;
+  currentLocations: string;
 }
 
 export interface SummaryContext {
