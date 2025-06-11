@@ -80,12 +80,14 @@ export class StoryAIService {
       });
 
       eventBus.emit<StoryBeatCreated>('world.beat.created', {
+        kind: 'world.beat.created',
         v: 1,
         worldId: worldId!,
+        arcId: beat.arc_id,
         beatId: beat.id,
         beatIndex: beat.beat_index,
-        arcId: beat.arc_id,
         beatName: beat.beat_name,
+        beatType: 'dynamic',
         directives: beat.world_directives || [],
         emergent: beat.emergent_storylines || []
       });
