@@ -76,7 +76,7 @@
     "superjson": "^2.2.2",
     "tailwind-merge": "^3.3.0",
     "winston": "^3.17.0",
-    "poisson-disk-sampling": "^3.0.1",
+    "poisson-disk-sampling": "^2.3.1",
     "zustand": "5.0.5"
   }
 }

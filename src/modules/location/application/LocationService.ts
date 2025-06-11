@@ -8,7 +8,6 @@ import type {
   Location, 
   CreateLocation, 
   UpdateLocation, 
-  LocationStatus, 
   HistoricalEvent 
 } from '../domain/schema';
 import type { 
@@ -123,8 +122,7 @@ export class LocationService {
       const landmarks = await this.ai.generateLandmarks({ worldName: event.name, regions, wilderness });
       await this.persistLocations(event.worldId, landmarks, regionLocations.concat(wildernessLocations));
 
-      const landmarkEntities = await this.repo.findByWorldId(event.worldId);
-      const landmarkLocations = landmarkEntities.filter(l => l.type === 'landmark');
+      await this.repo.findByWorldId(event.worldId); // landmark fetch side-effect if needed
 
       // ---------------- Stage 4: Cities -----------------
       const cities = await this.ai.generateCities({ worldName: event.name, regions, wilderness, landmarks });
