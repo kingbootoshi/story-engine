@@ -9,6 +9,7 @@ import type { DomainEvent, ID } from '../../../core/types';
 import { formatEvent } from '../../../shared/utils/formatEvent';
 import { formatLocationsForAI } from '../../../shared/utils/formatLocationContext';
 import type { LocationRepository } from '../../location/domain/ports';
+import type { ScheduledTask } from 'node-cron';
 
 const logger = createLogger('story.ai.service');
 
@@ -16,7 +17,7 @@ const logger = createLogger('story.ai.service');
 export class StoryAIService {
   private buffer: WorldEventLogged[] = [];
   private lastBeatAt: number = Date.now();
-  private cronTask: cron.ScheduledTask;
+  private cronTask: ScheduledTask;
 
   constructor(
     @inject('WorldRepo') private repo: WorldRepo,

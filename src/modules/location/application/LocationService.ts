@@ -364,7 +364,7 @@ export class LocationService {
     const enrichedDescription = await this.ai.enrichDescription({
       location,
       worldContext,
-      recentEvents: location.historical_events.slice(-5).map(e => e.event)
+      recentEvents: location.historical_events.slice(-5).map((e: HistoricalEvent) => e.event)
     });
 
     return this.repo.update(locationId, { description: enrichedDescription });
