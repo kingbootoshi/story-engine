@@ -15,6 +15,7 @@ import type {
   LocationDiscoveredEvent 
 } from '../domain/events';
 import type { WorldCreatedEvent, StoryBeatCreated } from '../../world/domain/events';
+import { allocCoords, allocAround } from '../../../core/infra/coords';
 
 const logger = createLogger('location.service');
 
@@ -218,22 +219,33 @@ export class LocationService {
       });
 
       for (const update of mutations.updates) {
+        // Allow AI to reference locations by NAME as a fallback. Detect UUID v4 format.
+        let targetId = update.locationId;
+        if (!/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(targetId)) {
+          const byName = locations.find(l => l.name.toLowerCase() === update.locationId.toLowerCase());
+          if (!byName) {
+            logger.warn('Update references unknown location', { provided: update.locationId });
+            continue; // skip invalid reference
+          }
+          targetId = byName.id;
+        }
+
         if (update.newStatus) {
           const historicalEvent: HistoricalEvent = {
             timestamp: new Date().toISOString(),
             event: update.reason,
-            previous_status: locations.find(l => l.id === update.locationId)?.status,
+            previous_status: locations.find(l => l.id === targetId)?.status,
             beat_index: event.beatIndex
           };
 
-          await this.repo.updateStatus(update.locationId, update.newStatus, historicalEvent);
+          await this.repo.updateStatus(targetId, update.newStatus, historicalEvent);
 
-          const location = locations.find(l => l.id === update.locationId);
+          const location = locations.find(l => l.id === targetId);
           if (location) {
             const statusEvent: LocationStatusChangedEvent = {
               v: 1,
               worldId: event.worldId,
-              locationId: update.locationId,
+              locationId: targetId,
               locationName: location.name,
               oldStatus: location.status,
               newStatus: update.newStatus,
@@ -246,10 +258,10 @@ export class LocationService {
         }
 
         if (update.descriptionAppend) {
-          const location = await this.repo.findById(update.locationId);
+          const location = await this.repo.findById(targetId);
           if (location) {
             const newDescription = location.description + '\n\n' + update.descriptionAppend;
-            await this.repo.updateDescription(update.locationId, newDescription);
+            await this.repo.updateDescription(targetId, newDescription);
           }
         }
       }
@@ -270,6 +282,35 @@ export class LocationService {
           relative_x: null,
           relative_y: null
         };
+
+        // Allocate coordinates if not provided by AI
+        try {
+          if (parentRegion && parentRegion.relative_x !== null && parentRegion.relative_y !== null) {
+            const coord = allocAround(
+              { x: parentRegion.relative_x, y: parentRegion.relative_y },
+              locations
+                .filter(l => l.relative_x !== null && l.relative_y !== null)
+                .map(l => ({ x: l.relative_x as number, y: l.relative_y as number }))
+            );
+            newLocation.relative_x = coord.x;
+            newLocation.relative_y = coord.y;
+          } else {
+            const coord = allocCoords(
+              1,
+              locations
+                .filter(l => l.relative_x !== null && l.relative_y !== null)
+                .map(l => ({ x: l.relative_x as number, y: l.relative_y as number }))
+            )[0];
+            newLocation.relative_x = coord.x;
+            newLocation.relative_y = coord.y;
+          }
+        } catch (coordErr) {
+          logger.warn('Failed to allocate coordinate for discovery', {
+            worldId: event.worldId,
+            discoveryName: discovery.name,
+            error: (coordErr as Error).message
+          });
+        }
 
         const saved = await this.repo.create(newLocation);
 
