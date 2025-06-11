@@ -87,22 +87,34 @@ describe('StoryAIService', () => {
       const events: WorldEventLogged[] = [
         {
           v: 1,
+          kind: 'world.event.logged',
           worldId: world.id,
+          arcId: arc.id,
+          beatId: anchor.id,
           eventId: randomUUID(),
+          eventType: 'system_event',
           impact: 'major',
           description: 'Major event 1'
         },
         {
           v: 1,
+          kind: 'world.event.logged',
           worldId: world.id,
+          arcId: arc.id,
+          beatId: anchor.id,
           eventId: randomUUID(),
+          eventType: 'system_event',
           impact: 'major',
           description: 'Major event 2'
         },
         {
           v: 1,
+          kind: 'world.event.logged',
           worldId: world.id,
+          arcId: arc.id,
+          beatId: anchor.id,
           eventId: randomUUID(),
+          eventType: 'system_event',
           impact: 'major',
           description: 'Major event 3'
         }
@@ -139,8 +151,12 @@ describe('StoryAIService', () => {
     it('should throw error when event hop limit is exceeded', () => {
       const event: WorldEventLogged = {
         v: 1,
+        kind: 'world.event.logged',
         worldId: randomUUID(),
+        arcId: randomUUID(),
+        beatId: randomUUID(),
         eventId: randomUUID(),
+        eventType: 'system_event',
         impact: 'minor',
         description: 'Test event',
         _hop: 9
@@ -157,8 +173,12 @@ describe('StoryAIService', () => {
       const largeDescription = 'x'.repeat(50_000);
       const event: WorldEventLogged = {
         v: 1,
+        kind: 'world.event.logged',
         worldId: randomUUID(),
+        arcId: randomUUID(),
+        beatId: randomUUID(),
         eventId: randomUUID(),
+        eventType: 'system_event',
         impact: 'minor',
         description: largeDescription
       };
@@ -176,15 +196,23 @@ describe('StoryAIService', () => {
       const events: WorldEventLogged[] = [
         {
           v: 1,
+          kind: 'world.event.logged',
           worldId,
+          arcId: randomUUID(),
+          beatId: randomUUID(),
           eventId: randomUUID(),
+          eventType: 'system_event',
           impact: 'major',
           description: 'Major event 1'
         },
         {
           v: 1,
+          kind: 'world.event.logged',
           worldId,
+          arcId: randomUUID(),
+          beatId: randomUUID(),
           eventId: randomUUID(),
+          eventType: 'system_event',
           impact: 'minor',
           description: 'Minor event'
         }
@@ -227,8 +255,12 @@ describe('StoryAIService', () => {
 
       const events: WorldEventLogged[] = Array(3).fill(null).map(() => ({
         v: 1 as const,
+        kind: 'world.event.logged',
         worldId: world.id,
+        arcId: arc.id,
+        beatId: randomUUID(),
         eventId: randomUUID(),
+        eventType: 'system_event' as const,
         impact: 'major' as const,
         description: 'Major event'
       }));
@@ -247,8 +279,12 @@ describe('StoryAIService', () => {
       // Add a new minor event
       const newEvent: WorldEventLogged = {
         v: 1,
+        kind: 'world.event.logged',
         worldId: world.id,
+        arcId: arc.id,
+        beatId: randomUUID(),
         eventId: randomUUID(),
+        eventType: 'system_event',
         impact: 'minor',
         description: 'After flush'
       };

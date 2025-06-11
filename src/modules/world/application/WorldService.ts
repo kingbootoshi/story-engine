@@ -25,10 +25,14 @@ export class WorldService {
     logger.info('Creating world', { name, descLen: description.length, ownerId: resolvedOwnerId });
     const world = await this.repo.createWorld({ name, description, user_id: resolvedOwnerId });
     
-    eventBus.emit<Events.WorldCreatedEvent>('world.created', { 
-      worldId: world.id, 
-      name, 
-      description 
+    eventBus.emit<Events.WorldCreatedEvent>('world.created', {
+      v: 1,
+      kind: 'world.created',
+      worldId: world.id,
+      arcId: null,
+      beatId: null,
+      name,
+      description
     });
     
     return world;
@@ -107,8 +111,12 @@ export class WorldService {
       });
 
       eventBus.emit<Events.WorldArcCreatedEvent>('world.arcCreated', {
+        v: 1,
+        kind: 'world.arc.created',
         worldId: params.worldId,
         arcId: arc.id,
+        beatId: null,
+        arcNumber: arc.arc_number,
         arcName: arc.story_name
       });
 
@@ -229,6 +237,8 @@ export class WorldService {
         emergent: savedBeat.emergent_storylines ?? [],
         arcId: params.arcId,
         beatName: savedBeat.beat_name,
+        beatType: savedBeat.beat_type as 'anchor' | 'dynamic',
+        kind: 'world.beat.created'
       });
 
       logger.logArcProgression(
@@ -275,8 +285,11 @@ export class WorldService {
       });
 
       eventBus.emit<Events.WorldArcCompletedEvent>('world.arcCompleted', {
+        v: 1,
+        kind: 'world.arc.completed',
         worldId,
         arcId,
+        beatId: lastBeat?.id ?? beats[0].id,
         arcName: arc.story_name,
         summary
       });
@@ -309,11 +322,16 @@ export class WorldService {
 
     logger.debug('Event attached', { beatId: arc.current_beat_id });
 
-    eventBus.emit<Events.WorldEventLoggedEvent>('world.eventLogged', {
+    eventBus.emit<Events.WorldEventLoggedEvent>('world.event.logged', {
+      v: 1,
+      kind: 'world.event.logged',
       worldId: event.world_id,
+      arcId: arc.id,
+      beatId: arc.current_beat_id,
       eventId: savedEvent.id,
       eventType: savedEvent.event_type,
-      impactLevel: savedEvent.impact_level
+      impact: savedEvent.impact_level as 'minor' | 'moderate' | 'major' | 'catastrophic',
+      description: savedEvent.description
     });
 
     return savedEvent;
@@ -351,8 +369,12 @@ export class WorldService {
 
     eventBus.emit<Events.WorldEventLogged>('world.event.logged', {
       v: 1,
+      kind: 'world.event.logged',
       worldId: data.world_id,
+      arcId: arc.id,
+      beatId: arc.current_beat_id,
       eventId: savedEvent.id,
+      eventType: data.event_type,
       impact: data.impact_level as 'minor' | 'moderate' | 'major' | 'catastrophic',
       description: data.description
     });
