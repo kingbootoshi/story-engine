@@ -15,8 +15,12 @@ import type {
   LocationDiscoveredEvent 
 } from '../domain/events';
 import type { WorldCreatedEvent, StoryBeatCreated } from '../../world/domain/events';
+import { generateCoords } from '../../../core/infra/coords';
+import { createTaskQueue } from '../../../core/infra/queue';
+import { v4 as uuidv4 } from 'uuid';
 
 const logger = createLogger('location.service');
+const USE_MAP_PLANNER = process.env.USE_MAP_PLANNER === 'true';
 
 /**
  * Service that manages location lifecycle and reactions to world events
@@ -91,6 +95,85 @@ export class LocationService {
     });
 
     try {
+      if (USE_MAP_PLANNER) {
+        // ------------ New staged pipeline -------------
+        const desiredCount = Math.floor(Math.random() * 8) + 8; // 8–15 inclusive
+        const coords = generateCoords(desiredCount);
+        const ids = coords.map(() => uuidv4());
+
+        const { stubs } = await this.ai.planWorldMap({
+          worldName: event.name,
+          worldDescription: event.description,
+          ids,
+          coords
+        });
+
+        if (stubs.length !== desiredCount) {
+          throw new Error(`Planner returned ${stubs.length} stubs; expected ${desiredCount}`);
+        }
+
+        // Persist without description/tags
+        const createLocations: CreateLocation[] = stubs.map((stub) => ({
+          world_id: event.worldId,
+          parent_location_id: stub.parent_location_id,
+          name: stub.name,
+          type: stub.type,
+          status: 'stable',
+          description: '',
+          tags: [],
+          relative_x: stub.relative_x,
+          relative_y: stub.relative_y
+        }));
+
+        const savedStubs = await this.repo.createBulk(createLocations);
+        logger.debug('[seed] inserted stubs', {
+          worldId: event.worldId,
+          regions: savedStubs.filter((l) => l.type === 'region').length,
+          childCount: savedStubs.filter((l) => l.type !== 'region').length,
+          correlation: event.worldId
+        });
+
+        // Map id to saved id for parent mapping though they already align.
+        const queue = createTaskQueue(3);
+        logger.debug('[seed] queued detail jobs', { worldId: event.worldId, jobCount: stubs.length });
+
+        stubs.forEach((stub) => {
+          queue.add(async () => {
+            const { description, tags } = await this.ai.detailLocation({
+              stub,
+              worldName: event.name,
+              worldDescription: event.description
+            });
+            await this.repo.update(stub.id, { description, tags });
+            logger.debug('[repo] update desc ok', { locationId: stub.id });
+          });
+        });
+
+        await queue.onIdle();
+
+        // Fire events similar to legacy path
+        for (const loc of savedStubs) {
+          const locationEvent: LocationCreatedEvent = {
+            v: 1,
+            worldId: event.worldId,
+            locationId: loc.id,
+            name: loc.name,
+            type: loc.type,
+            parentId: loc.parent_location_id || undefined
+          };
+          eventBus.emit('location.created', locationEvent);
+        }
+
+        logger.info('Successfully created locations for world (planner path)', {
+          worldId: event.worldId,
+          locationCount: savedStubs.length,
+          duration_ms: Date.now() - startTime,
+          correlation: event.worldId
+        });
+        return;
+      }
+
+      // ------------ Legacy single-call path -------------
       const mapResult = await this.ai.buildWorldMap({
         worldName: event.name,
         worldDescription: event.description
@@ -195,6 +278,22 @@ export class LocationService {
     try {
       const locations = await this.repo.findByWorldId(event.worldId);
       
+      // Utility to resolve a possibly-name reference to a proper UUID.
+      const resolveLocationId = (idOrName: string): string | null => {
+        const byId = locations.find((l) => l.id === idOrName);
+        if (byId) return byId.id;
+        const byName = locations.find((l) => l.name.toLowerCase() === idOrName.toLowerCase());
+        if (byName) {
+          logger.warn('Legacy location reference (name instead of UUID) detected', {
+            provided: idOrName,
+            resolvedId: byName.id,
+            correlation: event.worldId
+          });
+          return byName.id;
+        }
+        return null;
+      };
+
       const context = {
         worldId: event.worldId,
         beatDirectives: event.directives.join('\n'),
@@ -218,22 +317,28 @@ export class LocationService {
       });
 
       for (const update of mutations.updates) {
+        const targetId = resolveLocationId(update.locationId);
+        if (!targetId) {
+          logger.warn('Unknown location reference in update', { upd: update, correlation: event.worldId });
+          continue;
+        }
+
         if (update.newStatus) {
           const historicalEvent: HistoricalEvent = {
             timestamp: new Date().toISOString(),
             event: update.reason,
-            previous_status: locations.find(l => l.id === update.locationId)?.status,
+            previous_status: locations.find(l => l.id === targetId)?.status,
             beat_index: event.beatIndex
           };
 
-          await this.repo.updateStatus(update.locationId, update.newStatus, historicalEvent);
+          await this.repo.updateStatus(targetId, update.newStatus, historicalEvent);
 
-          const location = locations.find(l => l.id === update.locationId);
+          const location = locations.find(l => l.id === targetId);
           if (location) {
             const statusEvent: LocationStatusChangedEvent = {
               v: 1,
               worldId: event.worldId,
-              locationId: update.locationId,
+              locationId: targetId,
               locationName: location.name,
               oldStatus: location.status,
               newStatus: update.newStatus,
@@ -246,10 +351,10 @@ export class LocationService {
         }
 
         if (update.descriptionAppend) {
-          const location = await this.repo.findById(update.locationId);
+          const location = await this.repo.findById(targetId);
           if (location) {
             const newDescription = location.description + '\n\n' + update.descriptionAppend;
-            await this.repo.updateDescription(update.locationId, newDescription);
+            await this.repo.updateDescription(targetId, newDescription);
           }
         }
       }

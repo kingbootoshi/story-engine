@@ -4,7 +4,8 @@ import type {
   UpdateLocation, 
   LocationStatus, 
   HistoricalEvent,
-  LocationWithPosition 
+  LocationWithPosition,
+  LocationStub
 } from './schema';
 
 /**
@@ -136,10 +137,20 @@ export interface EnrichmentContext {
  */
 export interface LocationAI {
   /**
-   * Generate initial world map with 8-15 locations
+   * Generate initial world map with 8-15 locations (legacy single-step)
    */
   buildWorldMap(context: MapGenerationContext): Promise<MapGenerationResult>;
-  
+
+  /**
+   * New staged map generation – returns structural stubs only.
+   */
+  planWorldMap(ctx: MapGenerationContext & { ids: string[]; coords: Array<{ x: number; y: number }> }): Promise<{ stubs: LocationStub[] }>;
+
+  /**
+   * Enrich a stub with full descriptive detail.
+   */
+  detailLocation(input: { stub: LocationStub; worldName: string; worldDescription: string }): Promise<{ description: string; tags: string[] }>;
+
   /**
    * Analyze beat and determine location mutations
    */

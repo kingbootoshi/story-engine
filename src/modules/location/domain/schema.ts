@@ -100,3 +100,13 @@ export const LocationWithPosition = CreateLocation.extend({
   relative_position: RelativePosition
 });
 export type LocationWithPosition = z.infer<typeof LocationWithPosition>;
+
+export const LocationStub = z.object({
+  id: UUIDString,
+  name: NonEmptyString,
+  type: LocationType,
+  parent_location_id: UUIDString.nullable(),
+  relative_x: z.number().min(0).max(100),
+  relative_y: z.number().min(0).max(100)
+});
+export type LocationStub = z.infer<typeof LocationStub>;

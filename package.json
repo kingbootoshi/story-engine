@@ -76,6 +76,8 @@
     "tsyringe": "^4.10.0",
     "winston": "^3.17.0",
     "zod": "^3.25.51",
-    "zustand": "5.0.5"
+    "zustand": "5.0.5",
+    "p-queue": "^7.4.2",
+    "poisson-disk-sampling": "^2.3.0"
   }
 }

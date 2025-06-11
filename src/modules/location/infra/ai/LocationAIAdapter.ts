@@ -19,6 +19,9 @@ import {
   buildLocationMutationPrompt, 
   LOCATION_MUTATION_SCHEMA 
 } from './prompts/locationMutation.prompts';
+import { buildPlannerPrompt, WORLD_MAP_PLAN_SCHEMA } from './prompts/worldMapPlan.prompts';
+import { buildLocationDetailPrompt, LOCATION_DETAIL_SCHEMA } from './prompts/locationDetail.prompts';
+import type { LocationStub } from '../../domain/schema';
 
 const logger = createLogger('location.ai');
 
@@ -228,6 +231,114 @@ Provide an enriched description that:
         correlation: context.location.world_id
       });
       throw error;
+    }
+  }
+
+  /**
+   * Planner step – generates lightweight structural stubs for the world map.
+   */
+  async planWorldMap(ctx: MapGenerationContext & { ids: string[]; coords: Array<{ x: number; y: number }> }): Promise<{ stubs: LocationStub[] }> {
+    const startTime = Date.now();
+    logger.info('[planner] call start', {
+      worldName: ctx.worldName,
+      stubsExpected: ctx.ids.length,
+      correlation: ctx.worldName
+    });
+
+    try {
+      const messages = buildPlannerPrompt(ctx);
+      const completion = await chat({
+        messages,
+        tools: [{ type: 'function', function: WORLD_MAP_PLAN_SCHEMA }],
+        tool_choice: { type: 'function', function: { name: 'plan_world_map' } },
+        temperature: 0.7,
+        metadata: buildMetadata('location', 'plan_world_map@v1', {
+          world_name: ctx.worldName,
+          correlation: ctx.worldName
+        })
+      });
+
+      const toolCall = completion.choices[0]?.message?.tool_calls?.[0];
+      if (!toolCall?.function?.arguments) {
+        throw new Error('No tool call in planner response');
+      }
+
+      const parsed = JSON.parse(toolCall.function.arguments);
+      const resultSchema = z.object({ stubs: z.array(z.object({
+        id: z.string(),
+        name: z.string(),
+        type: z.string(),
+        parent_location_id: z.string().nullable(),
+        relative_x: z.number(),
+        relative_y: z.number()
+      }))});
+
+      const validation = resultSchema.safeParse(parsed);
+      if (!validation.success) {
+        logger.error('Planner schema validation failed', validation.error, { worldName: ctx.worldName });
+        throw new Error('Invalid planner payload');
+      }
+
+      logger.info('[ai] plan_world_map@v1 success', {
+        tokens: completion.usage,
+        stubs: validation.data.stubs.length,
+        correlation: ctx.worldName
+      });
+
+      return validation.data;
+    } catch (err) {
+      logger.error('Planner call failed', err, { correlation: ctx.worldName });
+      throw err;
+    }
+  }
+
+  /**
+   * Detailer step – enriches a stub with prose description & tags.
+   */
+  async detailLocation(input: { stub: LocationStub; worldName: string; worldDescription: string }): Promise<{ description: string; tags: string[] }> {
+    const startTime = Date.now();
+    logger.info('[detail] start', { stubId: input.stub.id });
+
+    try {
+      const messages = buildLocationDetailPrompt(input);
+      const completion = await chat({
+        messages,
+        tools: [{ type: 'function', function: LOCATION_DETAIL_SCHEMA }],
+        tool_choice: { type: 'function', function: { name: 'detail_location' } },
+        temperature: 0.8,
+        max_tokens: 800,
+        metadata: buildMetadata('location', 'detail_location@v1', {
+          stub_id: input.stub.id,
+          correlation: input.stub.id
+        })
+      });
+
+      const toolCall = completion.choices[0]?.message?.tool_calls?.[0];
+      if (!toolCall?.function?.arguments) {
+        throw new Error('No tool call in detailer response');
+      }
+
+      const parsed = JSON.parse(toolCall.function.arguments);
+      const detailSchema = z.object({
+        description: z.string(),
+        tags: z.array(z.string())
+      });
+      const validation = detailSchema.safeParse(parsed);
+      if (!validation.success) {
+        logger.error('Detailer schema validation failed', validation.error, { stubId: input.stub.id });
+        throw new Error('Invalid detail_location payload');
+      }
+
+      logger.info('[ai] detail_location@v1 success', {
+        stubId: input.stub.id,
+        tokens: completion.usage,
+        correlation: input.stub.id
+      });
+
+      return validation.data;
+    } catch (err) {
+      logger.error('Detailer call failed', err, { stubId: input.stub.id });
+      throw err;
     }
   }
 }
