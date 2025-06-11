@@ -84,6 +84,8 @@ export class StoryAIService {
         worldId: worldId!,
         beatId: beat.id,
         beatIndex: beat.beat_index,
+        arcId: beat.arc_id,
+        beatName: beat.beat_name,
         directives: beat.world_directives || [],
         emergent: beat.emergent_storylines || []
       });

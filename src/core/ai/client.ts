@@ -2,7 +2,7 @@ import OpenAI from 'openpipe/openai';
 import { log } from '../infra/logger';
 import { env } from '../../shared/config/env';
 import { modelRegistry } from './registry';
-import type { AIMetadata } from './metadata';
+import { validateMetadata, type AIMetadata } from './metadata';
 
 const client = new OpenAI({
   apiKey: env.OPENROUTER_API_KEY,
@@ -32,6 +32,13 @@ export async function chat(params: ChatParams): Promise<any> {
   const startTime = Date.now();
   
   try {
+    // ────────────────────────────────────────────────────────────────────
+    // Enforce metadata contract (module + prompt_id are REQUIRED).  We
+    // validate early so that any omission fails fast in development and
+    // never reaches the expensive network call.
+    // ────────────────────────────────────────────────────────────────────
+    validateMetadata(params.metadata);
+
     const completion = await client.chat.completions.create({
       model,
       messages: params.messages,
@@ -39,6 +46,7 @@ export async function chat(params: ChatParams): Promise<any> {
       tool_choice: params.tool_choice,
       temperature: params.temperature,
       max_tokens: params.max_tokens,
+      metadata: params.metadata
     });
     
     const duration_ms = Date.now() - startTime;

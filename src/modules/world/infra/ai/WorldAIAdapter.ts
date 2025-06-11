@@ -5,6 +5,7 @@ import type { WorldAI, AnchorContext, BeatContext, SummaryContext, AnchorDTO, Be
 import { ANCHOR_SYSTEM_PROMPT, buildAnchorUserPrompt } from './prompts/anchor.prompts';
 import { DYNAMIC_BEAT_SYSTEM_PROMPT, buildDynamicBeatUserPrompt } from './prompts/dynamicBeat.prompts';
 import { ARC_SUMMARY_SYSTEM_PROMPT, buildArcSummaryUserPrompt } from './prompts/arcSummary.prompts';
+import { SAVE_THE_CAT_BEATS } from '../../../../shared/story/saveTheCat';
 
 const log = createLogger('world.ai');
 
@@ -204,8 +205,11 @@ export class WorldAIAdapter implements WorldAI {
     const previousBeatsSummary = ctx.previousBeats
       .map(b => `Beat ${b.beat_index}: ${b.beat_name} - ${b.description.substring(0, 200)}...`)
       .join('\n');
-    const nextAnchorSummary = `${ctx.nextAnchor.beat_name}: ${ctx.nextAnchor.description}`;
+    const nextAnchorSummary = `Beat #${ctx.nextAnchor.beat_index} (${ctx.nextAnchor.beat_name}): ${ctx.nextAnchor.description}`;
     
+    // Look up structural metadata for this beat
+    const beatInfo = SAVE_THE_CAT_BEATS.find(b => b.index === ctx.currentBeatIndex);
+
     const completion = await chat({
       model: this.MODEL,
       messages: [
@@ -214,6 +218,8 @@ export class WorldAIAdapter implements WorldAI {
           ctx.worldName,
           ctx.worldDescription,
           ctx.currentBeatIndex,
+          beatInfo?.label ?? 'Unknown Beat',
+          beatInfo?.purpose ?? 'Advance the story coherently.',
           previousBeatsSummary,
           nextAnchorSummary,
           ctx.recentEvents,

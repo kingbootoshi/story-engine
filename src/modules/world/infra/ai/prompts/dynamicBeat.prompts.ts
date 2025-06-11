@@ -21,17 +21,19 @@ export function buildDynamicBeatUserPrompt(
   worldName: string,
   worldDescription: string,
   currentBeatIndex: number,
+  beatLabel: string,
+  beatPurpose: string,
   previousBeatsSummary: string,
   nextAnchorSummary: string,
   recentEvents: string,
   arcDetailedDescription?: string,
   currentLocations: string = 'No locations currently exist in this world.'
 ): string {
-  return `Generate the NEXT BEAT (Beat #${currentBeatIndex}) for this world's ongoing story:
-
-World Name: ${worldName}
-World Description: ${worldDescription}
-Current Beat Index: ${currentBeatIndex}
+  return `
+# WORLD CONTEXT
+## WORLD NAME: ${worldName}
+## WORLD DESCRIPTION: ${worldDescription}
+## CURRENT ARC OVERVIEW: ${arcDetailedDescription || 'N/A'}
 
 ## CURRENT WORLD LOCATIONS:
 ${currentLocations}
@@ -42,9 +44,19 @@ ${recentEvents || 'No specific events recorded.'}
 ## PREVIOUS WORLD STATES:
 ${previousBeatsSummary}
 
-## NEXT ANCHOR POINT:
-${nextAnchorSummary}
-${arcDetailedDescription ? `\n## ARC OVERVIEW:\n${arcDetailedDescription}` : ''}
+# HOW TO GENEREATE NEXT BEAT
+Generate the NEXT BEAT — Beat #${currentBeatIndex}: **${beatLabel}**
 
-Generate a compelling world beat that naturally incorporates the recent events while maintaining the arc's direction.`;
+## BEAT PURPOSE:
+${beatPurpose}
+
+## NEXT ANCHOR POINT (you are building up TOWARDS this beat anchor point based on world events):
+${nextAnchorSummary}
+
+## HOW TO USE THIS:
+– Everything you write (description, directives, conflicts) must serve THAT purpose.
+– Do NOT jump ahead to later Save-the-Cat beats.
+
+# TASK
+Generate a compelling world beat that naturally incorporates the recent events, fulfils the stated beat purpose, and keeps the narrative moving toward the next anchor.`;
 }

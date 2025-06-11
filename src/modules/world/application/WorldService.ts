@@ -220,12 +220,15 @@ export class WorldService {
         impact_level: 'moderate'
       });
 
-      eventBus.emit<Events.WorldBeatCreatedEvent>('world.beatCreated', {
+      eventBus.emit<Events.StoryBeatCreated>('world.beat.created', {
+        v: 1,
         worldId: params.worldId,
-        arcId: params.arcId,
         beatId: savedBeat.id,
         beatIndex: nextBeatIndex,
-        beatName: savedBeat.beat_name
+        directives: savedBeat.world_directives ?? [],
+        emergent: savedBeat.emergent_storylines ?? [],
+        arcId: params.arcId,
+        beatName: savedBeat.beat_name,
       });
 
       logger.logArcProgression(

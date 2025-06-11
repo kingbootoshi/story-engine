@@ -44,8 +44,10 @@ export interface WorldEventLogged {
 export interface StoryBeatCreated {
   v: 1;
   worldId: string;
+  arcId: string;
   beatId: string;
   beatIndex: number;
+  beatName: string;
   directives: string[];
   emergent: string[];
   _hop?: number;
