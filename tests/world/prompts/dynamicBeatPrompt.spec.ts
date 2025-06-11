@@ -34,6 +34,8 @@ describe('Dynamic Beat Prompts', () => {
       worldName: 'Eldoria',
       worldDescription: 'A fantasy realm',
       currentBeatIndex: 5,
+      beatLabel: 'Set-Up',
+      beatPurpose: 'Establish the ordinary world and hint at conflict',
       previousBeatsSummary: 'Previous beats summary',
       nextAnchorSummary: 'Next anchor summary',
       recentEvents: 'Dragon sighting reported',
@@ -44,15 +46,17 @@ describe('Dynamic Beat Prompts', () => {
         baseParams.worldName,
         baseParams.worldDescription,
         baseParams.currentBeatIndex,
+        baseParams.beatLabel,
+        baseParams.beatPurpose,
         baseParams.previousBeatsSummary,
         baseParams.nextAnchorSummary,
         baseParams.recentEvents
       );
 
-      expect(prompt).toContain('World Name: Eldoria');
-      expect(prompt).toContain('World Description: A fantasy realm');
-      expect(prompt).toContain('Current Beat Index: 5');
-      expect(prompt).toContain('Generate the NEXT BEAT (Beat #5)');
+      expect(prompt).toContain('## WORLD NAME: Eldoria');
+      expect(prompt).toContain('## WORLD DESCRIPTION: A fantasy realm');
+      expect(prompt).toContain('Beat #5');
+      expect(prompt).toContain('Generate the NEXT BEAT — Beat #5');
     });
 
     it('should include previous beats summary', () => {
@@ -60,6 +64,8 @@ describe('Dynamic Beat Prompts', () => {
         baseParams.worldName,
         baseParams.worldDescription,
         baseParams.currentBeatIndex,
+        baseParams.beatLabel,
+        baseParams.beatPurpose,
         'The kingdom faced drought',
         baseParams.nextAnchorSummary,
         baseParams.recentEvents
@@ -74,12 +80,14 @@ describe('Dynamic Beat Prompts', () => {
         baseParams.worldName,
         baseParams.worldDescription,
         baseParams.currentBeatIndex,
+        baseParams.beatLabel,
+        baseParams.beatPurpose,
         baseParams.previousBeatsSummary,
         'Magic returns to the world',
         baseParams.recentEvents
       );
 
-      expect(prompt).toContain('## NEXT ANCHOR POINT:');
+      expect(prompt).toContain('## NEXT ANCHOR POINT');
       expect(prompt).toContain('Magic returns to the world');
     });
 
@@ -88,6 +96,8 @@ describe('Dynamic Beat Prompts', () => {
         baseParams.worldName,
         baseParams.worldDescription,
         baseParams.currentBeatIndex,
+        baseParams.beatLabel,
+        baseParams.beatPurpose,
         baseParams.previousBeatsSummary,
         baseParams.nextAnchorSummary,
         'Players defeated the tyrant king'
@@ -102,6 +112,8 @@ describe('Dynamic Beat Prompts', () => {
         baseParams.worldName,
         baseParams.worldDescription,
         baseParams.currentBeatIndex,
+        baseParams.beatLabel,
+        baseParams.beatPurpose,
         baseParams.previousBeatsSummary,
         baseParams.nextAnchorSummary,
         ''
@@ -118,13 +130,14 @@ describe('Dynamic Beat Prompts', () => {
           baseParams.worldName,
           baseParams.worldDescription,
           index,
+          baseParams.beatLabel,
+          baseParams.beatPurpose,
           baseParams.previousBeatsSummary,
           baseParams.nextAnchorSummary,
           baseParams.recentEvents
         );
 
         expect(prompt).toContain(`Beat #${index}`);
-        expect(prompt).toContain(`Current Beat Index: ${index}`);
       });
     });
 
@@ -133,12 +146,14 @@ describe('Dynamic Beat Prompts', () => {
         baseParams.worldName,
         baseParams.worldDescription,
         baseParams.currentBeatIndex,
+        baseParams.beatLabel,
+        baseParams.beatPurpose,
         baseParams.previousBeatsSummary,
         baseParams.nextAnchorSummary,
         baseParams.recentEvents
       );
 
-      expect(prompt).toContain("naturally incorporates the recent events while maintaining the arc's direction");
+      expect(prompt).toContain('naturally incorporates the recent events');
     });
 
     it('should handle multi-line summaries', () => {
@@ -154,6 +169,8 @@ Beat 3: Cities begin quarantine`;
         baseParams.worldName,
         baseParams.worldDescription,
         baseParams.currentBeatIndex,
+        baseParams.beatLabel,
+        baseParams.beatPurpose,
         multiLinePrevious,
         multiLineAnchor,
         baseParams.recentEvents

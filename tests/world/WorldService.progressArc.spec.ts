@@ -139,13 +139,13 @@ describe('WorldService.progressArc', () => {
     });
 
     // Assert
-    expect(emitSpy).toHaveBeenCalledWith('world.beatCreated', {
+    expect(emitSpy).toHaveBeenCalledWith('world.beat.created', expect.objectContaining({
       worldId: testWorld.id,
       arcId: testArc.id,
       beatId: beat!.id,
       beatIndex: 1,
       beatName: 'Dynamic Beat 1',
-    });
+    }));
   });
 
   it('should return null when arc is complete (15 beats)', async () => {

@@ -123,6 +123,8 @@ When tests and hooks are green, open a PR; no other files need touching.
 
 ## 9 Best-practice reminders
 
+
+* ALWAYS npm run test WHEN CREATING NEW MODULES OR DOING UPDATES
 * **Single responsibility** per module: world logic stays in *world*, dialogue in *character*, etc.
 * Never bypass DI or call Supabase outside a `*Repo`.
 * Always include `correlation` id in logs and AI metadata.
