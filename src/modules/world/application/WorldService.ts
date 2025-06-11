@@ -9,6 +9,7 @@ import { randomUUID } from 'crypto';
 import { formatEvent } from '../../../shared/utils/formatEvent';
 import { formatLocationsForAI } from '../../../shared/utils/formatLocationContext';
 import type { LocationRepository } from '../../location/domain/ports';
+import type { ID } from '../../../core/types';
 
 const logger = createLogger('world.service');
 
@@ -25,15 +26,17 @@ export class WorldService {
     logger.info('Creating world', { name, descLen: description.length, ownerId: resolvedOwnerId });
     const world = await this.repo.createWorld({ name, description, user_id: resolvedOwnerId });
     
-    eventBus.emit<Events.WorldCreatedEvent>('world.created', {
+    const wcPayload: Events.WorldCreatedEvent = {
       kind: 'world.created',
       v: 1,
-      worldId: world.id,
+      worldId: world.id as ID,
       arcId: null,
       beatId: null,
       name,
       description
-    });
+    };
+    logger.debug('[emit]', { kind: wcPayload.kind, arcId: wcPayload.arcId, beatId: wcPayload.beatId });
+    eventBus.emit<Events.WorldCreatedEvent>('world.created', wcPayload);
     
     return world;
   }
@@ -110,15 +113,17 @@ export class WorldService {
         current_arc_id: arc.id
       });
 
-      eventBus.emit<Events.WorldArcCreatedEvent>('world.arc.created', {
+      const arcCreatedPayload: Events.WorldArcCreatedEvent = {
         kind: 'world.arc.created',
         v: 1,
-        worldId: params.worldId,
-        arcId: arc.id,
+        worldId: params.worldId as ID,
+        arcId: arc.id as ID,
         beatId: null,
         arcNumber: arc.arc_number,
         arcName: arc.story_name
-      });
+      };
+      logger.debug('[emit]', { kind: arcCreatedPayload.kind, arcId: arcCreatedPayload.arcId, beatId: arcCreatedPayload.beatId });
+      eventBus.emit<Events.WorldArcCreatedEvent>('world.arc.created', arcCreatedPayload);
 
       logger.success('Arc created', {
         arcId: arc.id,
@@ -228,18 +233,20 @@ export class WorldService {
         impact_level: 'moderate'
       });
 
-      eventBus.emit<Events.StoryBeatCreated>('world.beat.created', {
+      const beatPayload: Events.StoryBeatCreated = {
         kind: 'world.beat.created',
         v: 1,
-        worldId: params.worldId,
-        arcId: params.arcId,
-        beatId: savedBeat.id,
+        worldId: params.worldId as ID,
+        arcId: params.arcId as ID,
+        beatId: savedBeat.id as ID,
         beatIndex: nextBeatIndex,
         beatName: savedBeat.beat_name,
         beatType: 'dynamic',
         directives: savedBeat.world_directives ?? [],
         emergent: savedBeat.emergent_storylines ?? []
-      });
+      };
+      logger.debug('[emit]', { kind: beatPayload.kind, arcId: beatPayload.arcId, beatId: beatPayload.beatId });
+      eventBus.emit<Events.StoryBeatCreated>('world.beat.created', beatPayload);
 
       logger.logArcProgression(
         params.worldId,
@@ -284,15 +291,17 @@ export class WorldService {
         impact_level: 'major'
       });
 
-      eventBus.emit<Events.WorldArcCompletedEvent>('world.arc.completed', {
+      const arcCompletedPayload: Events.WorldArcCompletedEvent = {
         kind: 'world.arc.completed',
         v: 1,
-        worldId,
-        arcId,
-        beatId: lastBeat?.id ?? beats[0].id,
+        worldId: worldId as ID,
+        arcId: arcId as ID,
+        beatId: (lastBeat?.id ?? beats[0].id) as ID | null,
         arcName: arc.story_name,
         summary
-      });
+      };
+      logger.debug('[emit]', { kind: arcCompletedPayload.kind, arcId: arcCompletedPayload.arcId, beatId: arcCompletedPayload.beatId });
+      eventBus.emit<Events.WorldArcCompletedEvent>('world.arc.completed', arcCompletedPayload);
 
       logger.success('Arc completed', { worldId, arcId });
     } catch (error) {
@@ -322,17 +331,19 @@ export class WorldService {
 
     logger.debug('Event attached', { beatId: arc.current_beat_id });
 
-    eventBus.emit<Events.WorldEventLoggedEvent>('world.event.logged', {
+    const loggedPayload: Events.WorldEventLoggedEvent = {
       kind: 'world.event.logged',
       v: 1,
-      worldId: event.world_id,
-      arcId: arc.id,
-      beatId: arc.current_beat_id,
-      eventId: savedEvent.id,
+      worldId: event.world_id as ID,
+      arcId: arc.id as ID,
+      beatId: arc.current_beat_id as ID,
+      eventId: savedEvent.id as ID,
       eventType: event.event_type as any,
       impact: event.impact_level as any,
       description: event.description
-    });
+    };
+    logger.debug('[emit]', { kind: loggedPayload.kind, arcId: loggedPayload.arcId, beatId: loggedPayload.beatId });
+    eventBus.emit<Events.WorldEventLoggedEvent>('world.event.logged', loggedPayload);
 
     return savedEvent;
   }
@@ -367,17 +378,19 @@ export class WorldService {
       impact: data.impact_level 
     });
 
-    eventBus.emit<Events.WorldEventLogged>('world.event.logged', {
+    const logEvtPayload: Events.WorldEventLogged = {
       kind: 'world.event.logged',
       v: 1,
-      worldId: data.world_id,
-      arcId: arc.id,
-      beatId: arc.current_beat_id,
-      eventId: savedEvent.id,
+      worldId: data.world_id as ID,
+      arcId: arc.id as ID,
+      beatId: arc.current_beat_id as ID,
+      eventId: savedEvent.id as ID,
       eventType: data.event_type as any,
       impact: data.impact_level as any,
       description: data.description
-    });
+    };
+    logger.debug('[emit]', { kind: logEvtPayload.kind, arcId: logEvtPayload.arcId, beatId: logEvtPayload.beatId });
+    eventBus.emit<Events.WorldEventLogged>('world.event.logged', logEvtPayload);
 
     return savedEvent;
   }

@@ -250,7 +250,7 @@ export class LocationService {
               oldStatus: location.status,
               newStatus: update.newStatus,
               reason: update.reason,
-              beatId: event.beatId,
+              beatId: (event.beatId ?? undefined) as unknown as string | undefined,
               beatIndex: event.beatIndex
             };
             eventBus.emit('location.status_changed', statusEvent);
@@ -291,7 +291,7 @@ export class LocationService {
           locationId: saved.id,
           locationName: saved.name,
           type: saved.type,
-          beatId: event.beatId,
+          beatId: (event.beatId ?? saved.id) as unknown as string,
           beatIndex: event.beatIndex
         };
         eventBus.emit('location.discovered', discoveryEvent);

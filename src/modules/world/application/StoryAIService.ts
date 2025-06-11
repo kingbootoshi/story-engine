@@ -5,7 +5,7 @@ import { eventBus } from '../../../core/infra/eventBus';
 import type { WorldRepo, WorldAI } from '../domain/ports';
 import type { WorldBeat } from '../domain/schema';
 import type { WorldEventLogged, StoryBeatCreated } from '../domain/events';
-import type { DomainEvent } from '../../../core/types';
+import type { DomainEvent, ID } from '../../../core/types';
 import { formatEvent } from '../../../shared/utils/formatEvent';
 import { formatLocationsForAI } from '../../../shared/utils/formatLocationContext';
 import type { LocationRepository } from '../../location/domain/ports';
@@ -79,18 +79,20 @@ export class StoryAIService {
         index: beat.beat_index 
       });
 
-      eventBus.emit<StoryBeatCreated>('world.beat.created', {
+      const beatPayload: StoryBeatCreated = {
         kind: 'world.beat.created',
         v: 1,
-        worldId: worldId!,
-        arcId: beat.arc_id,
-        beatId: beat.id,
+        worldId: worldId! as ID,
+        arcId: beat.arc_id as ID,
+        beatId: beat.id as ID,
         beatIndex: beat.beat_index,
         beatName: beat.beat_name,
         beatType: 'dynamic',
         directives: beat.world_directives || [],
         emergent: beat.emergent_storylines || []
-      });
+      };
+      logger.debug('[emit]', { kind: beatPayload.kind, arcId: beatPayload.arcId, beatId: beatPayload.beatId });
+      eventBus.emit<StoryBeatCreated>('world.beat.created', beatPayload);
     } catch (error) {
       logger.error('[story] Failed to generate beat', error, { reason });
       throw error;
