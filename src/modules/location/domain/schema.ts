@@ -57,7 +57,12 @@ export const Location = z.object({
    * Relative Y coordinate (0-100) used for map visualisation.
    * See `relative_x` for rationale on storage strategy.
    */
-  relative_y: z.number().min(0).max(100).nullable().optional().default(null)
+  relative_y: z.number().min(0).max(100).nullable().optional().default(null),
+  
+  /**
+   * ID of the faction that controls this location (if any)
+   */
+  controlling_faction_id: UUIDString.nullable().optional()
 });
 export type Location = z.infer<typeof Location>;
 

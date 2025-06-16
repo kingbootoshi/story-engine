@@ -8,8 +8,19 @@ export class InMemoryWorldRepo implements WorldRepo {
   private beats = new Map<string, WorldBeat>();
   private events = new Map<string, WorldEvent>();
 
-  async createWorld(data: { name: string; description: string; user_id?: string }): Promise<World> {
-    const id = randomUUID();
+  /**
+   * In-memory implementation of `WorldRepo#createWorld` used in unit tests.
+   *
+   * The real repository layer (Supabase) generates the primary key server-side.
+   * For tests, however, we often need deterministic IDs so we can reference
+   * the newly created world in subsequent service calls. Therefore this fake
+   * repo honours an optional `id` field on the input object – falling back to
+   * a fresh `uuid` when none is provided.
+   */
+  async createWorld(
+    data: { id?: string; name: string; description: string; user_id?: string }
+  ): Promise<World> {
+    const id = data.id ?? randomUUID();
     const world: World = {
       id,
       user_id: data.user_id ?? randomUUID(),

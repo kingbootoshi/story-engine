@@ -238,10 +238,24 @@ export function WorldDetail() {
               color: 'white',
               borderRadius: '4px',
               textDecoration: 'none',
-              display: 'inline-block'
+              display: 'inline-block',
+              marginRight: '0.5rem'
             }}
           >
             View Locations
+          </Link>
+          <Link 
+            to={`/worlds/${worldId}/factions`}
+            style={{
+              padding: '0.5rem 1rem',
+              backgroundColor: '#3F51B5',
+              color: 'white',
+              borderRadius: '4px',
+              textDecoration: 'none',
+              display: 'inline-block'
+            }}
+          >
+            View Factions
           </Link>
         </div>
       </header>

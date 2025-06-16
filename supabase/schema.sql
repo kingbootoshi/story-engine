@@ -108,3 +108,56 @@ FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 -- CREATE POLICY "Worlds are viewable by everyone" ON worlds FOR SELECT USING (true);
 -- CREATE POLICY "Authenticated users can create worlds" ON worlds FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 -- CREATE POLICY "Users can update their own worlds" ON worlds FOR UPDATE USING (auth.uid() = metadata->>'owner_id');
+
+-- =====================================================
+-- FACTION MODULE TABLES
+-- =====================================================
+
+-- Create faction status enum
+CREATE TYPE faction_status AS ENUM ('rising', 'stable', 'declining', 'collapsed');
+
+-- Create diplomatic stance enum  
+CREATE TYPE diplomatic_stance AS ENUM ('ally', 'neutral', 'hostile');
+
+-- Factions table: power structures within worlds
+CREATE TABLE factions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  world_id UUID NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
+  name VARCHAR(120) NOT NULL,
+  banner_color VARCHAR(7),
+  emblem_svg TEXT,
+  ideology TEXT NOT NULL,
+  status faction_status NOT NULL DEFAULT 'rising',
+  members_estimate INTEGER NOT NULL DEFAULT 0 CHECK (members_estimate >= 0),
+  home_location_id UUID REFERENCES locations(id) ON DELETE SET NULL,
+  controlled_locations UUID[] DEFAULT '{}',
+  tags TEXT[] DEFAULT '{}',
+  historical_events JSONB DEFAULT '[]',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(world_id, name)
+);
+
+-- Faction relations table: diplomatic relationships between factions
+CREATE TABLE faction_relations (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  world_id UUID NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
+  source_id UUID NOT NULL REFERENCES factions(id) ON DELETE CASCADE,
+  target_id UUID NOT NULL REFERENCES factions(id) ON DELETE CASCADE,
+  stance diplomatic_stance NOT NULL,
+  last_changed TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(source_id, target_id),
+  CHECK (source_id != target_id)
+);
+
+-- Faction indexes
+CREATE INDEX idx_factions_world ON factions(world_id);
+CREATE INDEX idx_factions_status ON factions(status);
+CREATE INDEX idx_factions_home_location ON factions(home_location_id);
+CREATE INDEX idx_faction_rel_source ON faction_relations(source_id);
+CREATE INDEX idx_faction_rel_target ON faction_relations(target_id);
+CREATE INDEX idx_faction_rel_world ON faction_relations(world_id);
+
+-- Faction triggers
+CREATE TRIGGER update_factions_updated_at BEFORE UPDATE ON factions
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
