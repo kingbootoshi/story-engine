@@ -7,6 +7,8 @@ export interface AnchorContext {
   storyIdea?: string;
   previousArcs?: string[];
   currentLocations: string;
+  /** Markdown list of factions in the world */
+  currentFactions?: string;
 }
 
 export interface BeatContext {
@@ -18,6 +20,8 @@ export interface BeatContext {
   nextAnchor: WorldBeat;
   recentEvents: string;
   currentLocations: string;
+  /** Markdown list of factions in the world */
+  currentFactions?: string;
 }
 
 export interface SummaryContext {

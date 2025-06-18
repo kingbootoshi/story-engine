@@ -8,7 +8,10 @@ import type { WorldArcCreationParams, BeatProgressionParams } from './types';
 import { randomUUID } from 'crypto';
 import { formatEvent } from '../../../shared/utils/formatEvent';
 import { formatLocationsForAI } from '../../../shared/utils/formatLocationContext';
+import { formatFactionsForAI } from '../../../shared/utils/formatFactionContext';
 import type { LocationRepository } from '../../location/domain/ports';
+import { container } from 'tsyringe';
+import type { IFactionRepository } from '../../faction/domain/ports';
 
 const logger = createLogger('world.service');
 
@@ -59,12 +62,23 @@ export class WorldService {
       const locations = await this.locationRepo.findByWorldId(params.worldId);
       const locationsContext = formatLocationsForAI(locations);
       
+      // Gather factions context
+      let factionsContext = 'No factions currently exist in this world.';
+      try {
+        const factionRepo = container.resolve<IFactionRepository>('IFactionRepository');
+        const factions = await factionRepo.findByWorldId(params.worldId);
+        factionsContext = formatFactionsForAI(factions);
+      } catch (err) {
+        logger.debug('Faction repository unavailable – skipping faction context');
+      }
+      
       const result = await this.ai.generateAnchors({
         worldName: params.worldName,
         worldDescription: params.worldDescription,
         storyIdea: params.storyIdea,
         previousArcs,
-        currentLocations: locationsContext
+        currentLocations: locationsContext,
+        currentFactions: factionsContext
       });
 
       if (!result.anchors || result.anchors.length !== 3) {
@@ -188,6 +202,16 @@ export class WorldService {
       const locations = await this.locationRepo.findByWorldId(params.worldId);
       const locationsContext = formatLocationsForAI(locations);
 
+      // Gather factions context
+      let factionsContext = 'No factions currently exist in this world.';
+      try {
+        const factionRepo = container.resolve<IFactionRepository>('IFactionRepository');
+        const factions = await factionRepo.findByWorldId(params.worldId);
+        factionsContext = formatFactionsForAI(factions);
+      } catch (err) {
+        logger.debug('Faction repository unavailable – skipping faction context');
+      }
+
       const dynamicBeat = await this.ai.generateBeat({
         worldName: world.name,
         worldDescription: world.description,
@@ -196,7 +220,8 @@ export class WorldService {
         previousBeats,
         nextAnchor,
         recentEvents: recentEventsContext,
-        currentLocations: locationsContext
+        currentLocations: locationsContext,
+        currentFactions: factionsContext
       });
 
       const savedBeat = await this.repo.createBeat(

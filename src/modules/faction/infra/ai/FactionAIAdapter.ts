@@ -44,7 +44,7 @@ const GENERATE_FACTION_SCHEMA = {
           description: "Optional hex color for faction banner"
         }
       },
-      required: ["name", "ideology", "status", "members_estimate", "tags"],
+      required: ["name", "ideology", "status", "members_estimate", "tags", "banner_color"],
       additionalProperties: false
     },
     strict: true

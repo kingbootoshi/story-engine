@@ -8,7 +8,10 @@ import type { WorldEventLogged, StoryBeatCreated } from '../domain/events';
 import type { DomainEvent } from '../../../core/types';
 import { formatEvent } from '../../../shared/utils/formatEvent';
 import { formatLocationsForAI } from '../../../shared/utils/formatLocationContext';
+import { formatFactionsForAI } from '../../../shared/utils/formatFactionContext';
 import type { LocationRepository } from '../../location/domain/ports';
+import { container } from 'tsyringe';
+import type { IFactionRepository } from '../../faction/domain/ports';
 
 const logger = createLogger('story.ai.service');
 
@@ -155,6 +158,16 @@ export class StoryAIService {
     const locations = await this.locationRepo.findByWorldId(worldId);
     const locationsContext = formatLocationsForAI(locations);
 
+    // Gather factions context
+    let factionsContext = 'No factions currently exist in this world.';
+    try {
+      const factionRepo = container.resolve<IFactionRepository>('IFactionRepository');
+      const factions = await factionRepo.findByWorldId(worldId);
+      factionsContext = formatFactionsForAI(factions);
+    } catch (err) {
+      logger.debug('Faction repository unavailable – skipping faction context');
+    }
+
     const dynamicBeat = await this.ai.generateBeat({
       worldName: world.name,
       worldDescription: world.description,
@@ -163,7 +176,8 @@ export class StoryAIService {
       previousBeats,
       nextAnchor,
       recentEvents,
-      currentLocations: locationsContext
+      currentLocations: locationsContext,
+      currentFactions: factionsContext
     });
 
     const savedBeat = await this.repo.createBeat(

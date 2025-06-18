@@ -37,3 +37,16 @@ coverage
 
 # Supabase
 .supabase
+
+# Added by Task Master AI
+dev-debug.log
+# Dependency directories
+node_modules/
+# Environment variables
+.vscode
+# OS specific
+
+.taskmaster
+.roo
+.claude
+.roomodes
