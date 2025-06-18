@@ -183,11 +183,32 @@ export class InMemoryWorldRepo implements WorldRepo {
     return arcs[0] || null;
   }
 
+  async logWorldEvent(event: CreateEvent): Promise<void> {
+    await this.createEvent(event);
+  }
+
+
   // Test helper methods
   clear(): void {
     this.worlds.clear();
     this.arcs.clear();
     this.beats.clear();
     this.events.clear();
+  }
+
+  seed(world: World): void {
+    this.worlds.set(world.id, world);
+  }
+
+  seedArc(arc: WorldArc): void {
+    this.arcs.set(arc.id, arc);
+  }
+
+  seedBeat(beat: WorldBeat): void {
+    this.beats.set(beat.id, beat);
+  }
+
+  seedEvent(event: WorldEvent): void {
+    this.events.set(event.id, event);
   }
 }

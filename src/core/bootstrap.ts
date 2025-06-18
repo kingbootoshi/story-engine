@@ -9,6 +9,9 @@ import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import { appRouter } from './trpc/rootRouter';
 import { createContext as buildTrpcContext } from './trpc/context';
 
+// Import core DI bindings to register singleton services
+import './infra';
+
 export async function bootstrapModules(app: express.Express): Promise<void> {
   logger.info('🚀 Starting module bootstrap');
   

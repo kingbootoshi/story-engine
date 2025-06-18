@@ -4,7 +4,13 @@ import { createLogger } from './logger';
 
 const logger = createLogger('eventBus');
 
-class TypedEventBus {
+export interface IEventBus {
+  emit<T = any>(topic: string, payload: T & { _hop?: number }): boolean;
+  on<T = any>(topic: string, handler: (event: DomainEvent<T>) => void): this;
+  off<T = any>(topic: string, handler: (event: DomainEvent<T>) => void): this;
+}
+
+class TypedEventBus implements IEventBus {
   private emitter = new EventEmitter();
   
   emit<T = any>(topic: string, payload: T & { _hop?: number }): boolean {
@@ -42,4 +48,4 @@ class TypedEventBus {
   }
 }
 
-export const eventBus = new TypedEventBus();
+export const eventBus: IEventBus = new TypedEventBus();

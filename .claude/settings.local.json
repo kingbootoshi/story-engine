@@ -27,7 +27,8 @@
       "Bash(npm run typecheck:*)",
       "Bash(npm run lint:*)",
       "Bash(git push:*)",
-      "Bash(npm run test:*)"
+      "Bash(npm run test:*)",
+      "Bash(pnpm test:*)"
     ],
     "deny": []
   }
