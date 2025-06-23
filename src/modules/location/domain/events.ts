@@ -41,9 +41,20 @@ export interface LocationDiscoveredEvent {
 }
 
 /**
+ * Event emitted when all initial locations for a world have been generated
+ */
+export interface LocationWorldCompleteEvent {
+  v: 1;
+  worldId: string;
+  regionCount: number;
+  totalLocationCount: number;
+}
+
+/**
  * All location event types
  */
 export type LocationEvent = 
   | LocationCreatedEvent 
   | LocationStatusChangedEvent 
-  | LocationDiscoveredEvent;
+  | LocationDiscoveredEvent
+  | LocationWorldCompleteEvent;

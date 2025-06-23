@@ -12,7 +12,8 @@ import type {
 import type { 
   LocationCreatedEvent, 
   LocationStatusChangedEvent, 
-  LocationDiscoveredEvent 
+  LocationDiscoveredEvent,
+  LocationWorldCompleteEvent 
 } from '../domain/events';
 import type { WorldCreatedEvent, StoryBeatCreated } from '../../world/domain/events';
 
@@ -81,7 +82,7 @@ export class LocationService {
   }
 
   /**
-   * Generate initial world map with 8-15 locations
+   * Generate initial world map using individual AI agents
    */
   async seedInitialMap(event: WorldCreatedEvent): Promise<void> {
     const startTime = Date.now();
@@ -91,31 +92,37 @@ export class LocationService {
     });
 
     try {
-      const mapResult = await this.ai.buildWorldMap({
+      let totalLocationCount = 0;
+      
+      // Step 1: Generate regions
+      logger.info('Generating regions', {
+        worldId: event.worldId,
+        correlation: event.worldId
+      });
+      
+      const regionResult = await this.ai.generateRegions({
         worldName: event.name,
         worldDescription: event.description
       });
 
-      if (mapResult.locations.length < 8 || mapResult.locations.length > 15) {
-        throw new Error(`Invalid location count: ${mapResult.locations.length}. Expected 8-15 locations.`);
-      }
-
-      logger.debug('AI generated world map', {
+      logger.debug('AI generated regions', {
         worldId: event.worldId,
-        locationCount: mapResult.locations.length,
-        hasMapSvg: !!mapResult.mapSvg,
+        regionCount: regionResult.regions.length,
         correlation: event.worldId
       });
 
-      const regions = mapResult.locations.filter(loc => loc.type === 'region');
-      const regionMap = new Map<string, string>();
-
+      // Ensure regions is an array
+      const regionsArray = Array.isArray(regionResult.regions) 
+        ? regionResult.regions 
+        : [];
+      
+      // Save regions to database
       const savedRegions = await this.repo.createBulk(
-        regions.map(region => ({
+        regionsArray.map(region => ({
           world_id: event.worldId,
           parent_location_id: null,
           name: region.name,
-          type: region.type,
+          type: 'region' as const,
           status: 'stable' as LocationStatus,
           description: region.description,
           tags: region.tags,
@@ -124,49 +131,211 @@ export class LocationService {
         }))
       );
 
-      savedRegions.forEach(region => {
-        regionMap.set(region.name, region.id);
-      });
+      totalLocationCount += savedRegions.length;
 
-      const childLocations = mapResult.locations.filter(loc => loc.type !== 'region');
-      const childrenToCreate = childLocations.map(child => {
-        const parentId = child.parent_region_name 
-          ? regionMap.get(child.parent_region_name) || null
-          : null;
-
-        return {
-          world_id: event.worldId,
-          parent_location_id: parentId,
-          name: child.name,
-          type: child.type,
-          status: 'stable' as LocationStatus,
-          description: child.description,
-          tags: child.tags,
-          relative_x: child.relative_position.x,
-          relative_y: child.relative_position.y
-        } as CreateLocation;
-      });
-
-      const savedChildren = await this.repo.createBulk(childrenToCreate);
-      const allLocations = [...savedRegions, ...savedChildren];
-
-      for (const location of allLocations) {
+      // Emit events for created regions
+      for (const region of savedRegions) {
         const locationEvent: LocationCreatedEvent = {
           v: 1,
           worldId: event.worldId,
-          locationId: location.id,
-          name: location.name,
-          type: location.type,
-          parentId: location.parent_location_id || undefined
+          locationId: region.id,
+          name: region.name,
+          type: region.type,
+          parentId: undefined
         };
         eventBus.emit('location.created', locationEvent);
       }
 
-      logger.info('Successfully created locations for world', {
+      // Step 2: Generate locations for each region
+      for (const region of savedRegions) {
+        logger.info('Generating locations for region', {
+          worldId: event.worldId,
+          regionId: region.id,
+          regionName: region.name,
+          correlation: event.worldId
+        });
+
+        // Track existing locations in this region
+        const existingInRegion: Array<{
+          name: string;
+          type: string;
+          relative_position: { x: number; y: number };
+        }> = [];
+
+        // Generate cities
+        const cityResult = await this.ai.generateCities({
+          worldName: event.name,
+          worldDescription: event.description,
+          regionName: region.name,
+          regionDescription: region.description,
+          regionTags: region.tags,
+          existingLocationsInRegion: existingInRegion
+        });
+
+        // Ensure cities is an array
+        const citiesArray = Array.isArray(cityResult.cities) 
+          ? cityResult.cities 
+          : [];
+
+        const savedCities = await this.repo.createBulk(
+          citiesArray.map(city => ({
+            world_id: event.worldId,
+            parent_location_id: region.id,
+            name: city.name,
+            type: 'city' as const,
+            status: 'stable' as LocationStatus,
+            description: city.description,
+            tags: city.tags,
+            relative_x: city.relative_position.x,
+            relative_y: city.relative_position.y
+          }))
+        );
+
+        totalLocationCount += savedCities.length;
+        
+        // Update existing locations tracking
+        savedCities.forEach(city => {
+          existingInRegion.push({
+            name: city.name,
+            type: 'city',
+            relative_position: { x: city.relative_x!, y: city.relative_y! }
+          });
+        });
+
+        // Emit events for cities
+        for (const city of savedCities) {
+          const locationEvent: LocationCreatedEvent = {
+            v: 1,
+            worldId: event.worldId,
+            locationId: city.id,
+            name: city.name,
+            type: city.type,
+            parentId: region.id
+          };
+          eventBus.emit('location.created', locationEvent);
+        }
+
+        // Generate landmarks
+        const landmarkResult = await this.ai.generateLandmarks({
+          worldName: event.name,
+          worldDescription: event.description,
+          regionName: region.name,
+          regionDescription: region.description,
+          regionTags: region.tags,
+          existingLocationsInRegion: existingInRegion
+        });
+
+        // Ensure landmarks is an array
+        const landmarksArray = Array.isArray(landmarkResult.landmarks) 
+          ? landmarkResult.landmarks 
+          : [];
+
+        const savedLandmarks = await this.repo.createBulk(
+          landmarksArray.map(landmark => ({
+            world_id: event.worldId,
+            parent_location_id: region.id,
+            name: landmark.name,
+            type: 'landmark' as const,
+            status: 'stable' as LocationStatus,
+            description: landmark.description,
+            tags: landmark.tags,
+            relative_x: landmark.relative_position.x,
+            relative_y: landmark.relative_position.y
+          }))
+        );
+
+        totalLocationCount += savedLandmarks.length;
+        
+        // Update existing locations tracking
+        savedLandmarks.forEach(landmark => {
+          existingInRegion.push({
+            name: landmark.name,
+            type: 'landmark',
+            relative_position: { x: landmark.relative_x!, y: landmark.relative_y! }
+          });
+        });
+
+        // Emit events for landmarks
+        for (const landmark of savedLandmarks) {
+          const locationEvent: LocationCreatedEvent = {
+            v: 1,
+            worldId: event.worldId,
+            locationId: landmark.id,
+            name: landmark.name,
+            type: landmark.type,
+            parentId: region.id
+          };
+          eventBus.emit('location.created', locationEvent);
+        }
+
+        // Generate wilderness
+        const wildernessResult = await this.ai.generateWilderness({
+          worldName: event.name,
+          worldDescription: event.description,
+          regionName: region.name,
+          regionDescription: region.description,
+          regionTags: region.tags,
+          existingLocationsInRegion: existingInRegion
+        });
+
+        // Ensure wilderness is an array
+        const wildernessArray = Array.isArray(wildernessResult.wilderness) 
+          ? wildernessResult.wilderness 
+          : [];
+
+        const savedWilderness = await this.repo.createBulk(
+          wildernessArray.map(wild => ({
+            world_id: event.worldId,
+            parent_location_id: region.id,
+            name: wild.name,
+            type: 'wilderness' as const,
+            status: 'stable' as LocationStatus,
+            description: wild.description,
+            tags: wild.tags,
+            relative_x: wild.relative_position.x,
+            relative_y: wild.relative_position.y
+          }))
+        );
+
+        totalLocationCount += savedWilderness.length;
+
+        // Emit events for wilderness
+        for (const wild of savedWilderness) {
+          const locationEvent: LocationCreatedEvent = {
+            v: 1,
+            worldId: event.worldId,
+            locationId: wild.id,
+            name: wild.name,
+            type: wild.type,
+            parentId: region.id
+          };
+          eventBus.emit('location.created', locationEvent);
+        }
+
+        logger.info('Completed location generation for region', {
+          worldId: event.worldId,
+          regionName: region.name,
+          cityCount: savedCities.length,
+          landmarkCount: savedLandmarks.length,
+          wildernessCount: savedWilderness.length,
+          correlation: event.worldId
+        });
+      }
+
+      // Step 3: Emit location.world.complete event
+      const completionEvent: LocationWorldCompleteEvent = {
+        v: 1,
         worldId: event.worldId,
-        locationCount: allLocations.length,
         regionCount: savedRegions.length,
-        childCount: savedChildren.length,
+        totalLocationCount: totalLocationCount
+      };
+      
+      eventBus.emit('location.world.complete', completionEvent);
+
+      logger.info('Successfully created all locations for world', {
+        worldId: event.worldId,
+        regionCount: savedRegions.length,
+        totalLocationCount: totalLocationCount,
         duration_ms: Date.now() - startTime,
         correlation: event.worldId
       });

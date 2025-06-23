@@ -12,29 +12,23 @@ probably important to do in the future:
 
 # modules to do:
 
-## OVERALL:
-new world generation flow
-
-1. new world created
-2. locations in the world are created
-3. factions are created after locations so factions can own locations
-4. characters are created after factions so characters can be associated to factions and locations
-5. on initial arc generation, we use the info of generated locations/factions/characters to create the story
-
-beat progression flow:
-1. ALL actions are added to the world events log
-2.. beats progress based on the actions added to the world events log
-3. when a beat progresses, locations, factions, and characters ALL individually react to the new beat generation
-
 ## worlds
+- ensure that world beat is the only event that locations/factions/characters react to
+- every single module should only react to world.beat event, nothing else
+- each entity in location, each faction, and each character have their own individual AI that
+reacts indepdently based on the world beat. default "no change" and change
+
+(that ensures that the golden rule stays simple and complexity doesn't happen dev side)
 
 ## locations
-- i want to have a world map that gets created especially since we provide the x/y coordinates of locations 
-- locations should be genned 1 by one, first by region, then wilderness, then landmarks (cities, dungeons etc)
+- ~~NO monolithic AI gens. locations should be genned 1 by one, first by region, then wilderness, then landmarks (cities, dungeons etc)~~ (DONE)
 
 ## factions
-- 
+- ~~on world creation, factions should be generated after locations done~~ (DONE)
 
 ## characters
-- 
+- on world creation, characters should be generated after factions
+- characters can be a part of factions but also have no factions
 
+## misc
+- i want to have a world map that gets created especially since we provide the x/y coordinates of locations 

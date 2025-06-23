@@ -9,7 +9,13 @@ import type {
   MapGenerationResult, 
   LocationMutationContext, 
   LocationMutations,
-  EnrichmentContext 
+  EnrichmentContext,
+  RegionGenerationContext,
+  RegionGenerationResult,
+  LocationGenerationContext,
+  CityGenerationResult,
+  LandmarkGenerationResult,
+  WildernessGenerationResult
 } from '../../domain/ports';
 import { 
   buildWorldMapPrompt, 
@@ -19,6 +25,22 @@ import {
   buildLocationMutationPrompt, 
   LOCATION_MUTATION_SCHEMA 
 } from './prompts/locationMutation.prompts';
+import { 
+  buildRegionGenerationPrompt, 
+  REGION_GENERATION_SCHEMA 
+} from './prompts/regionGeneration.prompts';
+import { 
+  buildCityGenerationPrompt, 
+  CITY_GENERATION_SCHEMA 
+} from './prompts/cityGeneration.prompts';
+import { 
+  buildLandmarkGenerationPrompt, 
+  LANDMARK_GENERATION_SCHEMA 
+} from './prompts/landmarkGeneration.prompts';
+import { 
+  buildWildernessGenerationPrompt, 
+  WILDERNESS_GENERATION_SCHEMA 
+} from './prompts/wildernessGeneration.prompts';
 
 const logger = createLogger('location.ai');
 
@@ -85,6 +107,277 @@ export class LocationAIAdapter implements LocationAI {
     } catch (error) {
       logger.error('Failed to generate world map', error, {
         worldName: context.worldName,
+        correlation: context.worldName
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Generate regions for a world (2-4 regions)
+   */
+  async generateRegions(context: RegionGenerationContext): Promise<RegionGenerationResult> {
+    const startTime = Date.now();
+    const promptSize = JSON.stringify(context).length;
+    
+    logger.info('Calling AI for region generation', {
+      worldName: context.worldName,
+      promptSize,
+      correlation: context.worldName
+    });
+
+    try {
+      const messages = buildRegionGenerationPrompt(context);
+      
+      const completion = await chat({
+        messages,
+        tools: [{ type: 'function', function: REGION_GENERATION_SCHEMA }],
+        tool_choice: { type: 'function', function: { name: 'generate_regions' } },
+        temperature: 0.8,
+        metadata: buildMetadata('location', 'generate_regions@v1', {
+          world_name: context.worldName,
+          correlation: context.worldName
+        })
+      });
+
+      const toolCall = completion.choices[0]?.message?.tool_calls?.[0];
+      if (!toolCall || !toolCall.function) {
+        throw new Error('No tool call in AI response');
+      }
+
+      const result = JSON.parse(toolCall.function.arguments);
+      
+      // Validate the result structure
+      if (!result || !Array.isArray(result.regions)) {
+        logger.error('Invalid region generation result structure', {
+          worldName: context.worldName,
+          result,
+          correlation: context.worldName
+        });
+        throw new Error('Invalid region generation result: regions must be an array');
+      }
+      
+      const duration_ms = Date.now() - startTime;
+      logger.info('AI region generation complete', {
+        worldName: context.worldName,
+        regionCount: result.regions.length,
+        duration_ms,
+        tokens: completion.usage,
+        correlation: context.worldName
+      });
+
+      return result;
+      
+    } catch (error) {
+      logger.error('Failed to generate regions', error, {
+        worldName: context.worldName,
+        correlation: context.worldName
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Generate cities for a region (1-5 cities)
+   */
+  async generateCities(context: LocationGenerationContext): Promise<CityGenerationResult> {
+    const startTime = Date.now();
+    const promptSize = JSON.stringify(context).length;
+    
+    logger.info('Calling AI for city generation', {
+      worldName: context.worldName,
+      regionName: context.regionName,
+      promptSize,
+      correlation: context.worldName
+    });
+
+    try {
+      const messages = buildCityGenerationPrompt(context);
+      
+      const completion = await chat({
+        messages,
+        tools: [{ type: 'function', function: CITY_GENERATION_SCHEMA }],
+        tool_choice: { type: 'function', function: { name: 'generate_cities' } },
+        temperature: 0.8,
+        metadata: buildMetadata('location', 'generate_cities@v1', {
+          world_name: context.worldName,
+          region_name: context.regionName,
+          correlation: context.worldName
+        })
+      });
+
+      const toolCall = completion.choices[0]?.message?.tool_calls?.[0];
+      if (!toolCall || !toolCall.function) {
+        throw new Error('No tool call in AI response');
+      }
+
+      const result = JSON.parse(toolCall.function.arguments);
+      
+      // Validate the result structure
+      if (!result || !Array.isArray(result.cities)) {
+        logger.error('Invalid city generation result structure', {
+          worldName: context.worldName,
+          regionName: context.regionName,
+          result,
+          correlation: context.worldName
+        });
+        throw new Error('Invalid city generation result: cities must be an array');
+      }
+      
+      const duration_ms = Date.now() - startTime;
+      logger.info('AI city generation complete', {
+        worldName: context.worldName,
+        regionName: context.regionName,
+        cityCount: result.cities.length,
+        duration_ms,
+        tokens: completion.usage,
+        correlation: context.worldName
+      });
+
+      return result;
+      
+    } catch (error) {
+      logger.error('Failed to generate cities', error, {
+        worldName: context.worldName,
+        regionName: context.regionName,
+        correlation: context.worldName
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Generate landmarks for a region (1-3 landmarks)
+   */
+  async generateLandmarks(context: LocationGenerationContext): Promise<LandmarkGenerationResult> {
+    const startTime = Date.now();
+    const promptSize = JSON.stringify(context).length;
+    
+    logger.info('Calling AI for landmark generation', {
+      worldName: context.worldName,
+      regionName: context.regionName,
+      promptSize,
+      correlation: context.worldName
+    });
+
+    try {
+      const messages = buildLandmarkGenerationPrompt(context);
+      
+      const completion = await chat({
+        messages,
+        tools: [{ type: 'function', function: LANDMARK_GENERATION_SCHEMA }],
+        tool_choice: { type: 'function', function: { name: 'generate_landmarks' } },
+        temperature: 0.8,
+        metadata: buildMetadata('location', 'generate_landmarks@v1', {
+          world_name: context.worldName,
+          region_name: context.regionName,
+          correlation: context.worldName
+        })
+      });
+
+      const toolCall = completion.choices[0]?.message?.tool_calls?.[0];
+      if (!toolCall || !toolCall.function) {
+        throw new Error('No tool call in AI response');
+      }
+
+      const result = JSON.parse(toolCall.function.arguments);
+      
+      // Validate the result structure
+      if (!result || !Array.isArray(result.landmarks)) {
+        logger.error('Invalid landmark generation result structure', {
+          worldName: context.worldName,
+          regionName: context.regionName,
+          result,
+          correlation: context.worldName
+        });
+        throw new Error('Invalid landmark generation result: landmarks must be an array');
+      }
+      
+      const duration_ms = Date.now() - startTime;
+      logger.info('AI landmark generation complete', {
+        worldName: context.worldName,
+        regionName: context.regionName,
+        landmarkCount: result.landmarks.length,
+        duration_ms,
+        tokens: completion.usage,
+        correlation: context.worldName
+      });
+
+      return result;
+      
+    } catch (error) {
+      logger.error('Failed to generate landmarks', error, {
+        worldName: context.worldName,
+        regionName: context.regionName,
+        correlation: context.worldName
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Generate wilderness areas for a region (1-2 wilderness)
+   */
+  async generateWilderness(context: LocationGenerationContext): Promise<WildernessGenerationResult> {
+    const startTime = Date.now();
+    const promptSize = JSON.stringify(context).length;
+    
+    logger.info('Calling AI for wilderness generation', {
+      worldName: context.worldName,
+      regionName: context.regionName,
+      promptSize,
+      correlation: context.worldName
+    });
+
+    try {
+      const messages = buildWildernessGenerationPrompt(context);
+      
+      const completion = await chat({
+        messages,
+        tools: [{ type: 'function', function: WILDERNESS_GENERATION_SCHEMA }],
+        tool_choice: { type: 'function', function: { name: 'generate_wilderness' } },
+        temperature: 0.8,
+        metadata: buildMetadata('location', 'generate_wilderness@v1', {
+          world_name: context.worldName,
+          region_name: context.regionName,
+          correlation: context.worldName
+        })
+      });
+
+      const toolCall = completion.choices[0]?.message?.tool_calls?.[0];
+      if (!toolCall || !toolCall.function) {
+        throw new Error('No tool call in AI response');
+      }
+
+      const result = JSON.parse(toolCall.function.arguments);
+      
+      // Validate the result structure
+      if (!result || !Array.isArray(result.wilderness)) {
+        logger.error('Invalid wilderness generation result structure', {
+          worldName: context.worldName,
+          regionName: context.regionName,
+          result,
+          correlation: context.worldName
+        });
+        throw new Error('Invalid wilderness generation result: wilderness must be an array');
+      }
+      
+      const duration_ms = Date.now() - startTime;
+      logger.info('AI wilderness generation complete', {
+        worldName: context.worldName,
+        regionName: context.regionName,
+        wildernessCount: result.wilderness.length,
+        duration_ms,
+        tokens: completion.usage,
+        correlation: context.worldName
+      });
+
+      return result;
+      
+    } catch (error) {
+      logger.error('Failed to generate wilderness', error, {
+        worldName: context.worldName,
+        regionName: context.regionName,
         correlation: context.worldName
       });
       throw error;

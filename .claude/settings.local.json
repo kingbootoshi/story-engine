@@ -28,7 +28,8 @@
       "Bash(npm run lint:*)",
       "Bash(git push:*)",
       "Bash(npm run test:*)",
-      "Bash(git worktree:*)"
+      "Bash(git worktree:*)",
+      "Bash(pnpm run:*)"
     ],
     "deny": []
   }

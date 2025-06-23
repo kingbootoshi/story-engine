@@ -132,6 +132,93 @@ export interface EnrichmentContext {
 }
 
 /**
+ * Context for region generation
+ */
+export interface RegionGenerationContext {
+  worldName: string;
+  worldDescription: string;
+}
+
+/**
+ * Result of region generation
+ */
+export interface RegionGenerationResult {
+  regions: Array<{
+    name: string;
+    description: string;
+    tags: string[];
+    relative_position: {
+      x: number;
+      y: number;
+    };
+  }>;
+}
+
+/**
+ * Context for location generation within a region
+ */
+export interface LocationGenerationContext {
+  worldName: string;
+  worldDescription: string;
+  regionName: string;
+  regionDescription: string;
+  regionTags: string[];
+  existingLocationsInRegion: Array<{
+    name: string;
+    type: string;
+    relative_position: {
+      x: number;
+      y: number;
+    };
+  }>;
+}
+
+/**
+ * Result of city generation
+ */
+export interface CityGenerationResult {
+  cities: Array<{
+    name: string;
+    description: string;
+    tags: string[];
+    relative_position: {
+      x: number;
+      y: number;
+    };
+  }>;
+}
+
+/**
+ * Result of landmark generation
+ */
+export interface LandmarkGenerationResult {
+  landmarks: Array<{
+    name: string;
+    description: string;
+    tags: string[];
+    relative_position: {
+      x: number;
+      y: number;
+    };
+  }>;
+}
+
+/**
+ * Result of wilderness generation
+ */
+export interface WildernessGenerationResult {
+  wilderness: Array<{
+    name: string;
+    description: string;
+    tags: string[];
+    relative_position: {
+      x: number;
+      y: number;
+    };
+  }>;
+}
+
+/**
  * AI adapter interface for location-related AI operations
  */
 export interface LocationAI {
@@ -139,6 +226,26 @@ export interface LocationAI {
    * Generate initial world map with 8-15 locations
    */
   buildWorldMap(context: MapGenerationContext): Promise<MapGenerationResult>;
+  
+  /**
+   * Generate regions for a world (2-4 regions)
+   */
+  generateRegions(context: RegionGenerationContext): Promise<RegionGenerationResult>;
+  
+  /**
+   * Generate cities for a region (1-5 cities)
+   */
+  generateCities(context: LocationGenerationContext): Promise<CityGenerationResult>;
+  
+  /**
+   * Generate landmarks for a region (1-3 landmarks)
+   */
+  generateLandmarks(context: LocationGenerationContext): Promise<LandmarkGenerationResult>;
+  
+  /**
+   * Generate wilderness areas for a region (1-2 wilderness)
+   */
+  generateWilderness(context: LocationGenerationContext): Promise<WildernessGenerationResult>;
   
   /**
    * Analyze beat and determine location mutations

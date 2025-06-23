@@ -8,8 +8,8 @@ interface Model {
  * Models are prioritized based on performance, cost, and capabilities.
  */
 const MODELS: Model[] = [
-  { name: 'openai/gpt-4.1-nano', default: false },
-  { name: 'anthropic/claude-sonnet-4', default: true },
+  { name: 'openai/gpt-4.1-nano', default: true },
+  { name: 'anthropic/claude-sonnet-4', default: false },
   { name: 'openai/gpt-4o-mini', default: false },
 ];
 

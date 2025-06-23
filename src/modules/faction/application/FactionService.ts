@@ -13,6 +13,7 @@ import { type HistoricalEvent } from '../domain/schema';
 import type * as Events from '../domain/events';
 import type { WorldRepo } from '../../world/domain/ports';
 import type { LocationRepository } from '../../location/domain/ports';
+import type { LocationWorldCompleteEvent } from '../../location/domain/events';
 
 const logger = createLogger('faction.service');
 
@@ -28,7 +29,7 @@ export class FactionService {
   }
 
   private setupEventHandlers(): void {
-    eventBus.on('world.created', async (evt: any) => {
+    eventBus.on('location.world.complete', async (evt: { payload: LocationWorldCompleteEvent }) => {
       await this.seedFactions(evt.payload);
     });
     
@@ -339,7 +340,7 @@ export class FactionService {
     }
   }
 
-  private async seedFactions(payload: any): Promise<void> {
+  private async seedFactions(payload: LocationWorldCompleteEvent): Promise<void> {
     const { worldId } = payload;
     logger.info('Seeding initial factions for world', { worldId });
     

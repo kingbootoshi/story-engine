@@ -172,6 +172,101 @@ class MockLocationAI implements LocationAI {
   async enrichDescription(context: any) {
     return context.location.description + ' [enriched]';
   }
+
+  async generateRegions(context: any) {
+    return {
+      regions: [
+        {
+          name: 'Northern Realm',
+          description: 'A cold northern region',
+          tags: ['cold', 'mountainous'],
+          relative_position: { x: 50, y: 20 }
+        },
+        {
+          name: 'Eastern Territories',
+          description: 'Vast eastern lands',
+          tags: ['plains', 'agricultural'],
+          relative_position: { x: 80, y: 50 }
+        }
+      ]
+    };
+  }
+
+  async generateCities(context: any) {
+    if (context.regionName === 'Northern Realm') {
+      return {
+        cities: [
+          {
+            name: 'Frost City',
+            description: 'Capital of the north',
+            tags: ['capital', 'fortified'],
+            relative_position: { x: 55, y: 25 }
+          },
+          {
+            name: 'Winterhold',
+            description: 'Mountain fortress city',
+            tags: ['fortress', 'mining'],
+            relative_position: { x: 45, y: 15 }
+          }
+        ]
+      };
+    } else if (context.regionName === 'Eastern Territories') {
+      return {
+        cities: [
+          {
+            name: 'Eastport',
+            description: 'Major trading hub',
+            tags: ['port', 'trade'],
+            relative_position: { x: 85, y: 55 }
+          }
+        ]
+      };
+    }
+    return { cities: [] };
+  }
+
+  async generateLandmarks(context: any) {
+    if (context.regionName === 'Northern Realm') {
+      return {
+        landmarks: [
+          {
+            name: 'Ancient Ruins',
+            description: 'Mysterious ancient structure',
+            tags: ['ruins', 'magical'],
+            relative_position: { x: 52, y: 30 }
+          }
+        ]
+      };
+    } else if (context.regionName === 'Eastern Territories') {
+      return {
+        landmarks: [
+          {
+            name: 'Crystal Spire',
+            description: 'Towering magical crystal',
+            tags: ['magical', 'mysterious'],
+            relative_position: { x: 75, y: 45 }
+          }
+        ]
+      };
+    }
+    return { landmarks: [] };
+  }
+
+  async generateWilderness(context: any) {
+    if (context.regionName === 'Northern Realm') {
+      return {
+        wilderness: [
+          {
+            name: 'Frozen Wastes',
+            description: 'Inhospitable frozen tundra',
+            tags: ['hostile', 'frozen'],
+            relative_position: { x: 50, y: 10 }
+          }
+        ]
+      };
+    }
+    return { wilderness: [] };
+  }
 }
 
 describe('LocationService', () => {
@@ -237,10 +332,19 @@ describe('LocationService', () => {
       
       const createdEvents = emittedEvents.filter(e => e.topic === 'location.created');
       expect(createdEvents).toHaveLength(8);
+      
+      // Check that location.world.complete event was emitted
+      const completeEvents = emittedEvents.filter(e => e.topic === 'location.world.complete');
+      expect(completeEvents).toHaveLength(1);
+      expect(completeEvents[0].payload).toMatchObject({
+        worldId: 'world-1',
+        regionCount: 2,
+        totalLocationCount: 8
+      });
     });
 
     it('should handle AI failures gracefully', async () => {
-      vi.spyOn(mockAI, 'buildWorldMap').mockRejectedValueOnce(new Error('AI failed'));
+      vi.spyOn(mockAI, 'generateRegions').mockRejectedValueOnce(new Error('AI failed'));
       
       const worldEvent: WorldCreatedEvent = {
         worldId: 'world-2',
