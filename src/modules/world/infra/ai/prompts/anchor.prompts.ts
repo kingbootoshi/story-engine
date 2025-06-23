@@ -28,7 +28,8 @@ export function buildAnchorUserPrompt(
   storyIdea?: string,
   previousArcs: string[] = [],
   currentLocations: string = 'No locations currently exist in this world.',
-  currentFactions: string = 'No factions currently exist in this world.'
+  currentFactions: string = 'No factions currently exist in this world.',
+  currentCharacters: string = 'No characters currently exist in this world.'
 ): string {
   return `Generate the THREE anchor points (beginning, middle, end) for a world story arc following the Save the Cat framework adapted for world-building:
 
@@ -40,6 +41,9 @@ ${currentLocations}
 
 ## CURRENT WORLD FACTIONS:
 ${currentFactions}
+
+## CURRENT WORLD CHARACTERS:
+${currentCharacters}
 
 ${previousArcs.length ? `\nIMPORTANT WORLD HISTORY:\nThis world has experienced previous story arcs that should inform this new era. Review this history to ensure continuity:\n\n${previousArcs.join('\n\n')}\n\nThe new arc should acknowledge and build upon this world history, showing meaningful evolution and consequences rather than resetting.\n` : ''}
 

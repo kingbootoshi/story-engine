@@ -28,7 +28,8 @@ export function buildDynamicBeatUserPrompt(
   recentEvents: string,
   arcDetailedDescription?: string,
   currentLocations: string = 'No locations currently exist in this world.',
-  currentFactions: string = 'No factions currently exist in this world.'
+  currentFactions: string = 'No factions currently exist in this world.',
+  currentCharacters: string = 'No characters currently exist in this world.'
 ): string {
   return `
 # WORLD CONTEXT
@@ -41,6 +42,9 @@ ${currentLocations}
 
 ## CURRENT WORLD FACTIONS:
 ${currentFactions}
+
+## CURRENT WORLD CHARACTERS:
+${currentCharacters}
 
 ## RECENT WORLD EVENTS:
 ${recentEvents || 'No specific events recorded.'}

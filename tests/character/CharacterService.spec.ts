@@ -63,15 +63,17 @@ describe('CharacterService', () => {
     worldRepo = new InMemoryWorldRepo();
 
     locationRepo = {
+      createBulk: vi.fn(),
       create: vi.fn(),
-      update: vi.fn(),
-      findById: vi.fn(),
       findByWorldId: vi.fn(),
-      delete: vi.fn(),
-      findByCoordinates: vi.fn(),
-      findByControllingFaction: vi.fn(),
-      setControllingFaction: vi.fn(),
-    };
+      findById: vi.fn(),
+      findByParentId: vi.fn(),
+      updateStatus: vi.fn(),
+      updateDescription: vi.fn(),
+      addHistoricalEvent: vi.fn(),
+      update: vi.fn(),
+      search: vi.fn()
+    } as unknown as LocationRepository;
 
     container.register('ICharacterRepository', { useValue: characterRepo });
     container.register('ICharacterAI', { useValue: characterAI });
@@ -88,7 +90,7 @@ describe('CharacterService', () => {
       locationRepo
     );
     
-    emitSpy = vi.spyOn(eventBus, 'emit');
+    emitSpy = vi.spyOn(eventBus as any, 'emit');
 
     mockCtx = {
       reqId: 'test-req-123',
@@ -113,15 +115,15 @@ describe('CharacterService', () => {
         description: 'A kind healer',
         background: 'Trained at the temple',
         personality_traits: ['compassionate', 'brave'],
-        motivations: ['heal the sick', 'protect innocents']
-      };
+        motivations: ['heal the sick', 'protect innocents'],
+        status: 'alive',
+        memories: [],
+        story_beats_witnessed: []
+      } as any;
 
       const created: Character = {
         id: 'char-123',
         ...input,
-        status: 'alive',
-        memories: [],
-        story_beats_witnessed: [],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -156,6 +158,7 @@ describe('CharacterService', () => {
           name: 'Healers Guild',
           ideology: 'Help all in need',
           member_count: 100,
+          members_estimate: 100,
           tags: ['peaceful'],
           status: 'stable',
           controlled_locations: [],
@@ -173,7 +176,7 @@ describe('CharacterService', () => {
           name: 'Temple District',
           type: 'landmark',
           description: 'Sacred grounds',
-          status: 'inhabited',
+          status: 'stable',
           tags: ['religious'],
           coordinates: { x: 0, y: 0 },
           created_at: new Date().toISOString(),
@@ -196,11 +199,9 @@ describe('CharacterService', () => {
       vi.mocked(characterRepo.batchCreate).mockResolvedValue([]);
 
       const event = {
-        payload: {
-          v: 1,
-          worldId,
-          factionCount: 1
-        }
+        v: 1,
+        worldId,
+        factionCount: 1
       };
 
       eventBus.emit('faction.seeding.complete', event);
@@ -242,13 +243,9 @@ describe('CharacterService', () => {
       vi.mocked(locationRepo.findByWorldId).mockResolvedValue([]);
       vi.mocked(factionRepo.getRelations).mockResolvedValue([]);
 
-      await worldRepo.createWorld({ id: worldId, name: 'Test', description: 'Test world' });
+      await worldRepo.createWorld({ name: 'Test', description: 'Test world' });
       
-      const arc = await worldRepo.createArc({ 
-        world_id: worldId, 
-        story_name: 'Test Arc', 
-        story_idea: 'Test idea' 
-      });
+      const arc = await worldRepo.createArc(worldId, 'Test Arc', 'Test idea');
       const beat = await worldRepo.createBeat(
         arc.id,
         beatIndex,
@@ -275,7 +272,11 @@ describe('CharacterService', () => {
           motivation_changes: {
             add: ['find those responsible'],
             remove: []
-          }
+          },
+          location_id: null,
+          faction_id: null,
+          new_description: undefined,
+          background_addition: null
         },
         world_event: null
       };
@@ -291,16 +292,14 @@ describe('CharacterService', () => {
       vi.mocked(characterRepo.update).mockResolvedValue(character);
 
       const event = {
-        payload: {
-          v: 1,
-          worldId,
-          arcId: 'arc-123',
-          beatId,
-          beatIndex,
-          beatName: 'Fire in the market',
-          directives: ['Market destroyed'],
-          emergent: ['Refugees flee']
-        }
+        v: 1,
+        worldId,
+        arcId: arc.id,
+        beatId,
+        beatIndex,
+        beatName: 'Fire in the market',
+        directives: ['Market destroyed'],
+        emergent: ['Refugees flee']
       };
 
       eventBus.emit('world.beat.created', event);

@@ -9,6 +9,8 @@ export interface AnchorContext {
   currentLocations: string;
   /** Markdown list of factions in the world */
   currentFactions?: string;
+  /** Markdown list of characters in the world */
+  currentCharacters?: string;
 }
 
 export interface BeatContext {
@@ -22,6 +24,8 @@ export interface BeatContext {
   currentLocations: string;
   /** Markdown list of factions in the world */
   currentFactions?: string;
+  /** Markdown list of characters in the world */
+  currentCharacters?: string;
 }
 
 export interface SummaryContext {

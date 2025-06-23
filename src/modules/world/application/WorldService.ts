@@ -9,9 +9,11 @@ import { randomUUID } from 'crypto';
 import { formatEvent } from '../../../shared/utils/formatEvent';
 import { formatLocationsForAI } from '../../../shared/utils/formatLocationContext';
 import { formatFactionsForAI } from '../../../shared/utils/formatFactionContext';
+import { formatCharactersForAI } from '../../../shared/utils/formatCharacterContext';
 import type { LocationRepository } from '../../location/domain/ports';
 import { container } from 'tsyringe';
 import type { IFactionRepository } from '../../faction/domain/ports';
+import type { ICharacterRepository } from '../../character/domain/ports';
 
 const logger = createLogger('world.service');
 
@@ -72,13 +74,24 @@ export class WorldService {
         logger.debug('Faction repository unavailable – skipping faction context');
       }
       
+      // Gather characters context
+      let charactersContext = 'No characters currently exist in this world.';
+      try {
+        const charRepo = container.resolve<ICharacterRepository>('ICharacterRepository');
+        const chars = await charRepo.findByWorldId(params.worldId);
+        charactersContext = formatCharactersForAI(chars);
+      } catch (err) {
+        logger.debug('Character repository unavailable – skipping character context');
+      }
+      
       const result = await this.ai.generateAnchors({
         worldName: params.worldName,
         worldDescription: params.worldDescription,
         storyIdea: params.storyIdea,
         previousArcs,
         currentLocations: locationsContext,
-        currentFactions: factionsContext
+        currentFactions: factionsContext,
+        currentCharacters: charactersContext
       });
 
       if (!result.anchors || result.anchors.length !== 3) {
@@ -212,6 +225,16 @@ export class WorldService {
         logger.debug('Faction repository unavailable – skipping faction context');
       }
 
+      // Gather characters context
+      let charactersContext = 'No characters currently exist in this world.';
+      try {
+        const charRepo = container.resolve<ICharacterRepository>('ICharacterRepository');
+        const chars = await charRepo.findByWorldId(params.worldId);
+        charactersContext = formatCharactersForAI(chars);
+      } catch (err) {
+        logger.debug('Character repository unavailable – skipping character context');
+      }
+
       const dynamicBeat = await this.ai.generateBeat({
         worldName: world.name,
         worldDescription: world.description,
@@ -221,7 +244,8 @@ export class WorldService {
         nextAnchor,
         recentEvents: recentEventsContext,
         currentLocations: locationsContext,
-        currentFactions: factionsContext
+        currentFactions: factionsContext,
+        currentCharacters: charactersContext
       });
 
       const savedBeat = await this.repo.createBeat(

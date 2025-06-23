@@ -170,7 +170,8 @@ export class WorldAIAdapter implements WorldAI {
           ctx.storyIdea,
           ctx.previousArcs,
           ctx.currentLocations,
-          ctx.currentFactions
+          ctx.currentFactions,
+          ctx.currentCharacters
         ) }
       ],
       tools: [WORLD_ARC_ANCHORS_SCHEMA],
@@ -232,7 +233,8 @@ export class WorldAIAdapter implements WorldAI {
           ctx.recentEvents,
           ctx.arcDetailedDescription,
           ctx.currentLocations,
-          ctx.currentFactions
+          ctx.currentFactions,
+          ctx.currentCharacters
         )}
       ],
       tools: [DYNAMIC_WORLD_BEAT_SCHEMA],
