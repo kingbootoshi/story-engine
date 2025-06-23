@@ -252,10 +252,24 @@ export function WorldDetail() {
               color: 'white',
               borderRadius: '4px',
               textDecoration: 'none',
-              display: 'inline-block'
+              display: 'inline-block',
+              marginRight: '0.5rem'
             }}
           >
             View Factions
+          </Link>
+          <Link 
+            to={`/worlds/${worldId}/characters`}
+            style={{
+              padding: '0.5rem 1rem',
+              backgroundColor: '#607D8B',
+              color: 'white',
+              borderRadius: '4px',
+              textDecoration: 'none',
+              display: 'inline-block'
+            }}
+          >
+            View Characters
           </Link>
         </div>
       </header>

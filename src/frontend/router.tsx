@@ -7,6 +7,7 @@ import { WorldsList } from './pages/WorldsList';
 import { WorldDetail } from './pages/WorldDetail';
 import { Locations } from './pages/Locations';
 import { Factions } from './pages/Factions';
+import { Characters } from './pages/Characters';
 
 function PrivateRoute() {
   const { user, isInitialized } = useAuth();
@@ -57,6 +58,10 @@ export const router = createBrowserRouter([
       {
         path: 'worlds/:worldId/factions',
         element: <Factions />,
+      },
+      {
+        path: 'worlds/:worldId/characters',
+        element: <Characters />,
       },
     ],
   },

@@ -126,8 +126,8 @@ export class LocationService {
           status: 'stable' as LocationStatus,
           description: region.description,
           tags: region.tags,
-          relative_x: region.relative_position.x,
-          relative_y: region.relative_position.y
+          relative_x: region.relative_position?.x ?? null,
+          relative_y: region.relative_position?.y ?? null
         }))
       );
 
@@ -186,8 +186,8 @@ export class LocationService {
             status: 'stable' as LocationStatus,
             description: city.description,
             tags: city.tags,
-            relative_x: city.relative_position.x,
-            relative_y: city.relative_position.y
+            relative_x: city.relative_position?.x ?? null,
+            relative_y: city.relative_position?.y ?? null
           }))
         );
 
@@ -239,8 +239,8 @@ export class LocationService {
             status: 'stable' as LocationStatus,
             description: landmark.description,
             tags: landmark.tags,
-            relative_x: landmark.relative_position.x,
-            relative_y: landmark.relative_position.y
+            relative_x: landmark.relative_position?.x ?? null,
+            relative_y: landmark.relative_position?.y ?? null
           }))
         );
 
@@ -292,8 +292,8 @@ export class LocationService {
             status: 'stable' as LocationStatus,
             description: wild.description,
             tags: wild.tags,
-            relative_x: wild.relative_position.x,
-            relative_y: wild.relative_position.y
+            relative_x: wild.relative_position?.x ?? null,
+            relative_y: wild.relative_position?.y ?? null
           }))
         );
 

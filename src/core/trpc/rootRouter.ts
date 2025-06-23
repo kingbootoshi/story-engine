@@ -2,6 +2,7 @@ import { router } from './init';
 import { worldRouter } from '../../modules/world/delivery/trpc/router';
 import { locationRouter } from '../../modules/location/delivery/trpc/router';
 import { factionRouter } from '../../modules/faction/delivery/trpc/router';
+import { characterRouter } from '../../modules/character/delivery/trpc/router';
 
 /**
  * Application-wide tRPC router.
@@ -21,6 +22,7 @@ export const appRouter = router({
   world: worldRouter,
   location: locationRouter,
   faction: factionRouter,
+  character: characterRouter,
 });
 
 /**
