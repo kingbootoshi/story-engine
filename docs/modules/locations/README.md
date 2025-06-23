@@ -42,11 +42,13 @@ Code examples, patterns, and real-world usage scenarios.
 ## Key Features
 
 - **Automatic World Generation**: 8-15 locations created when a world is initialized
+- **Individual AI Agents**: Separate AI agents for regions, cities, landmarks, and wilderness
+- **Progressive Generation**: Regions generated first, then child locations per region
 - **Event-Driven Updates**: Locations react to story beats and world events
 - **Status Lifecycle**: Locations progress through narrative states (thriving → lost)
 - **Historical Tracking**: Every change is recorded with timestamp and reason
 - **Hierarchical Structure**: Regions contain cities, landmarks, and wilderness
-- **AI Integration**: Intelligent generation and mutation based on narrative context
+- **Completion Signal**: Emits `location.world.complete` event when all initial locations are generated
 
 ## Quick Examples
 
@@ -86,7 +88,7 @@ The Location module integrates with:
 - **World Module**: Listens to world.created and world.beat.created events
 - **Story Module**: Reacts to narrative beats by updating location states
 - **Character Module**: Characters reference their home locations
-- **Faction Module**: Factions control and contest locations
+- **Faction Module**: Listens to location.world.complete before generating factions
 
 ## Development
 

@@ -28,28 +28,40 @@ thriving → stable → declining → ruined → abandoned → lost
 The module follows the Golden Rule: **Action → Event → Beat → Reactions**
 
 ### Event Subscriptions
-1. **world.created** → Generate initial world map (8-15 locations)
+1. **world.created** → Generate initial world map using progressive AI agents
 2. **world.beat.created** → Analyze beat for location mutations
 
 ### Event Emissions
 - **location.created**: New location added to world
 - **location.status_changed**: Location status transition
 - **location.discovered**: New location revealed during story
+- **location.world.complete**: All initial locations have been generated
 
 ## AI Integration
 
 ### World Map Generation
-When a world is created, the AI generates:
-- 2-3 major regions
-- 3-5 cities distributed across regions
-- 2-4 significant landmarks
-- 1-3 wilderness areas
+When a world is created, locations are generated progressively using individual AI agents:
+
+#### Phase 1: Region Generation
+- Single AI call generates 2-4 major regions
+- Each region gets global coordinates (0-100 on world map)
+- Regions saved to database immediately
+
+#### Phase 2: Location Generation (per region)
+For each region, three specialized AI agents generate:
+1. **Cities Agent**: 1-5 cities with local coordinates
+2. **Landmarks Agent**: 1-3 landmarks (ruins, monuments, natural wonders)
+3. **Wilderness Agent**: 1-2 wilderness areas (forests, deserts, mountains)
 
 Each location includes:
-- Evocative name fitting the world theme
-- Rich description (100-300 words)
+- Evocative name fitting the world and region theme
+- Rich description (100-200 words)
 - Tags for features (e.g., "coastal", "fortified", "magical")
-- Relative position on 0-100 x/y grid
+- Relative position on 0-100 x/y grid within the region
+
+#### Phase 3: Completion
+- After all locations are saved, emits `location.world.complete` event
+- This signals other modules (e.g., factions) to begin their generation
 
 ### Beat Reaction
 For each story beat, the AI analyzes:

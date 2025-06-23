@@ -21,11 +21,14 @@ function WorldCreator() {
       description: 'A world of floating islands connected by magical bridges'
     });
     
-    // The world.created event automatically generates 8-15 locations
-    // Wait a moment for processing, then refetch
+    // The world.created event triggers progressive location generation:
+    // 1. First, 2-4 regions are generated
+    // 2. Then for each region: cities, landmarks, and wilderness
+    // 3. Finally, location.world.complete is emitted
+    // Wait a moment for all generation to complete, then refetch
     setTimeout(() => {
       listLocations.refetch();
-    }, 3000);
+    }, 5000);
   };
 
   return (

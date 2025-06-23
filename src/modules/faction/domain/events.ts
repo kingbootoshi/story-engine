@@ -47,3 +47,17 @@ export interface FactionLostLocation {
   beatId: string;
   beatIndex: number;
 }
+
+export interface FactionSeedingComplete {
+  v: 1;
+  worldId: string;
+  factionCount: number;
+}
+
+export type FactionEvent =
+  | FactionCreated
+  | FactionStatusChanged
+  | FactionRelationChanged
+  | FactionTookLocation
+  | FactionLostLocation
+  | FactionSeedingComplete;

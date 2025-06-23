@@ -361,6 +361,14 @@ export class FactionService {
       
       await this.create(factionData);
     }
+
+    // Emit a single event after all initial factions are seeded so that other
+    // modules (e.g. Characters) can safely begin their own seeding logic.
+    eventBus.emit<Events.FactionSeedingComplete>('faction.seeding.complete', {
+      v: 1,
+      worldId,
+      factionCount: initialFactionCount
+    });
   }
 
   private async reactToBeat(payload: any): Promise<void> {

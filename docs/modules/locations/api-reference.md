@@ -321,6 +321,125 @@ interface HistoricalEvent {
 }
 ```
 
+## Internal AI Generation Methods
+
+These methods are used internally by the LocationService for progressive world generation:
+
+### `generateRegions`
+Generates 2-4 major regions for a world.
+
+**Context:**
+```typescript
+{
+  worldName: string,
+  worldDescription: string
+}
+```
+
+**Returns:**
+```typescript
+{
+  regions: Array<{
+    name: string,
+    description: string,
+    tags: string[],
+    relative_position: { x: number, y: number }
+  }>
+}
+```
+
+### `generateCities`
+Generates 1-5 cities for a specific region.
+
+**Context:**
+```typescript
+{
+  worldName: string,
+  worldDescription: string,
+  regionName: string,
+  regionDescription: string,
+  regionTags: string[],
+  existingLocationsInRegion: Array<{
+    name: string,
+    type: string,
+    relative_position: { x: number, y: number }
+  }>
+}
+```
+
+### `generateLandmarks`
+Generates 1-3 landmarks for a specific region.
+
+**Context:** Same as `generateCities`
+
+### `generateWilderness`
+Generates 1-2 wilderness areas for a specific region.
+
+**Context:** Same as `generateCities`
+
+## Events
+
+### Emitted Events
+
+#### `location.created`
+Emitted when a new location is created.
+```typescript
+{
+  v: 1,
+  worldId: string,
+  locationId: string,
+  name: string,
+  type: LocationType,
+  parentId?: string
+}
+```
+
+#### `location.status_changed`
+Emitted when a location's status changes.
+```typescript
+{
+  v: 1,
+  worldId: string,
+  locationId: string,
+  locationName: string,
+  oldStatus: LocationStatus,
+  newStatus: LocationStatus,
+  reason: string,
+  beatId?: string,
+  beatIndex?: number
+}
+```
+
+#### `location.discovered`
+Emitted when a new location is discovered during story progression.
+```typescript
+{
+  v: 1,
+  worldId: string,
+  locationId: string,
+  locationName: string,
+  type: LocationType,
+  beatId: string,
+  beatIndex: number
+}
+```
+
+#### `location.world.complete`
+Emitted when all initial locations for a world have been generated.
+```typescript
+{
+  v: 1,
+  worldId: string,
+  regionCount: number,
+  totalLocationCount: number
+}
+```
+
+### Subscribed Events
+
+- **`world.created`**: Triggers initial location generation
+- **`world.beat.created`**: Triggers location mutation analysis
+
 ## Error Handling
 
 All endpoints may return these errors:
