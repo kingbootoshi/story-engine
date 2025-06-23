@@ -137,11 +137,25 @@ Tags enable narrative filtering and themed events:
 When the AI generates or mutates locations, it considers:
 
 ### Initial Generation
+The progressive generation approach ensures better quality and consistency:
+
+**Phase 1 - Regions (Single AI call)**
 - World theme and tone
-- Geographical logic
-- Cultural distribution
-- Resource balance
-- Narrative potential
+- Major geographical divisions
+- Climate zones and natural boundaries
+- Strategic placement on world map (0-100 coordinates)
+
+**Phase 2 - Per-Region Generation (Multiple focused AI calls)**
+Each region receives individual attention from specialized agents:
+- **Cities**: Population centers with economic and strategic considerations
+- **Landmarks**: Mysterious sites with narrative potential
+- **Wilderness**: Natural barriers and adventure locations
+
+Benefits of this approach:
+- Simpler prompts work with less capable AI models
+- Each location type gets focused, contextual generation
+- Region context ensures geographical consistency
+- Existing locations inform placement of new ones
 
 ### Beat Reactions
 - Direct mentions in directives
