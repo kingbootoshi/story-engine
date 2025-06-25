@@ -5,10 +5,10 @@ import type { LocationMutationContext } from '../../../domain/ports';
  */
 export const LOCATION_MUTATION_SCHEMA = {
   name: 'mutate_locations',
-  description: 'Analyze story beat and determine location status changes and new discoveries',
+  description: 'Determine location status changes and updates based on story beat',
   parameters: {
     type: 'object',
-    required: ['updates', 'discoveries'],
+    required: ['updates'],
     properties: {
       updates: {
         type: 'array',
@@ -35,37 +35,6 @@ export const LOCATION_MUTATION_SCHEMA = {
             }
           }
         }
-      },
-      discoveries: {
-        type: 'array',
-        items: {
-          type: 'object',
-          required: ['name', 'type', 'description', 'tags'],
-          properties: {
-            name: {
-              type: 'string',
-              description: 'Name of newly discovered location'
-            },
-            type: {
-              type: 'string',
-              enum: ['city', 'landmark', 'wilderness'],
-              description: 'Type of location (not region)'
-            },
-            description: {
-              type: 'string',
-              description: 'Description of the discovered location'
-            },
-            parentRegionName: {
-              type: 'string',
-              description: 'Name of the parent region'
-            },
-            tags: {
-              type: 'array',
-              items: { type: 'string' },
-              description: 'Tags describing location features'
-            }
-          }
-        }
       }
     }
   }
@@ -82,7 +51,7 @@ export function buildLocationMutationPrompt(context: LocationMutationContext) {
   return [
     {
       role: 'system' as const,
-      content: `You are analyzing a story beat to determine its impact on world locations. Based on the narrative events, you will suggest location status changes and potentially discover new locations.
+      content: `You are mutating locations based on story events. Focus only on updating existing locations that are directly affected by the narrative.
 
 Current Locations:
 ${locationsList}
@@ -93,27 +62,22 @@ Status Progression Rules:
 - Status rarely improves without explicit positive events
 - "lost" locations cannot be updated (they're forgotten)
 
-Discovery Guidelines:
-- Only discover locations directly mentioned or strongly implied
-- New discoveries should feel organic to the narrative
-- Maximum 2 discoveries per beat
-- Cannot discover new regions (only cities, landmarks, wilderness)
-
 Update Guidelines:
 - Only update locations directly affected by the beat
 - Provide clear narrative reasons for changes
 - Status changes should feel earned by the story
-- Description appends should be 1-2 sentences max`
+- Description appends should be 1-2 sentences max
+- Be specific about which locations are affected and why`
     },
     {
       role: 'user' as const,
-      content: `Analyze this story beat and determine location impacts:
+      content: `Based on these story events, which locations need to be updated?
 
 Beat Directives: ${context.beatDirectives}
 
 Emergent Storylines: ${context.emergentStorylines.join(', ')}
 
-What locations should be updated or discovered based on these events?`
+Identify specific locations from the list above that are affected and how they should change.`
     }
   ];
 }

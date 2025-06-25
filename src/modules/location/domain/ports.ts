@@ -119,6 +119,12 @@ export interface LocationDiscovery {
  */
 export interface LocationMutations {
   updates: LocationUpdate[];
+}
+
+/**
+ * Result of location discovery analysis  
+ */
+export interface LocationDiscoveries {
   discoveries: LocationDiscovery[];
 }
 
@@ -219,6 +225,40 @@ export interface WildernessGenerationResult {
 }
 
 /**
+ * Context for mutation decision
+ */
+export interface MutationDecisionContext {
+  worldId: string;
+  beatDirectives: string;
+  emergentStorylines: string[];
+}
+
+/**
+ * Result of mutation decision
+ */
+export interface MutationDecisionResult {
+  think: string;
+  shouldMutate: boolean;
+}
+
+/**
+ * Context for discovery decision
+ */
+export interface DiscoveryDecisionContext {
+  worldId: string;
+  beatDirectives: string;
+  emergentStorylines: string[];
+}
+
+/**
+ * Result of discovery decision
+ */
+export interface DiscoveryDecisionResult {
+  think: string;
+  shouldDiscover: boolean;
+}
+
+/**
  * AI adapter interface for location-related AI operations
  */
 export interface LocationAI {
@@ -248,9 +288,24 @@ export interface LocationAI {
   generateWilderness(context: LocationGenerationContext): Promise<WildernessGenerationResult>;
   
   /**
+   * Decide if locations should be mutated based on story beat
+   */
+  decideMutation(context: MutationDecisionContext): Promise<MutationDecisionResult>;
+  
+  /**
+   * Decide if new locations should be discovered based on story beat
+   */
+  decideDiscovery(context: DiscoveryDecisionContext): Promise<DiscoveryDecisionResult>;
+  
+  /**
    * Analyze beat and determine location mutations
    */
   mutateLocations(context: LocationMutationContext): Promise<LocationMutations>;
+  
+  /**
+   * Analyze beat and generate location discoveries
+   */
+  discoverLocations(context: LocationMutationContext): Promise<LocationDiscoveries>;
   
   /**
    * Enrich a location's description with more detail

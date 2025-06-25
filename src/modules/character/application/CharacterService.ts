@@ -10,6 +10,8 @@ import type { WorldRepo } from '../../world/domain/ports';
 import type { IFactionRepository } from '../../faction/domain/ports';
 import type { LocationRepository } from '../../location/domain/ports';
 import type { TrpcCtx } from '../../../core/trpc/context';
+import { resolveFactionIdentifier } from '../../../shared/utils/resolveFactionIdentifier';
+import type { Faction } from '../../faction/domain/schema';
 
 const logger = createLogger('character.service');
 
@@ -134,28 +136,76 @@ export class CharacterService {
       user: undefined
     };
     
+    // ------------------------------------------------------------------
+    // Run character generation for every faction ***and*** independents
+    // concurrently so they all finish together.
+    // ------------------------------------------------------------------
+    const tasks: Promise<void>[] = [];
+
+    // one task per faction
     for (const faction of factions) {
-      const targetCount = 3 + Math.floor(Math.random() * 6);
-      
-      const characterBatch = await this.ai.generateCharacterBatch({
+      tasks.push((async () => {
+        const targetCount = 3 + Math.floor(Math.random() * 6);
+
+        const characterBatch = await this.ai.generateCharacterBatch({
+          worldId,
+          worldTheme: world.description,
+          factionId: faction.id,
+          factionName: faction.name,
+          factionIdeology: faction.ideology,
+          existingCharacterCount: 0,
+          targetCount,
+          availableLocations
+        }, traceCtx);
+
+        const charactersToCreate: CreateCharacter[] = characterBatch.map(char => ({
+          world_id: worldId,
+          name: char.name,
+          type: 'npc',
+          status: 'alive',
+          story_role: char.story_role,
+          location_id: availableLocations.find(l => l.name === char.spawn_location)?.id || null,
+          faction_id: faction.id,
+          description: char.description,
+          background: char.background,
+          personality_traits: char.personality_traits,
+          motivations: char.motivations,
+          memories: [],
+          story_beats_witnessed: []
+        }));
+
+        await this.repo.batchCreate(charactersToCreate);
+
+        eventBus.emit<Events.CharacterBatchGenerated>('character.batch_generated', {
+          v: 1,
+          worldId,
+          count: charactersToCreate.length,
+          factionId: faction.id,
+          trigger: 'faction_seeding'
+        });
+      })());
+    }
+
+    // one task for non-faction (“independent”) characters
+    const independentCount = 3 + Math.floor(Math.random() * 6);
+    tasks.push((async () => {
+      const independentBatch = await this.ai.generateCharacterBatch({
         worldId,
         worldTheme: world.description,
-        factionId: faction.id,
-        factionName: faction.name,
-        factionIdeology: faction.ideology,
-        existingCharacterCount: 0,
-        targetCount,
+        factionId: null,
+        existingCharacterCount: factions.length * 5,
+        targetCount: independentCount,
         availableLocations
       }, traceCtx);
-      
-      const charactersToCreate: CreateCharacter[] = characterBatch.map(char => ({
+
+      const independentCharacters: CreateCharacter[] = independentBatch.map(char => ({
         world_id: worldId,
         name: char.name,
         type: 'npc',
         status: 'alive',
         story_role: char.story_role,
         location_id: availableLocations.find(l => l.name === char.spawn_location)?.id || null,
-        faction_id: faction.id,
+        faction_id: null,
         description: char.description,
         background: char.background,
         personality_traits: char.personality_traits,
@@ -163,53 +213,20 @@ export class CharacterService {
         memories: [],
         story_beats_witnessed: []
       }));
-      
-      await this.repo.batchCreate(charactersToCreate);
-      
+
+      await this.repo.batchCreate(independentCharacters);
+
       eventBus.emit<Events.CharacterBatchGenerated>('character.batch_generated', {
         v: 1,
         worldId,
-        count: charactersToCreate.length,
-        factionId: faction.id,
+        count: independentCharacters.length,
+        factionId: null,
         trigger: 'faction_seeding'
       });
-    }
-    
-    const independentCount = 3 + Math.floor(Math.random() * 6);
-    const independentBatch = await this.ai.generateCharacterBatch({
-      worldId,
-      worldTheme: world.description,
-      factionId: null,
-      existingCharacterCount: factions.length * 5,
-      targetCount: independentCount,
-      availableLocations
-    }, traceCtx);
-    
-    const independentCharacters: CreateCharacter[] = independentBatch.map(char => ({
-      world_id: worldId,
-      name: char.name,
-      type: 'npc',
-      status: 'alive',
-      story_role: char.story_role,
-      location_id: availableLocations.find(l => l.name === char.spawn_location)?.id || null,
-      faction_id: null,
-      description: char.description,
-      background: char.background,
-      personality_traits: char.personality_traits,
-      motivations: char.motivations,
-      memories: [],
-      story_beats_witnessed: []
-    }));
-    
-    await this.repo.batchCreate(independentCharacters);
-    
-    eventBus.emit<Events.CharacterBatchGenerated>('character.batch_generated', {
-      v: 1,
-      worldId,
-      count: independentCharacters.length,
-      factionId: null,
-      trigger: 'faction_seeding'
-    });
+    })());
+
+    // Wait for all generation tasks to complete in parallel
+    await Promise.all(tasks);
     
     logger.success('Character seeding complete', { 
       worldId, 
@@ -260,7 +277,7 @@ export class CharacterService {
       existing_factions: factions.map(f => `${f.name}: ${f.ideology}`),
       existing_locations: locations.map(l => ({ id: l.id, name: l.name })),
       current_character_count: characters.length
-    }, traceCtx, worldId, beatIndex);
+    }, traceCtx, worldId, beatIndex, factions);
     
     const characterBatches = chunk(characters, 10);
     
@@ -318,7 +335,8 @@ export class CharacterService {
     },
     traceCtx: TrpcCtx,
     worldId: string,
-    beatIndex: number
+    beatIndex: number,
+    factions: Faction[]
   ): Promise<void> {
     const spawnDecision = await this.ai.analyzeSpawnNeed(context, traceCtx);
     
@@ -339,7 +357,7 @@ export class CharacterService {
       status: 'alive',
       story_role: char.story_role,
       location_id: context.existing_locations.find(l => l.name === char.spawn_location)?.id || null,
-      faction_id: char.faction_id,
+      faction_id: char.faction_id ? resolveFactionIdentifier(char.faction_id, factions) : null,
       description: char.description,
       background: char.background,
       personality_traits: char.personality_traits,

@@ -147,7 +147,14 @@ export class LocationService {
       }
 
       // Step 2: Generate locations for each region
-      for (const region of savedRegions) {
+      // Create world context to avoid re-serializing for each region
+      const worldCtx = {
+        worldName: event.name,
+        worldDescription: event.description,
+      };
+
+      // Process all regions in parallel
+      const regionTasks = savedRegions.map(async (region) => {
         logger.info('Generating locations for region', {
           worldId: event.worldId,
           regionId: region.id,
@@ -162,10 +169,9 @@ export class LocationService {
           relative_position: { x: number; y: number };
         }> = [];
 
-        // Generate cities
+        // Generate cities first (need their coordinates)
         const cityResult = await this.ai.generateCities({
-          worldName: event.name,
-          worldDescription: event.description,
+          ...worldCtx,
           regionName: region.name,
           regionDescription: region.description,
           regionTags: region.tags,
@@ -191,8 +197,6 @@ export class LocationService {
           }))
         );
 
-        totalLocationCount += savedCities.length;
-        
         // Update existing locations tracking
         savedCities.forEach(city => {
           existingInRegion.push({
@@ -217,8 +221,7 @@ export class LocationService {
 
         // Generate landmarks
         const landmarkResult = await this.ai.generateLandmarks({
-          worldName: event.name,
-          worldDescription: event.description,
+          ...worldCtx,
           regionName: region.name,
           regionDescription: region.description,
           regionTags: region.tags,
@@ -244,8 +247,6 @@ export class LocationService {
           }))
         );
 
-        totalLocationCount += savedLandmarks.length;
-        
         // Update existing locations tracking
         savedLandmarks.forEach(landmark => {
           existingInRegion.push({
@@ -270,8 +271,7 @@ export class LocationService {
 
         // Generate wilderness
         const wildernessResult = await this.ai.generateWilderness({
-          worldName: event.name,
-          worldDescription: event.description,
+          ...worldCtx,
           regionName: region.name,
           regionDescription: region.description,
           regionTags: region.tags,
@@ -297,8 +297,6 @@ export class LocationService {
           }))
         );
 
-        totalLocationCount += savedWilderness.length;
-
         // Emit events for wilderness
         for (const wild of savedWilderness) {
           const locationEvent: LocationCreatedEvent = {
@@ -320,7 +318,20 @@ export class LocationService {
           wildernessCount: savedWilderness.length,
           correlation: event.worldId
         });
-      }
+
+        // Return counts for aggregation
+        return {
+          cityCount: savedCities.length,
+          landmarkCount: savedLandmarks.length,
+          wildernessCount: savedWilderness.length
+        };
+      });
+
+      // Wait for all regions to complete and aggregate counts
+      const regionResults = await Promise.all(regionTasks);
+      totalLocationCount = savedRegions.length + regionResults.reduce((sum, result) => 
+        sum + result.cityCount + result.landmarkCount + result.wildernessCount, 0
+      );
 
       // Step 3: Emit location.world.complete event
       const completionEvent: LocationWorldCompleteEvent = {
@@ -354,7 +365,7 @@ export class LocationService {
    */
   async reactToBeat(event: StoryBeatCreated): Promise<void> {
     const startTime = Date.now();
-    logger.info('Processing beat for location mutations', {
+    logger.info('Processing beat for location reactions', {
       worldId: event.worldId,
       beatId: event.beatId,
       beatIndex: event.beatIndex,
@@ -362,103 +373,50 @@ export class LocationService {
     });
 
     try {
-      const locations = await this.repo.findByWorldId(event.worldId);
-      
-      const context = {
+      // Step 1: Create decision context
+      const decisionContext = {
         worldId: event.worldId,
         beatDirectives: event.directives.join('\n'),
-        emergentStorylines: event.emergent,
-        currentLocations: locations.map(loc => ({
-          id: loc.id,
-          name: loc.name,
-          status: loc.status,
-          description: loc.description.substring(0, 200)
-        }))
+        emergentStorylines: event.emergent
       };
 
-      const mutations = await this.ai.mutateLocations(context);
-
-      logger.info('AI suggested location mutations', {
+      // Step 2: Run both decision agents in parallel
+      logger.info('Running location decision agents', {
         worldId: event.worldId,
         beatId: event.beatId,
-        updateCount: mutations.updates.length,
-        discoveryCount: mutations.discoveries.length,
         correlation: event.worldId
       });
 
-      for (const update of mutations.updates) {
-        if (update.newStatus) {
-          const historicalEvent: HistoricalEvent = {
-            timestamp: new Date().toISOString(),
-            event: update.reason,
-            previous_status: locations.find(l => l.id === update.locationId)?.status,
-            beat_index: event.beatIndex
-          };
+      const [mutationDecision, discoveryDecision] = await Promise.all([
+        this.ai.decideMutation(decisionContext),
+        this.ai.decideDiscovery(decisionContext)
+      ]);
 
-          await this.repo.updateStatus(update.locationId, update.newStatus, historicalEvent);
+      logger.info('Location decisions made', {
+        worldId: event.worldId,
+        beatId: event.beatId,
+        shouldMutate: mutationDecision.shouldMutate,
+        shouldDiscover: discoveryDecision.shouldDiscover,
+        mutationReason: mutationDecision.think,
+        discoveryReason: discoveryDecision.think,
+        correlation: event.worldId
+      });
 
-          const location = locations.find(l => l.id === update.locationId);
-          if (location) {
-            const statusEvent: LocationStatusChangedEvent = {
-              v: 1,
-              worldId: event.worldId,
-              locationId: update.locationId,
-              locationName: location.name,
-              oldStatus: location.status,
-              newStatus: update.newStatus,
-              reason: update.reason,
-              beatId: event.beatId,
-              beatIndex: event.beatIndex
-            };
-            eventBus.emit('location.status_changed', statusEvent);
-          }
-        }
-
-        if (update.descriptionAppend) {
-          const location = await this.repo.findById(update.locationId);
-          if (location) {
-            const newDescription = location.description + '\n\n' + update.descriptionAppend;
-            await this.repo.updateDescription(update.locationId, newDescription);
-          }
-        }
+      // Step 3: Execute mutations if decided
+      if (mutationDecision.shouldMutate) {
+        await this.executeMutations(event);
       }
 
-      for (const discovery of mutations.discoveries) {
-        const parentRegion = locations.find(
-          loc => loc.type === 'region' && loc.name === discovery.parentRegionName
-        );
-
-        const newLocation: CreateLocation = {
-          world_id: event.worldId,
-          parent_location_id: parentRegion?.id || null,
-          name: discovery.name,
-          type: discovery.type as any,
-          status: 'stable',
-          description: discovery.description,
-          tags: discovery.tags,
-          relative_x: null,
-          relative_y: null
-        };
-
-        const saved = await this.repo.create(newLocation);
-
-        const discoveryEvent: LocationDiscoveredEvent = {
-          v: 1,
-          worldId: event.worldId,
-          locationId: saved.id,
-          locationName: saved.name,
-          type: saved.type,
-          beatId: event.beatId,
-          beatIndex: event.beatIndex
-        };
-        eventBus.emit('location.discovered', discoveryEvent);
+      // Step 4: Execute discoveries if decided
+      if (discoveryDecision.shouldDiscover) {
+        await this.executeDiscoveries(event);
       }
 
       logger.info('Completed beat reaction for locations', {
         worldId: event.worldId,
         beatId: event.beatId,
-        updatesApplied: mutations.updates.length,
-        locationsDiscovered: mutations.discoveries.length,
+        mutationsExecuted: mutationDecision.shouldMutate,
+        discoveriesExecuted: discoveryDecision.shouldDiscover,
         duration_ms: Date.now() - startTime,
         correlation: event.worldId
       });
@@ -470,6 +428,160 @@ export class LocationService {
         correlation: event.worldId
       });
     }
+  }
+
+  /**
+   * Execute location mutations based on story beat
+   */
+  private async executeMutations(event: StoryBeatCreated): Promise<void> {
+    const startTime = Date.now();
+    logger.info('Executing location mutations', {
+      worldId: event.worldId,
+      beatId: event.beatId,
+      correlation: event.worldId
+    });
+
+    const locations = await this.repo.findByWorldId(event.worldId);
+    
+    const context = {
+      worldId: event.worldId,
+      beatDirectives: event.directives.join('\n'),
+      emergentStorylines: event.emergent,
+      currentLocations: locations.map(loc => ({
+        id: loc.id,
+        name: loc.name,
+        status: loc.status,
+        description: loc.description.substring(0, 200)
+      }))
+    };
+
+    const mutations = await this.ai.mutateLocations(context);
+
+    logger.info('AI suggested location mutations', {
+      worldId: event.worldId,
+      beatId: event.beatId,
+      updateCount: mutations.updates.length,
+      correlation: event.worldId
+    });
+
+    for (const update of mutations.updates) {
+      if (update.newStatus) {
+        const historicalEvent: HistoricalEvent = {
+          timestamp: new Date().toISOString(),
+          event: update.reason,
+          previous_status: locations.find(l => l.id === update.locationId)?.status,
+          beat_index: event.beatIndex
+        };
+
+        await this.repo.updateStatus(update.locationId, update.newStatus, historicalEvent);
+
+        const location = locations.find(l => l.id === update.locationId);
+        if (location) {
+          const statusEvent: LocationStatusChangedEvent = {
+            v: 1,
+            worldId: event.worldId,
+            locationId: update.locationId,
+            locationName: location.name,
+            oldStatus: location.status,
+            newStatus: update.newStatus,
+            reason: update.reason,
+            beatId: event.beatId,
+            beatIndex: event.beatIndex
+          };
+          eventBus.emit('location.status_changed', statusEvent);
+        }
+      }
+
+      if (update.descriptionAppend) {
+        const location = await this.repo.findById(update.locationId);
+        if (location) {
+          const newDescription = location.description + '\n\n' + update.descriptionAppend;
+          await this.repo.updateDescription(update.locationId, newDescription);
+        }
+      }
+    }
+
+    logger.info('Completed location mutations', {
+      worldId: event.worldId,
+      beatId: event.beatId,
+      updatesApplied: mutations.updates.length,
+      duration_ms: Date.now() - startTime,
+      correlation: event.worldId
+    });
+  }
+
+  /**
+   * Execute location discoveries based on story beat
+   */
+  private async executeDiscoveries(event: StoryBeatCreated): Promise<void> {
+    const startTime = Date.now();
+    logger.info('Executing location discoveries', {
+      worldId: event.worldId,
+      beatId: event.beatId,
+      correlation: event.worldId
+    });
+
+    const locations = await this.repo.findByWorldId(event.worldId);
+    
+    const context = {
+      worldId: event.worldId,
+      beatDirectives: event.directives.join('\n'),
+      emergentStorylines: event.emergent,
+      currentLocations: locations.map(loc => ({
+        id: loc.id,
+        name: loc.name,
+        status: loc.status,
+        description: loc.description.substring(0, 200)
+      }))
+    };
+
+    const discoveries = await this.ai.discoverLocations(context);
+
+    logger.info('AI suggested location discoveries', {
+      worldId: event.worldId,
+      beatId: event.beatId,
+      discoveryCount: discoveries.discoveries.length,
+      correlation: event.worldId
+    });
+
+    for (const discovery of discoveries.discoveries) {
+      const parentRegion = locations.find(
+        loc => loc.type === 'region' && loc.name === discovery.parentRegionName
+      );
+
+      const newLocation: CreateLocation = {
+        world_id: event.worldId,
+        parent_location_id: parentRegion?.id || null,
+        name: discovery.name,
+        type: discovery.type as any,
+        status: 'stable',
+        description: discovery.description,
+        tags: discovery.tags,
+        relative_x: null,
+        relative_y: null
+      };
+
+      const saved = await this.repo.create(newLocation);
+
+      const discoveryEvent: LocationDiscoveredEvent = {
+        v: 1,
+        worldId: event.worldId,
+        locationId: saved.id,
+        locationName: saved.name,
+        type: saved.type,
+        beatId: event.beatId,
+        beatIndex: event.beatIndex
+      };
+      eventBus.emit('location.discovered', discoveryEvent);
+    }
+
+    logger.info('Completed location discoveries', {
+      worldId: event.worldId,
+      beatId: event.beatId,
+      locationsDiscovered: discoveries.discoveries.length,
+      duration_ms: Date.now() - startTime,
+      correlation: event.worldId
+    });
   }
 
   /**
