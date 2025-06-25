@@ -1,11 +1,9 @@
 import { injectable, inject } from 'tsyringe';
-import * as cron from 'node-cron';
 import { createLogger } from '../../../core/infra/logger';
 import { eventBus } from '../../../core/infra/eventBus';
 import type { WorldRepo, WorldAI } from '../domain/ports';
 import type { WorldBeat } from '../domain/schema';
 import type { WorldEventLogged, StoryBeatCreated } from '../domain/events';
-import type { DomainEvent } from '../../../core/types';
 import { formatEvent } from '../../../shared/utils/formatEvent';
 import { formatLocationsForAI } from '../../../shared/utils/formatLocationContext';
 import { formatFactionsForAI } from '../../../shared/utils/formatFactionContext';
@@ -20,86 +18,14 @@ const logger = createLogger('story.ai.service');
 
 @injectable()
 export class StoryAIService {
-  private buffer: WorldEventLogged[] = [];
-  private lastBeatAt: number = Date.now();
-  private cronTask: cron.ScheduledTask;
-
   constructor(
     @inject('WorldRepo') private repo: WorldRepo,
     @inject('WorldAI') private ai: WorldAI,
     @inject('LocationRepository') private locationRepo: LocationRepository
   ) {
-    eventBus.on<WorldEventLogged>('world.event.logged', (event: DomainEvent<WorldEventLogged>) => {
-      this.handleEvent(event.payload).catch(error => {
-        logger.error('[story] Failed to handle event', error, { event });
-      });
-    });
-
-    this.cronTask = cron.schedule('0 * * * *', () => {
-      this.flush('timer').catch(error => {
-        logger.error('[story] Failed to flush on timer', error);
-      });
-    });
-
     logger.info('[story] StoryAIService initialized');
   }
 
-  async handleEvent(evt: WorldEventLogged): Promise<void> {
-    this.buffer.push(evt);
-    
-    logger.debug('[story] buffer size', { len: this.buffer.length });
-
-    const majorEvents = this.buffer.filter(e => e.impact === 'major' || e.impact === 'catastrophic').length;
-    const twentyFourHoursPassed = Date.now() - this.lastBeatAt > 86_400_000;
-
-    if (majorEvents >= 3 || twentyFourHoursPassed) {
-      await this.flush('threshold');
-    }
-  }
-
-  async flush(reason: 'threshold' | 'timer'): Promise<void> {
-    if (!this.buffer.length) {
-      logger.debug('[story] No events to flush');
-      return;
-    }
-
-    // For timer-based flushes, only proceed if we have significant events
-    if (reason === 'timer') {
-      const majorEvents = this.buffer.filter(e => e.impact === 'major' || e.impact === 'catastrophic').length;
-      if (majorEvents === 0) {
-        logger.debug('[story] Timer flush skipped - no major events in buffer');
-        return;
-      }
-    }
-
-    logger.info('[story] generating beat', { reason, events: this.buffer.length });
-
-    try {
-      const worldId = this.buffer[0]?.worldId;
-      const beat = await this.generateNextBeat(this.buffer);
-      this.buffer = [];
-      this.lastBeatAt = Date.now();
-
-      logger.info('[story] beat created', { 
-        beatId: beat.id, 
-        index: beat.beat_index 
-      });
-
-      eventBus.emit<StoryBeatCreated>('world.beat.created', {
-        v: 1,
-        worldId: worldId!,
-        beatId: beat.id,
-        beatIndex: beat.beat_index,
-        arcId: beat.arc_id,
-        beatName: beat.beat_name,
-        directives: beat.world_directives || [],
-        emergent: beat.emergent_storylines || []
-      });
-    } catch (error) {
-      logger.error('[story] Failed to generate beat', error, { reason });
-      throw error;
-    }
-  }
 
   async generateNextBeat(events: WorldEventLogged[]): Promise<WorldBeat> {
     if (!events.length) {
@@ -217,11 +143,5 @@ export class StoryAIService {
     });
 
     return savedBeat;
-  }
-
-  destroy(): void {
-    if (this.cronTask) {
-      this.cronTask.stop();
-    }
   }
 }

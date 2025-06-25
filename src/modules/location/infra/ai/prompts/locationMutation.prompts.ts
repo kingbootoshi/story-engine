@@ -45,7 +45,7 @@ export const LOCATION_MUTATION_SCHEMA = {
  */
 export function buildLocationMutationPrompt(context: LocationMutationContext) {
   const locationsList = context.currentLocations
-    .map(loc => `- ${loc.name} (${loc.status}): ${loc.description}`)
+    .map(loc => `- [${loc.id}] ${loc.name} (${loc.status}): ${loc.description}`)
     .join('\n');
 
   return [
@@ -53,7 +53,7 @@ export function buildLocationMutationPrompt(context: LocationMutationContext) {
       role: 'system' as const,
       content: `You are mutating locations based on story events. Focus only on updating existing locations that are directly affected by the narrative.
 
-Current Locations:
+Current Locations (format: [UUID] Name (status): description):
 ${locationsList}
 
 Status Progression Rules:
@@ -64,6 +64,7 @@ Status Progression Rules:
 
 Update Guidelines:
 - Only update locations directly affected by the beat
+- Use the location's UUID or exact name in the locationId field
 - Provide clear narrative reasons for changes
 - Status changes should feel earned by the story
 - Description appends should be 1-2 sentences max
@@ -77,7 +78,7 @@ Beat Directives: ${context.beatDirectives}
 
 Emergent Storylines: ${context.emergentStorylines.join(', ')}
 
-Identify specific locations from the list above that are affected and how they should change.`
+Identify specific locations from the list above that are affected and how they should change. You can use either the UUID (preferred) or the exact location name for the locationId field.`
     }
   ];
 }

@@ -1,6 +1,7 @@
 import { injectable, inject } from 'tsyringe';
 import { eventBus } from '../../../core/infra/eventBus';
 import { createLogger } from '../../../core/infra/logger';
+import { resolveLocationIdentifier } from '../../../shared/utils/resolveLocationIdentifier';
 import type { LocationRepository, LocationAI } from '../domain/ports';
 import type { 
   Location, 
@@ -453,22 +454,35 @@ export class LocationService {
     });
 
     for (const update of mutations.updates) {
+      // Resolve location identifier (could be name or UUID)
+      const resolvedLocationId = resolveLocationIdentifier(update.locationId, locations);
+      
+      if (!resolvedLocationId) {
+        logger.warn('Could not resolve location identifier', {
+          identifier: update.locationId,
+          worldId: event.worldId,
+          beatId: event.beatId,
+          correlation: event.worldId
+        });
+        continue;
+      }
+
       if (update.newStatus) {
         const historicalEvent: HistoricalEvent = {
           timestamp: new Date().toISOString(),
           event: update.reason,
-          previous_status: locations.find(l => l.id === update.locationId)?.status,
+          previous_status: locations.find(l => l.id === resolvedLocationId)?.status,
           beat_index: event.beatIndex
         };
 
-        await this.repo.updateStatus(update.locationId, update.newStatus, historicalEvent);
+        await this.repo.updateStatus(resolvedLocationId, update.newStatus, historicalEvent);
 
-        const location = locations.find(l => l.id === update.locationId);
+        const location = locations.find(l => l.id === resolvedLocationId);
         if (location) {
           const statusEvent: LocationStatusChangedEvent = {
             v: 1,
             worldId: event.worldId,
-            locationId: update.locationId,
+            locationId: resolvedLocationId,
             locationName: location.name,
             oldStatus: location.status,
             newStatus: update.newStatus,
@@ -481,10 +495,10 @@ export class LocationService {
       }
 
       if (update.descriptionAppend) {
-        const location = await this.repo.findById(update.locationId);
+        const location = await this.repo.findById(resolvedLocationId);
         if (location) {
           const newDescription = location.description + '\n\n' + update.descriptionAppend;
-          await this.repo.updateDescription(update.locationId, newDescription);
+          await this.repo.updateDescription(resolvedLocationId, newDescription);
         }
       }
     }
