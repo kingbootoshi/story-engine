@@ -14,6 +14,7 @@ import type { LocationRepository } from '../../location/domain/ports';
 import { container } from 'tsyringe';
 import type { IFactionRepository } from '../../faction/domain/ports';
 import type { ICharacterRepository } from '../../character/domain/ports';
+import type { Faction } from '../../faction/domain/schema';
 
 const logger = createLogger('story.ai.service');
 
@@ -162,9 +163,10 @@ export class StoryAIService {
 
     // Gather factions context
     let factionsContext = 'No factions currently exist in this world.';
+    let factions: Faction[] = [];
     try {
       const factionRepo = container.resolve<IFactionRepository>('IFactionRepository');
-      const factions = await factionRepo.findByWorldId(worldId);
+      factions = await factionRepo.findByWorldId(worldId);
       factionsContext = formatFactionsForAI(factions);
     } catch (err) {
       logger.debug('Faction repository unavailable – skipping faction context');
@@ -175,7 +177,7 @@ export class StoryAIService {
     try {
       const charRepo = container.resolve<ICharacterRepository>('ICharacterRepository');
       const chars = await charRepo.findByWorldId(worldId);
-      charactersContext = formatCharactersForAI(chars);
+      charactersContext = formatCharactersForAI(chars, factions);
     } catch (err) {
       logger.debug('Character repository unavailable – skipping character context');
     }

@@ -14,6 +14,7 @@ import type { LocationRepository } from '../../location/domain/ports';
 import { container } from 'tsyringe';
 import type { IFactionRepository } from '../../faction/domain/ports';
 import type { ICharacterRepository } from '../../character/domain/ports';
+import type { Faction } from '../../faction/domain/schema';
 
 const logger = createLogger('world.service');
 
@@ -66,9 +67,10 @@ export class WorldService {
       
       // Gather factions context
       let factionsContext = 'No factions currently exist in this world.';
+      let factions: Faction[] = [];
       try {
         const factionRepo = container.resolve<IFactionRepository>('IFactionRepository');
-        const factions = await factionRepo.findByWorldId(params.worldId);
+        factions = await factionRepo.findByWorldId(params.worldId);
         factionsContext = formatFactionsForAI(factions);
       } catch (err) {
         logger.debug('Faction repository unavailable – skipping faction context');
@@ -79,7 +81,7 @@ export class WorldService {
       try {
         const charRepo = container.resolve<ICharacterRepository>('ICharacterRepository');
         const chars = await charRepo.findByWorldId(params.worldId);
-        charactersContext = formatCharactersForAI(chars);
+        charactersContext = formatCharactersForAI(chars, factions);
       } catch (err) {
         logger.debug('Character repository unavailable – skipping character context');
       }
@@ -217,9 +219,10 @@ export class WorldService {
 
       // Gather factions context
       let factionsContext = 'No factions currently exist in this world.';
+      let factions: Faction[] = [];
       try {
         const factionRepo = container.resolve<IFactionRepository>('IFactionRepository');
-        const factions = await factionRepo.findByWorldId(params.worldId);
+        factions = await factionRepo.findByWorldId(params.worldId);
         factionsContext = formatFactionsForAI(factions);
       } catch (err) {
         logger.debug('Faction repository unavailable – skipping faction context');
@@ -230,7 +233,7 @@ export class WorldService {
       try {
         const charRepo = container.resolve<ICharacterRepository>('ICharacterRepository');
         const chars = await charRepo.findByWorldId(params.worldId);
-        charactersContext = formatCharactersForAI(chars);
+        charactersContext = formatCharactersForAI(chars, factions);
       } catch (err) {
         logger.debug('Character repository unavailable – skipping character context');
       }

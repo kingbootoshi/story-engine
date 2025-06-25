@@ -14,6 +14,7 @@ import type * as Events from '../domain/events';
 import type { WorldRepo } from '../../world/domain/ports';
 import type { LocationRepository } from '../../location/domain/ports';
 import type { LocationWorldCompleteEvent } from '../../location/domain/events';
+import { resolveFactionIdentifier } from '../../../shared/utils/resolveFactionIdentifier';
 
 const logger = createLogger('faction.service');
 
@@ -330,10 +331,28 @@ export class FactionService {
       beatContext
     });
     
+    // ---------------------------------------------------------------------
+    // The AI may return faction *names* instead of UUIDs. Convert them here so
+    // that downstream calls operate on canonical identifiers.
+    // ---------------------------------------------------------------------
     for (const suggestion of suggestions) {
+      const sourceId = resolveFactionIdentifier(suggestion.sourceId, factions);
+      const targetId = resolveFactionIdentifier(suggestion.targetId, factions);
+
+      if (!sourceId || !targetId) {
+        logger.warn('Unable to resolve faction identifiers from AI suggestion', {
+          suggestion,
+          unresolved: {
+            sourceId,
+            targetId
+          }
+        });
+        continue; // Skip invalid suggestions rather than throwing and halting.
+      }
+
       await this.setStance(
-        suggestion.sourceId,
-        suggestion.targetId,
+        sourceId,
+        targetId,
         suggestion.suggestedStance,
         suggestion.reason
       );

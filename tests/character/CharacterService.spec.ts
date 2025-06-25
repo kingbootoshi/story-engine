@@ -216,7 +216,8 @@ describe('CharacterService', () => {
   describe('beat reactions', () => {
     it('should process character reactions to beats', async () => {
       const worldId = 'world-123';
-      const beatId = 'beat-123';
+      // beatId will be set after creating the beat to ensure it matches the repo-generated ID
+      let beatId: string;
       const beatIndex = 5;
 
       const character: Character = {
@@ -257,6 +258,9 @@ describe('CharacterService', () => {
           emergent_storylines: ['Refugees flee']
         }
       );
+
+      // Capture the actual beat id returned by the repo
+      beatId = beat.id;
 
       const reaction: CharacterReaction = {
         affected: true,
