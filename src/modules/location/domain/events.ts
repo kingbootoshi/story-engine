@@ -28,19 +28,6 @@ export interface LocationStatusChangedEvent {
 }
 
 /**
- * Event emitted when a new location is discovered during story progression
- */
-export interface LocationDiscoveredEvent {
-  v: 1;
-  worldId: string;
-  locationId: string;
-  locationName: string;
-  type: LocationType;
-  beatId: string;
-  beatIndex: number;
-}
-
-/**
  * Event emitted when all initial locations for a world have been generated
  */
 export interface LocationWorldCompleteEvent {
@@ -56,5 +43,4 @@ export interface LocationWorldCompleteEvent {
 export type LocationEvent = 
   | LocationCreatedEvent 
   | LocationStatusChangedEvent 
-  | LocationDiscoveredEvent
   | LocationWorldCompleteEvent;

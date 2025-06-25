@@ -52,10 +52,10 @@ You are about to modify code that powers dynamic self-evolving game-world narrat
 ## 2 Fast Dev Commands
 
 ```bash
-pnpm dev:all         # run API + Vite HMR
-pnpm run scaffold X  # generate new module skeleton
-pnpm vitest          # run offline unit tests
-pnpm run lint-logs   # ensure log + metadata compliance
+npm dev:all         # run API + Vite HMR
+npm run scaffold X  # generate new module skeleton
+npm vitest          # run offline unit tests
+npm run lint-logs   # ensure log + metadata compliance
 ````
 
 Essential env vars: `OPENROUTER_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`.

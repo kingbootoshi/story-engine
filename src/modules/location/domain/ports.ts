@@ -103,16 +103,6 @@ export interface LocationUpdate {
   reason: string;
 }
 
-/**
- * New location to discover
- */
-export interface LocationDiscovery {
-  name: string;
-  type: string;
-  description: string;
-  parentRegionName?: string;
-  tags: string[];
-}
 
 /**
  * Result of location mutation analysis
@@ -121,12 +111,6 @@ export interface LocationMutations {
   updates: LocationUpdate[];
 }
 
-/**
- * Result of location discovery analysis  
- */
-export interface LocationDiscoveries {
-  discoveries: LocationDiscovery[];
-}
 
 /**
  * Context for enriching location description
@@ -241,22 +225,6 @@ export interface MutationDecisionResult {
   shouldMutate: boolean;
 }
 
-/**
- * Context for discovery decision
- */
-export interface DiscoveryDecisionContext {
-  worldId: string;
-  beatDirectives: string;
-  emergentStorylines: string[];
-}
-
-/**
- * Result of discovery decision
- */
-export interface DiscoveryDecisionResult {
-  think: string;
-  shouldDiscover: boolean;
-}
 
 /**
  * AI adapter interface for location-related AI operations
@@ -293,19 +261,9 @@ export interface LocationAI {
   decideMutation(context: MutationDecisionContext): Promise<MutationDecisionResult>;
   
   /**
-   * Decide if new locations should be discovered based on story beat
-   */
-  decideDiscovery(context: DiscoveryDecisionContext): Promise<DiscoveryDecisionResult>;
-  
-  /**
    * Analyze beat and determine location mutations
    */
   mutateLocations(context: LocationMutationContext): Promise<LocationMutations>;
-  
-  /**
-   * Analyze beat and generate location discoveries
-   */
-  discoverLocations(context: LocationMutationContext): Promise<LocationDiscoveries>;
   
   /**
    * Enrich a location's description with more detail

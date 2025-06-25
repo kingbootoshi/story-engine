@@ -12,7 +12,6 @@ import type {
 import type { 
   LocationCreatedEvent, 
   LocationStatusChangedEvent, 
-  LocationDiscoveredEvent,
   LocationWorldCompleteEvent 
 } from '../domain/events';
 import type { WorldCreatedEvent, StoryBeatCreated } from '../../world/domain/events';
@@ -380,25 +379,20 @@ export class LocationService {
         emergentStorylines: event.emergent
       };
 
-      // Step 2: Run both decision agents in parallel
-      logger.info('Running location decision agents', {
+      // Step 2: Check if we should mutate locations
+      logger.info('Running location mutation decision', {
         worldId: event.worldId,
         beatId: event.beatId,
         correlation: event.worldId
       });
 
-      const [mutationDecision, discoveryDecision] = await Promise.all([
-        this.ai.decideMutation(decisionContext),
-        this.ai.decideDiscovery(decisionContext)
-      ]);
+      const mutationDecision = await this.ai.decideMutation(decisionContext);
 
-      logger.info('Location decisions made', {
+      logger.info('Location decision made', {
         worldId: event.worldId,
         beatId: event.beatId,
         shouldMutate: mutationDecision.shouldMutate,
-        shouldDiscover: discoveryDecision.shouldDiscover,
         mutationReason: mutationDecision.think,
-        discoveryReason: discoveryDecision.think,
         correlation: event.worldId
       });
 
@@ -407,16 +401,10 @@ export class LocationService {
         await this.executeMutations(event);
       }
 
-      // Step 4: Execute discoveries if decided
-      if (discoveryDecision.shouldDiscover) {
-        await this.executeDiscoveries(event);
-      }
-
       logger.info('Completed beat reaction for locations', {
         worldId: event.worldId,
         beatId: event.beatId,
         mutationsExecuted: mutationDecision.shouldMutate,
-        discoveriesExecuted: discoveryDecision.shouldDiscover,
         duration_ms: Date.now() - startTime,
         correlation: event.worldId
       });
@@ -510,79 +498,6 @@ export class LocationService {
     });
   }
 
-  /**
-   * Execute location discoveries based on story beat
-   */
-  private async executeDiscoveries(event: StoryBeatCreated): Promise<void> {
-    const startTime = Date.now();
-    logger.info('Executing location discoveries', {
-      worldId: event.worldId,
-      beatId: event.beatId,
-      correlation: event.worldId
-    });
-
-    const locations = await this.repo.findByWorldId(event.worldId);
-    
-    const context = {
-      worldId: event.worldId,
-      beatDirectives: event.directives.join('\n'),
-      emergentStorylines: event.emergent,
-      currentLocations: locations.map(loc => ({
-        id: loc.id,
-        name: loc.name,
-        status: loc.status,
-        description: loc.description.substring(0, 200)
-      }))
-    };
-
-    const discoveries = await this.ai.discoverLocations(context);
-
-    logger.info('AI suggested location discoveries', {
-      worldId: event.worldId,
-      beatId: event.beatId,
-      discoveryCount: discoveries.discoveries.length,
-      correlation: event.worldId
-    });
-
-    for (const discovery of discoveries.discoveries) {
-      const parentRegion = locations.find(
-        loc => loc.type === 'region' && loc.name === discovery.parentRegionName
-      );
-
-      const newLocation: CreateLocation = {
-        world_id: event.worldId,
-        parent_location_id: parentRegion?.id || null,
-        name: discovery.name,
-        type: discovery.type as any,
-        status: 'stable',
-        description: discovery.description,
-        tags: discovery.tags,
-        relative_x: null,
-        relative_y: null
-      };
-
-      const saved = await this.repo.create(newLocation);
-
-      const discoveryEvent: LocationDiscoveredEvent = {
-        v: 1,
-        worldId: event.worldId,
-        locationId: saved.id,
-        locationName: saved.name,
-        type: saved.type,
-        beatId: event.beatId,
-        beatIndex: event.beatIndex
-      };
-      eventBus.emit('location.discovered', discoveryEvent);
-    }
-
-    logger.info('Completed location discoveries', {
-      worldId: event.worldId,
-      beatId: event.beatId,
-      locationsDiscovered: discoveries.discoveries.length,
-      duration_ms: Date.now() - startTime,
-      correlation: event.worldId
-    });
-  }
 
   /**
    * Public methods for direct location management

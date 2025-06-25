@@ -10,8 +10,6 @@ import type { WorldRepo } from '../../world/domain/ports';
 import type { IFactionRepository } from '../../faction/domain/ports';
 import type { LocationRepository } from '../../location/domain/ports';
 import type { TrpcCtx } from '../../../core/trpc/context';
-import { resolveFactionIdentifier } from '../../../shared/utils/resolveFactionIdentifier';
-import type { Faction } from '../../faction/domain/schema';
 
 const logger = createLogger('character.service');
 
@@ -267,17 +265,6 @@ export class CharacterService {
     const beat = await this.worldRepo.getBeat(beatId);
     if (!beat) return;
     
-    await this.checkForNewCharacters({
-      beat: {
-        description: beat.description,
-        directives,
-        emergent
-      },
-      world_theme: (await this.worldRepo.getWorld(worldId))?.description || '',
-      existing_factions: factions.map(f => `${f.name}: ${f.ideology}`),
-      existing_locations: locations.map(l => ({ id: l.id, name: l.name })),
-      current_character_count: characters.length
-    }, traceCtx, worldId, beatIndex, factions);
     
     const characterBatches = chunk(characters, 10);
     
@@ -325,57 +312,6 @@ export class CharacterService {
     logger.success('Beat reactions processed', { worldId, beatId, characterCount: characters.length });
   }
 
-  private async checkForNewCharacters(
-    context: {
-      beat: { description: string; directives: string[]; emergent: string[] };
-      world_theme: string;
-      existing_factions: string[];
-      existing_locations: Array<{ id: string; name: string }>;
-      current_character_count: number;
-    },
-    traceCtx: TrpcCtx,
-    worldId: string,
-    beatIndex: number,
-    factions: Faction[]
-  ): Promise<void> {
-    const spawnDecision = await this.ai.analyzeSpawnNeed(context, traceCtx);
-    
-    if (!spawnDecision.spawn_characters || spawnDecision.new_characters.length === 0) {
-      return;
-    }
-    
-    logger.info('Spawning new characters based on beat', {
-      worldId,
-      count: spawnDecision.new_characters.length,
-      correlation: traceCtx.reqId
-    });
-    
-    const charactersToCreate: CreateCharacter[] = spawnDecision.new_characters.map(char => ({
-      world_id: worldId,
-      name: char.name,
-      type: 'npc',
-      status: 'alive',
-      story_role: char.story_role,
-      location_id: context.existing_locations.find(l => l.name === char.spawn_location)?.id || null,
-      faction_id: char.faction_id ? resolveFactionIdentifier(char.faction_id, factions) : null,
-      description: char.description,
-      background: char.background,
-      personality_traits: char.personality_traits,
-      motivations: char.motivations,
-      memories: [],
-      story_beats_witnessed: [beatIndex]
-    }));
-    
-    await this.repo.batchCreate(charactersToCreate);
-    
-    eventBus.emit<Events.CharacterBatchGenerated>('character.batch_generated', {
-      v: 1,
-      worldId,
-      count: charactersToCreate.length,
-      factionId: null,
-      trigger: 'beat_spawn'
-    });
-  }
 
   private async applyCharacterReaction(
     character: Character,

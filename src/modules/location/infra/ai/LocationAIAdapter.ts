@@ -9,7 +9,6 @@ import type {
   MapGenerationResult, 
   LocationMutationContext, 
   LocationMutations,
-  LocationDiscoveries,
   EnrichmentContext,
   RegionGenerationContext,
   RegionGenerationResult,
@@ -18,9 +17,7 @@ import type {
   LandmarkGenerationResult,
   WildernessGenerationResult,
   MutationDecisionContext,
-  MutationDecisionResult,
-  DiscoveryDecisionContext,
-  DiscoveryDecisionResult
+  MutationDecisionResult
 } from '../../domain/ports';
 import { 
   buildWorldMapPrompt, 
@@ -50,14 +47,6 @@ import {
   buildMutationDecisionPrompt, 
   MUTATION_DECISION_SCHEMA 
 } from './prompts/mutationDecision.prompts';
-import { 
-  buildDiscoveryDecisionPrompt, 
-  DISCOVERY_DECISION_SCHEMA 
-} from './prompts/discoveryDecision.prompts';
-import { 
-  buildLocationDiscoveryPrompt, 
-  LOCATION_DISCOVERY_SCHEMA 
-} from './prompts/locationDiscovery.prompts';
 
 const logger = createLogger('location.ai');
 
@@ -516,119 +505,6 @@ export class LocationAIAdapter implements LocationAI {
     }
   }
 
-  /**
-   * Decide if new locations should be discovered based on story beat
-   */
-  async decideDiscovery(context: DiscoveryDecisionContext): Promise<DiscoveryDecisionResult> {
-    const startTime = Date.now();
-    
-    logger.info('Calling AI for discovery decision', {
-      worldId: context.worldId,
-      correlation: context.worldId
-    });
-
-    try {
-      const messages = buildDiscoveryDecisionPrompt(context);
-      
-      const completion = await chat({
-        messages,
-        tools: [{ type: 'function', function: DISCOVERY_DECISION_SCHEMA }],
-        tool_choice: { type: 'function', function: { name: 'decide_discovery' } },
-        temperature: 0.7,
-        metadata: buildMetadata('location', 'decide_discovery@v1', {
-          world_id: context.worldId,
-          correlation: context.worldId
-        })
-      });
-
-      const toolCall = completion.choices[0]?.message?.tool_calls?.[0];
-      if (!toolCall || !toolCall.function) {
-        throw new Error('No tool call in AI response');
-      }
-
-      const result = JSON.parse(toolCall.function.arguments);
-      
-      const duration_ms = Date.now() - startTime;
-      logger.info('AI discovery decision complete', {
-        worldId: context.worldId,
-        shouldDiscover: result.shouldDiscover,
-        duration_ms,
-        tokens: completion.usage,
-        correlation: context.worldId
-      });
-
-      return result;
-      
-    } catch (error) {
-      logger.error('Failed to decide discovery', error, {
-        worldId: context.worldId,
-        correlation: context.worldId
-      });
-      throw error;
-    }
-  }
-
-  /**
-   * Analyze beat and generate location discoveries
-   */
-  async discoverLocations(context: LocationMutationContext): Promise<LocationDiscoveries> {
-    const startTime = Date.now();
-    const promptSize = JSON.stringify(context).length;
-    
-    logger.info('Calling AI for location discoveries', {
-      worldId: context.worldId,
-      promptSize,
-      correlation: context.worldId
-    });
-
-    try {
-      const messages = buildLocationDiscoveryPrompt(context);
-      
-      const completion = await chat({
-        messages,
-        tools: [{ type: 'function', function: LOCATION_DISCOVERY_SCHEMA }],
-        tool_choice: { type: 'function', function: { name: 'discover_locations' } },
-        temperature: 0.8,
-        metadata: buildMetadata('location', 'discover_locations@v1', {
-          world_id: context.worldId,
-          correlation: context.worldId
-        })
-      });
-
-      const toolCall = completion.choices[0]?.message?.tool_calls?.[0];
-      if (!toolCall || !toolCall.function) {
-        throw new Error('No tool call in AI response');
-      }
-
-      const result = JSON.parse(toolCall.function.arguments);
-      
-      const duration_ms = Date.now() - startTime;
-      logger.info('AI location discovery complete', {
-        worldId: context.worldId,
-        discoveryCount: result.discoveries.length,
-        duration_ms,
-        tokens: completion.usage,
-        correlation: context.worldId
-      });
-
-      const validationResult = validateLocationDiscoveries(result);
-      if (!validationResult.success) {
-        logger.error('Schema validation failed for discoveries', validationResult.error, {
-          worldId: context.worldId
-        });
-        throw new Error('Invalid location discoveries result');
-      }
-
-      return result;
-      
-    } catch (error) {
-      logger.error('Failed to discover locations', error, {
-        worldId: context.worldId,
-        correlation: context.worldId
-      });
-      throw error;
-    }
-  }
 
   /**
    * Enrich a location's description with more detail
@@ -734,24 +610,10 @@ const LocationMutationsSchema = z.object({
   }))
 });
 
-const LocationDiscoveriesSchema = z.object({
-  discoveries: z.array(z.object({
-    name: z.string(),
-    type: z.string(),
-    description: z.string(),
-    parentRegionName: z.string().optional(),
-    tags: z.array(z.string())
-  }))
-});
-
 function validateMapGenerationResult(result: any) {
   return MapGenerationResultSchema.safeParse(result);
 }
 
 function validateLocationMutations(result: any) {
   return LocationMutationsSchema.safeParse(result);
-}
-
-function validateLocationDiscoveries(result: any) {
-  return LocationDiscoveriesSchema.safeParse(result);
 }
