@@ -14,7 +14,7 @@ describe('FactionService.relations', () => {
   let emitSpy: ReturnType<typeof vi.spyOn>;
 
   const mockFaction: Faction = {
-    id: 'faction-1',
+    id: '550e8400-e29b-41d4-a716-446655440001',
     world_id: 'world-1',
     name: 'Trade Federation',
     ideology: 'Profit above all else',
@@ -91,8 +91,8 @@ describe('FactionService.relations', () => {
 
   describe('setStance', () => {
     it('should set diplomatic stance between factions', async () => {
-      const sourceId = 'faction-1';
-      const targetId = 'faction-2';
+      const sourceId = '550e8400-e29b-41d4-a716-446655440001';
+      const targetId = '550e8400-e29b-41d4-a716-446655440002';
       const stance = 'ally' as const;
       const reason = 'Mutual defense pact signed';
 
@@ -120,8 +120,8 @@ describe('FactionService.relations', () => {
     });
 
     it('should track previous stance when changing relations', async () => {
-      const sourceId = 'faction-1';
-      const targetId = 'faction-2';
+      const sourceId = '550e8400-e29b-41d4-a716-446655440001';
+      const targetId = '550e8400-e29b-41d4-a716-446655440002';
       const existingRelation: FactionRelation = {
         id: 'relation-1',
         world_id: 'world-1',
@@ -158,20 +158,20 @@ describe('FactionService.relations', () => {
 
   describe('getStances', () => {
     it('should return all diplomatic stances for a faction', async () => {
-      const factionId = 'faction-1';
+      const factionId = '550e8400-e29b-41d4-a716-446655440001';
       const relations: FactionRelation[] = [
         {
           id: 'rel-1',
           world_id: 'world-1',
           source_id: factionId,
-          target_id: 'faction-2',
+          target_id: '550e8400-e29b-41d4-a716-446655440002',
           stance: 'ally',
           last_changed: new Date().toISOString()
         },
         {
           id: 'rel-2',
           world_id: 'world-1',
-          source_id: 'faction-3',
+          source_id: '550e8400-e29b-41d4-a716-446655440003',
           target_id: factionId,
           stance: 'hostile',
           last_changed: new Date().toISOString()
@@ -183,8 +183,8 @@ describe('FactionService.relations', () => {
       const result = await factionService.getStances(factionId);
 
       expect(result).toEqual([
-        { targetId: 'faction-2', stance: 'ally' },
-        { targetId: 'faction-3', stance: 'hostile' }
+        { targetId: '550e8400-e29b-41d4-a716-446655440002', stance: 'ally' },
+        { targetId: '550e8400-e29b-41d4-a716-446655440003', stance: 'hostile' }
       ]);
     });
   });
@@ -196,7 +196,7 @@ describe('FactionService.relations', () => {
         mockFaction,
         {
           ...mockFaction,
-          id: 'faction-2',
+          id: '550e8400-e29b-41d4-a716-446655440002',
           name: 'War Clan',
           ideology: 'Might makes right',
           tags: ['militaristic', 'aggressive']
@@ -205,8 +205,8 @@ describe('FactionService.relations', () => {
 
       const suggestions = [
         {
-          sourceId: 'faction-1',
-          targetId: 'faction-2',
+          sourceId: '550e8400-e29b-41d4-a716-446655440001',
+          targetId: '550e8400-e29b-41d4-a716-446655440002',
           suggestedStance: 'hostile' as const,
           reason: 'Trade disputes escalated to embargo'
         }
@@ -228,8 +228,8 @@ describe('FactionService.relations', () => {
       });
 
       expect(factionRepo.setRelation).toHaveBeenCalledWith(
-        'faction-1',
-        'faction-2',
+        '550e8400-e29b-41d4-a716-446655440001',
+        '550e8400-e29b-41d4-a716-446655440002',
         'hostile',
         worldId
       );
