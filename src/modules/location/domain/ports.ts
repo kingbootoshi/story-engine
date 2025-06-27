@@ -60,6 +60,11 @@ export interface LocationRepository {
    * Search locations by name or tags
    */
   search(worldId: string, query: string, tags?: string[]): Promise<Location[]>;
+  
+  /**
+   * Delete a location by ID
+   */
+  delete(id: string): Promise<void>;
 }
 
 /**

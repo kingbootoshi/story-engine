@@ -427,4 +427,21 @@ export class FactionService {
       }
     }
   }
+
+  async delete(id: string): Promise<void> {
+    logger.info('Deleting faction', { factionId: id });
+    
+    const faction = await this.repo.findById(id);
+    if (!faction) {
+      throw new Error(`Faction ${id} not found`);
+    }
+    
+    await this.repo.delete(id);
+    
+    logger.info('Faction deleted', { 
+      factionId: id,
+      worldId: faction.world_id,
+      name: faction.name
+    });
+  }
 }

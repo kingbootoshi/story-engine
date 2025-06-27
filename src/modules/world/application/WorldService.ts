@@ -491,4 +491,18 @@ export class WorldService {
       ? await this.repo.getBeat(arc.current_beat_id)
       : null;
   }
+
+  /**
+   * Get events with flexible filtering
+   */
+  async getEvents(worldId: string, filters?: {
+    eventType?: string;
+    impactLevel?: string;
+    limit?: number;
+    offset?: number;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<WorldEvent[]> {
+    return this.repo.getEvents(worldId, filters);
+  }
 }

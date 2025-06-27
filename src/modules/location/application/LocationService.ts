@@ -581,4 +581,21 @@ export class LocationService {
 
     return this.repo.update(locationId, { description: enrichedDescription });
   }
+
+  async delete(id: string): Promise<void> {
+    logger.info('Deleting location', { locationId: id });
+    
+    const location = await this.repo.findById(id);
+    if (!location) {
+      throw new Error(`Location ${id} not found`);
+    }
+    
+    await this.repo.delete(id);
+    
+    logger.info('Location deleted', { 
+      locationId: id,
+      worldId: location.world_id,
+      name: location.name
+    });
+  }
 }

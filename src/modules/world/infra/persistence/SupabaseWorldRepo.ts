@@ -295,6 +295,60 @@ export class SupabaseWorldRepo implements WorldRepo {
     return data || [];
   }
 
+  /**
+   * Get events with flexible filtering options
+   */
+  async getEvents(worldId: string, filters?: {
+    eventType?: string;
+    impactLevel?: string;
+    limit?: number;
+    offset?: number;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<WorldEvent[]> {
+    let query = supabase
+      .from('world_events')
+      .select('*')
+      .eq('world_id', worldId);
+
+    // Apply filters
+    if (filters?.eventType) {
+      query = query.eq('event_type', filters.eventType);
+    }
+    
+    if (filters?.impactLevel) {
+      query = query.eq('impact_level', filters.impactLevel);
+    }
+    
+    if (filters?.startDate) {
+      query = query.gte('created_at', filters.startDate.toISOString());
+    }
+    
+    if (filters?.endDate) {
+      query = query.lte('created_at', filters.endDate.toISOString());
+    }
+    
+    // Apply pagination
+    query = query.order('created_at', { ascending: false });
+    
+    if (filters?.limit) {
+      query = query.limit(filters.limit);
+    }
+    
+    if (filters?.offset) {
+      query = query.range(filters.offset, filters.offset + (filters.limit || 20) - 1);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      repoLog.error('Failed to get events', error, { worldId, filters });
+      throw error;
+    }
+
+    return data || [];
+  }
+
   async getCurrentBeat(arcId: string): Promise<WorldBeat | null> {
     // First get the arc to find current_beat_id
     const { data: arc, error: arcError } = await supabase

@@ -97,6 +97,14 @@ export interface WorldRepo {
   createEvent(event: CreateEvent): Promise<WorldEvent>;
   getRecentEvents(worldId: string, limit?: number): Promise<WorldEvent[]>;
   getBeatEvents(beatId: string): Promise<WorldEvent[]>;
+  getEvents(worldId: string, filters?: {
+    eventType?: string;
+    impactLevel?: string;
+    limit?: number;
+    offset?: number;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<WorldEvent[]>;
   
   // Helper operations
   getArcByWorld(worldId: string): Promise<WorldArc | null>;

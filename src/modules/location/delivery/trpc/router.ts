@@ -43,6 +43,7 @@ export const locationRouter = router({
 
   /**
    * Get locations by parent region
+   * INTERNAL: Use list with filtering instead
    */
   getByRegion: publicProcedure
     .input(z.object({
@@ -56,6 +57,7 @@ export const locationRouter = router({
 
   /**
    * Get location history
+   * INTERNAL: History is included in get endpoint
    */
   getHistory: publicProcedure
     .input(z.object({
@@ -136,6 +138,7 @@ export const locationRouter = router({
 
   /**
    * Enrich location description with AI
+   * INTERNAL: AI enrichment happens automatically
    */
   enrichWithAI: publicProcedure
     .input(z.object({
@@ -149,5 +152,21 @@ export const locationRouter = router({
       
       const service = container.resolve(LocationService);
       return service.enrichWithAI(input.locationId, input.worldContext);
+    }),
+
+  /**
+   * Delete a location
+   */
+  delete: publicProcedure
+    .input(UUIDString)
+    .mutation(async ({ input }) => {
+      logger.info('Deleting location', { 
+        locationId: input 
+      });
+      
+      const service = container.resolve(LocationService);
+      await service.delete(input);
+      
+      return { success: true };
     })
 });

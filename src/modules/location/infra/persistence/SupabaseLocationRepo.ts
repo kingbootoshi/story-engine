@@ -452,4 +452,40 @@ export class SupabaseLocationRepo implements LocationRepository {
     });
     return data || [];
   }
+
+  /**
+   * Deletes a location by ID.
+   * 
+   * @param id - The location ID to delete
+   * @throws {Error} If the deletion fails
+   */
+  async delete(id: string): Promise<void> {
+    const startTime = Date.now();
+    const correlation = `delete-${id}-${Date.now()}`;
+    
+    logger.info('Deleting location', { 
+      id,
+      correlation 
+    });
+
+    const { error } = await supabase
+      .from('locations')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      logger.error('Failed to delete location', error, { 
+        id,
+        correlation,
+        duration_ms: Date.now() - startTime
+      });
+      throw error;
+    }
+
+    logger.info('Location deleted', { 
+      id,
+      correlation,
+      duration_ms: Date.now() - startTime
+    });
+  }
 }

@@ -28,6 +28,7 @@ export const worldRouter = router({
       return worldService.getWorld(input);
     }),
 
+  // INTERNAL: Arc management is handled automatically through event processing
   createNewArc: publicProcedure
     .input(z.object({
       worldId: z.string().uuid(),
@@ -84,6 +85,7 @@ export const worldRouter = router({
       return worldService.getWorldState(input);
     }),
 
+  // INTERNAL: Arc completion is managed by the system
   completeArc: publicProcedure
     .input(z.object({
       worldId: z.string().uuid(),
@@ -95,6 +97,7 @@ export const worldRouter = router({
       return { message: 'Arc completed successfully' };
     }),
 
+  // INTERNAL: Use getEvents for public API
   getBeatEvents: publicProcedure
     .input(z.string().uuid())
     .output(S.WorldEvent.array())
@@ -109,5 +112,23 @@ export const worldRouter = router({
     .query(async ({ input }) => {
       const worldService = container.resolve(WorldService);
       return worldService.getCurrentBeat(input);
+    }),
+
+  getEvents: publicProcedure
+    .input(z.object({
+      worldId: z.string().uuid(),
+      filters: z.object({
+        eventType: z.enum(['player_action', 'system_event', 'environmental', 'social']).optional(),
+        impactLevel: z.enum(['minor', 'moderate', 'major', 'catastrophic']).optional(),
+        limit: z.number().int().positive().max(100).optional(),
+        offset: z.number().int().nonnegative().optional(),
+        startDate: z.date().optional(),
+        endDate: z.date().optional()
+      }).optional()
+    }))
+    .output(S.WorldEvent.array())
+    .query(async ({ input }) => {
+      const worldService = container.resolve(WorldService);
+      return worldService.getEvents(input.worldId, input.filters);
     }),
 });

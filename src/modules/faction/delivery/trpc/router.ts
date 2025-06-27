@@ -76,6 +76,7 @@ export const factionRouter = router({
       return factionService.getStances(input);
     }),
 
+  // INTERNAL: Territory management happens through events
   claimLocation: authedProcedure
     .input(z.object({
       factionId: UUIDString,
@@ -92,6 +93,7 @@ export const factionRouter = router({
       return { success: true };
     }),
 
+  // INTERNAL: Territory management happens through events
   releaseLocation: authedProcedure
     .input(z.object({
       factionId: UUIDString,
@@ -108,6 +110,7 @@ export const factionRouter = router({
       return { success: true };
     }),
 
+  // INTERNAL: Status changes happen automatically based on events
   setStatus: authedProcedure
     .input(z.object({
       id: UUIDString,
@@ -124,6 +127,7 @@ export const factionRouter = router({
       return { success: true };
     }),
 
+  // INTERNAL: History is included in get endpoint
   getHistory: publicProcedure
     .input(z.object({
       id: UUIDString,
@@ -135,6 +139,7 @@ export const factionRouter = router({
       return factionService.getHistory(input.id, input.limit);
     }),
 
+  // INTERNAL: AI generation happens automatically
   generateDoctrine: authedProcedure
     .input(UUIDString)
     .output(Faction)
@@ -143,6 +148,7 @@ export const factionRouter = router({
       return factionService.generateDoctrine(input);
     }),
 
+  // INTERNAL: Relation evaluation happens automatically during story progression
   evaluateRelations: authedProcedure
     .input(z.object({
       worldId: UUIDString,
@@ -151,6 +157,14 @@ export const factionRouter = router({
     .mutation(async ({ input }) => {
       const factionService = container.resolve(FactionService);
       await factionService.evaluateRelations(input.worldId, input.beatContext);
+      return { success: true };
+    }),
+
+  delete: authedProcedure
+    .input(UUIDString)
+    .mutation(async ({ input }) => {
+      const factionService = container.resolve(FactionService);
+      await factionService.delete(input);
       return { success: true };
     })
 });

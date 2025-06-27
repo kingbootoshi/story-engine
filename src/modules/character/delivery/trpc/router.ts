@@ -54,6 +54,7 @@ export const characterRouter = router({
       await service.delete(input.characterId, ctx);
     }),
 
+  // INTERNAL: Use list endpoint with filtering instead
   listByFaction: authedProcedure
     .input(z.object({
       factionId: z.string().uuid()
@@ -64,6 +65,7 @@ export const characterRouter = router({
       return await repo.findByFactionId(input.factionId);
     }),
 
+  // INTERNAL: Use list endpoint with filtering instead
   listByLocation: authedProcedure
     .input(z.object({
       locationId: z.string().uuid()
