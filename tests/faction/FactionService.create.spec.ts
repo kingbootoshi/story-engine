@@ -165,7 +165,8 @@ describe('FactionService.create', () => {
     expect(factionAI.generateFaction).toHaveBeenCalledWith({
       worldId: worldId,
       worldTheme: world.description,
-      existingFactions: []
+      existingFactions: [],
+      userId: 'user-123'
     });
     expect(factionRepo.create).toHaveBeenCalledWith(aiGeneratedData);
   });

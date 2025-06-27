@@ -17,7 +17,7 @@ class MockLocationRepo implements LocationRepository {
   async createBulk(locations: any[]): Promise<Location[]> {
     const created = locations.map(loc => ({
       ...loc,
-      id: `loc-${this.idCounter++}`,
+      id: `00000000-0000-4000-8000-00000000000${this.idCounter++}`,
       historical_events: [],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -29,7 +29,7 @@ class MockLocationRepo implements LocationRepository {
   async create(location: any): Promise<Location> {
     const created = {
       ...location,
-      id: `loc-${this.idCounter++}`,
+      id: `00000000-0000-4000-8000-00000000000${this.idCounter++}`,
       historical_events: [],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -267,12 +267,20 @@ class MockLocationAI implements LocationAI {
     }
     return { wilderness: [] };
   }
+
+  async decideMutation(context: any) {
+    return {
+      think: 'Analyzing beat for location impacts',
+      shouldMutate: false
+    };
+  }
 }
 
 describe('LocationService', () => {
   let service: LocationService;
   let mockRepo: MockLocationRepo;
   let mockAI: MockLocationAI;
+  let mockLogger: any;
   let emittedEvents: any[] = [];
 
   beforeEach(() => {
@@ -282,9 +290,22 @@ describe('LocationService', () => {
     mockAI = new MockLocationAI();
     emittedEvents = [];
     
+    // Mock WorldRepo
+    const mockWorldRepo = {
+      getWorld: vi.fn().mockImplementation(async (worldId: string) => ({
+        id: worldId,
+        user_id: 'user-1',
+        name: 'Test World',
+        description: 'A test world'
+      }))
+    };
+    
+    mockLogger = createMockLogger();
+    
     container.register('LocationRepository', { useValue: mockRepo });
     container.register('LocationAI', { useValue: mockAI });
-    container.register('Logger', { useValue: createMockLogger() });
+    container.register('Logger', { useValue: mockLogger });
+    container.register('WorldRepo', { useValue: mockWorldRepo });
     
     // Clear all event listeners before each test
     eventBus['emitter'].removeAllListeners();
@@ -362,6 +383,31 @@ describe('LocationService', () => {
   });
 
   describe('reactToBeat', () => {
+    it('mock repository should update status correctly', async () => {
+      // Test the mock repo directly
+      const location = await mockRepo.create({
+        world_id: 'test-world',
+        parent_location_id: null,
+        name: 'Test Location',
+        type: 'city',
+        status: 'stable',
+        description: 'Test',
+        tags: []
+      });
+      
+      expect(location.status).toBe('stable');
+      
+      await mockRepo.updateStatus(location.id, 'declining', {
+        timestamp: new Date().toISOString(),
+        event: 'Test event',
+        previous_status: 'stable',
+        beat_index: 0
+      });
+      
+      const updated = await mockRepo.findById(location.id);
+      expect(updated?.status).toBe('declining');
+    });
+    
     it('should process beat events for location mutations', async () => {
       // Reset events before this test
       emittedEvents = [];
@@ -376,13 +422,19 @@ describe('LocationService', () => {
         tags: []
       });
 
-      vi.spyOn(mockAI, 'mutateLocations').mockResolvedValueOnce({
+      // Override the decideMutation method completely
+      mockAI.decideMutation = vi.fn().mockResolvedValue({
+        think: 'Economic crisis affects city status',
+        shouldMutate: true
+      });
+      
+      // Override mutateLocations method
+      mockAI.mutateLocations = vi.fn().mockResolvedValue({
         updates: [{
           locationId: testLocation.id,
           newStatus: 'declining',
           reason: 'Economic troubles'
-        }],
-        discoveries: []
+        }]
       });
 
       const beatEvent: StoryBeatCreated = {
@@ -394,6 +446,9 @@ describe('LocationService', () => {
         emergent: ['trade routes disrupted']
       };
 
+      // Spy on updateStatus
+      const updateStatusSpy = vi.spyOn(mockRepo, 'updateStatus');
+      
       // Call reactToBeat directly
       await (service as any).reactToBeat(beatEvent);
       
