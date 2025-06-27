@@ -1,5 +1,5 @@
 import { injectable } from 'tsyringe';
-import { chat, buildMetadata } from '../../../../core/ai';
+import { chat, buildMetadata, modelRegistry } from '../../../../core/ai';
 import { createLogger } from '../../../../core/infra/logger';
 import type { WorldAI, AnchorContext, BeatContext, SummaryContext, AnchorDTO, BeatDTO } from '../../domain/ports';
 import { ANCHOR_SYSTEM_PROMPT, buildAnchorUserPrompt } from './prompts/anchor.prompts';
@@ -150,18 +150,13 @@ const ARC_SUMMARY_SCHEMA = {
 
 @injectable()
 export class WorldAIAdapter implements WorldAI {
-  /** 
-   * Primary AI model for world generation and narrative progression.
-   * Using OpenAI GPT-4.1 Nano for efficient world state management and beat generation.
-   */
-  private readonly MODEL = 'openai/gpt-4.1-nano';
   private readonly MODULE = 'world';
 
   async generateAnchors(ctx: AnchorContext): Promise<{ anchors: AnchorDTO[]; arcDetailedDescription: string }> {
-    log.debug('AI call', { promptId: 'generate_world_arc_anchors', model: this.MODEL });
+    log.debug('AI call', { promptId: 'generate_world_arc_anchors', model: modelRegistry.getDefault() });
     
     const completion = await chat({
-      model: this.MODEL,
+      model: modelRegistry.getDefault(),
       messages: [
         { role: 'system', content: ANCHOR_SYSTEM_PROMPT },
         { role: 'user', content: buildAnchorUserPrompt(
@@ -178,7 +173,7 @@ export class WorldAIAdapter implements WorldAI {
       tool_choice: { type: 'function', function: { name: 'generate_world_arc_anchors' } },
       temperature: 0.9,
       max_tokens: 3000,
-      metadata: buildMetadata(this.MODULE, 'generate_world_arc_anchors', { world_name: ctx.worldName })
+      metadata: buildMetadata(this.MODULE, 'generate_world_arc_anchors', ctx.userId, { world_name: ctx.worldName })
     });
 
     const toolCall = completion.choices[0].message.tool_calls?.[0];
@@ -189,7 +184,7 @@ export class WorldAIAdapter implements WorldAI {
     const args = JSON.parse(toolCall.function.arguments);
     log.info('AI success', { 
       ai: { 
-        model: this.MODEL, 
+        model: modelRegistry.getDefault(), 
         prompt_id: 'generate_world_arc_anchors', 
         usage: completion.usage 
       } 
@@ -207,7 +202,7 @@ export class WorldAIAdapter implements WorldAI {
   }
 
   async generateBeat(ctx: BeatContext): Promise<BeatDTO> {
-    log.debug('AI call', { promptId: 'generate_dynamic_world_beat', model: this.MODEL });
+    log.debug('AI call', { promptId: 'generate_dynamic_world_beat', model: modelRegistry.getDefault() });
     
     // Build summaries for previous beats and next anchor
     const previousBeatsSummary = ctx.previousBeats
@@ -219,7 +214,7 @@ export class WorldAIAdapter implements WorldAI {
     const beatInfo = SAVE_THE_CAT_BEATS.find(b => b.index === ctx.currentBeatIndex);
 
     const completion = await chat({
-      model: this.MODEL,
+      model: modelRegistry.getDefault(),
       messages: [
         { role: 'system', content: DYNAMIC_BEAT_SYSTEM_PROMPT },
         { role: 'user', content: buildDynamicBeatUserPrompt(
@@ -241,7 +236,7 @@ export class WorldAIAdapter implements WorldAI {
       tool_choice: { type: 'function', function: { name: 'generate_dynamic_world_beat' } },
       temperature: 0.85,
       max_tokens: 2000,
-      metadata: buildMetadata(this.MODULE, 'generate_dynamic_world_beat', {
+      metadata: buildMetadata(this.MODULE, 'generate_dynamic_world_beat', ctx.userId, {
         world_name: ctx.worldName,
         beat_index: ctx.currentBeatIndex
       })
@@ -255,7 +250,7 @@ export class WorldAIAdapter implements WorldAI {
     const args = JSON.parse(toolCall.function.arguments);
     log.info('AI success', { 
       ai: { 
-        model: this.MODEL, 
+        model: modelRegistry.getDefault(), 
         prompt_id: 'generate_dynamic_world_beat', 
         usage: completion.usage 
       } 
@@ -266,10 +261,10 @@ export class WorldAIAdapter implements WorldAI {
   }
 
   async summarizeArc(ctx: SummaryContext): Promise<string> {
-    log.debug('AI call', { promptId: 'generate_arc_summary', model: this.MODEL });
+    log.debug('AI call', { promptId: 'generate_arc_summary', model: modelRegistry.getDefault() });
     
     const completion = await chat({
-      model: this.MODEL,
+      model: modelRegistry.getDefault(),
       messages: [
         { role: 'system', content: ARC_SUMMARY_SYSTEM_PROMPT },
         { role: 'user', content: buildArcSummaryUserPrompt(ctx.arcName, ctx.arcIdea, ctx.beatDescriptions) }
@@ -278,7 +273,7 @@ export class WorldAIAdapter implements WorldAI {
       tool_choice: { type: 'function', function: { name: 'generate_arc_summary' } },
       temperature: 0.7,
       max_tokens: 1000,
-      metadata: buildMetadata(this.MODULE, 'generate_arc_summary', { arc_name: ctx.arcName })
+      metadata: buildMetadata(this.MODULE, 'generate_arc_summary', ctx.userId, { arc_name: ctx.arcName })
     });
 
     const toolCall = completion.choices[0].message.tool_calls?.[0];
@@ -289,7 +284,7 @@ export class WorldAIAdapter implements WorldAI {
     const args = JSON.parse(toolCall.function.arguments);
     log.info('AI success', { 
       ai: { 
-        model: this.MODEL, 
+        model: modelRegistry.getDefault(), 
         prompt_id: 'generate_arc_summary', 
         usage: completion.usage 
       } 

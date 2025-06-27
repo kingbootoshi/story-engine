@@ -33,12 +33,14 @@ export interface IFactionAI {
     worldTheme: string;
     existingFactions: string[];
     locationContext?: string;
+    userId?: string;
   }): Promise<CreateFaction>;
   
   updateDoctrine(params: {
     faction: Faction;
     statusChange: { from: string; to: string; reason: string };
     worldContext: string;
+    userId?: string;
   }): Promise<{ ideology: string; tags: string[] }>;
   
   evaluateRelations(params: {
@@ -46,6 +48,7 @@ export interface IFactionAI {
     factions: Faction[];
     currentRelations: FactionRelation[];
     beatContext: string;
+    userId?: string;
   }): Promise<Array<{
     sourceId: string;
     targetId: string;

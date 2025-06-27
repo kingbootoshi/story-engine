@@ -68,6 +68,7 @@ export interface LocationRepository {
 export interface MapGenerationContext {
   worldName: string;
   worldDescription: string;
+  userId?: string;
 }
 
 /**
@@ -91,6 +92,7 @@ export interface LocationMutationContext {
     status: LocationStatus;
     description: string;
   }>;
+  userId?: string;
 }
 
 /**
@@ -119,6 +121,7 @@ export interface EnrichmentContext {
   location: Location;
   worldContext: string;
   recentEvents?: string[];
+  userId?: string;
 }
 
 /**
@@ -127,6 +130,7 @@ export interface EnrichmentContext {
 export interface RegionGenerationContext {
   worldName: string;
   worldDescription: string;
+  userId?: string;
 }
 
 /**
@@ -161,6 +165,7 @@ export interface LocationGenerationContext {
       y: number;
     };
   }>;
+  userId?: string;
 }
 
 /**
@@ -215,6 +220,7 @@ export interface MutationDecisionContext {
   worldId: string;
   beatDirectives: string;
   emergentStorylines: string[];
+  userId?: string;
 }
 
 /**

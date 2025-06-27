@@ -77,7 +77,7 @@ export class LocationAIAdapter implements LocationAI {
         tools: [{ type: 'function', function: WORLD_MAP_GENERATION_SCHEMA }],
         tool_choice: { type: 'function', function: { name: 'generate_world_map' } },
         temperature: 0.8,
-        metadata: buildMetadata('location', 'generate_world_map@v1', {
+        metadata: buildMetadata('location', 'generate_world_map@v1', context.userId || 'anonymous', {
           world_name: context.worldName,
           correlation: context.worldName
         })
@@ -140,7 +140,7 @@ export class LocationAIAdapter implements LocationAI {
         tools: [{ type: 'function', function: REGION_GENERATION_SCHEMA }],
         tool_choice: { type: 'function', function: { name: 'generate_regions' } },
         temperature: 0.8,
-        metadata: buildMetadata('location', 'generate_regions@v1', {
+        metadata: buildMetadata('location', 'generate_regions@v1', context.userId || 'anonymous', {
           world_name: context.worldName,
           correlation: context.worldName
         })
@@ -205,7 +205,7 @@ export class LocationAIAdapter implements LocationAI {
         tools: [{ type: 'function', function: CITY_GENERATION_SCHEMA }],
         tool_choice: { type: 'function', function: { name: 'generate_cities' } },
         temperature: 0.8,
-        metadata: buildMetadata('location', 'generate_cities@v1', {
+        metadata: buildMetadata('location', 'generate_cities@v1', context.userId || 'anonymous', {
           world_name: context.worldName,
           region_name: context.regionName,
           correlation: context.worldName
@@ -274,7 +274,7 @@ export class LocationAIAdapter implements LocationAI {
         tools: [{ type: 'function', function: LANDMARK_GENERATION_SCHEMA }],
         tool_choice: { type: 'function', function: { name: 'generate_landmarks' } },
         temperature: 0.8,
-        metadata: buildMetadata('location', 'generate_landmarks@v1', {
+        metadata: buildMetadata('location', 'generate_landmarks@v1', context.userId || 'anonymous', {
           world_name: context.worldName,
           region_name: context.regionName,
           correlation: context.worldName
@@ -343,7 +343,7 @@ export class LocationAIAdapter implements LocationAI {
         tools: [{ type: 'function', function: WILDERNESS_GENERATION_SCHEMA }],
         tool_choice: { type: 'function', function: { name: 'generate_wilderness' } },
         temperature: 0.8,
-        metadata: buildMetadata('location', 'generate_wilderness@v1', {
+        metadata: buildMetadata('location', 'generate_wilderness@v1', context.userId || 'anonymous', {
           world_name: context.worldName,
           region_name: context.regionName,
           correlation: context.worldName
@@ -412,7 +412,7 @@ export class LocationAIAdapter implements LocationAI {
         tools: [{ type: 'function', function: LOCATION_MUTATION_SCHEMA }],
         tool_choice: { type: 'function', function: { name: 'mutate_locations' } },
         temperature: 0.7,
-        metadata: buildMetadata('location', 'mutate_locations@v1', {
+        metadata: buildMetadata('location', 'mutate_locations@v1', context.userId || 'anonymous', {
           world_id: context.worldId,
           correlation: context.worldId
         })
@@ -472,7 +472,7 @@ export class LocationAIAdapter implements LocationAI {
         tools: [{ type: 'function', function: MUTATION_DECISION_SCHEMA }],
         tool_choice: { type: 'function', function: { name: 'decide_mutation' } },
         temperature: 0.7,
-        metadata: buildMetadata('location', 'decide_mutation@v1', {
+        metadata: buildMetadata('location', 'decide_mutation@v1', context.userId || 'anonymous', {
           world_id: context.worldId,
           correlation: context.worldId
         })
@@ -549,7 +549,7 @@ Provide an enriched description that:
         messages,
         temperature: 0.8,
         max_tokens: 800,
-        metadata: buildMetadata('location', 'enrich_description@v1', {
+        metadata: buildMetadata('location', 'enrich_description@v1', context.userId || 'anonymous', {
           location_id: context.location.id,
           world_id: context.location.world_id,
           correlation: context.location.world_id

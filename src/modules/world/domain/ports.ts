@@ -11,6 +11,8 @@ export interface AnchorContext {
   currentFactions?: string;
   /** Markdown list of characters in the world */
   currentCharacters?: string;
+  /** User ID for usage tracking */
+  userId: string;
 }
 
 export interface BeatContext {
@@ -26,12 +28,16 @@ export interface BeatContext {
   currentFactions?: string;
   /** Markdown list of characters in the world */
   currentCharacters?: string;
+  /** User ID for usage tracking */
+  userId: string;
 }
 
 export interface SummaryContext {
   arcName: string;
   arcIdea: string;
   beatDescriptions: string;
+  /** User ID for usage tracking */
+  userId: string;
 }
 
 export interface AnchorDTO {

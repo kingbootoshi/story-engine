@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { createLogger } from './logger';
+import { env } from '../../shared/config/env';
 
 const logger = createLogger('supabase');
 
@@ -7,7 +8,7 @@ const isBrowser = typeof window !== 'undefined';
 
 const supabaseUrl: string | undefined = isBrowser
   ? (import.meta as any).env.VITE_SUPABASE_URL
-  : process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  : env.SUPABASE_URL;
 
 /**
  * Resolve the most privileged Supabase key available **for server-side usage**.
@@ -21,8 +22,8 @@ const supabaseUrl: string | undefined = isBrowser
  */
 const supabaseKey: string | undefined = isBrowser
   ? (import.meta as any).env.VITE_SUPABASE_ANON_KEY
-  : process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_ANON_KEY
+  : env.SUPABASE_SERVICE_ROLE_KEY ||
+    env.SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseKey) {
   logger.error('[Supabase] Missing credentials – make sure the appropriate ' +
@@ -34,7 +35,7 @@ if (!supabaseUrl || !supabaseKey) {
 // IMPORTANT: Do **NOT** log the key value; we only log which role is in use.
 // ---------------------------------------------------------------------------
 
-const roleInUse = isBrowser ? 'anon (browser)' : (process.env.SUPABASE_SERVICE_ROLE_KEY ? 'service' : 'anon');
+const roleInUse = isBrowser ? 'anon (browser)' : (env.SUPABASE_SERVICE_ROLE_KEY ? 'service' : 'anon');
 
 logger.debug(`[Supabase] Initialising client with ${roleInUse} key`);
 

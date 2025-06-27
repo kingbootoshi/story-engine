@@ -11,6 +11,7 @@ const EnvSchema = z.object({
   // Supabase
   SUPABASE_URL: z.string().url(),
   SUPABASE_ANON_KEY: z.string(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
 
   // OpenAI / Router / OpenPipe
   OPENROUTER_API_KEY: z.string(),

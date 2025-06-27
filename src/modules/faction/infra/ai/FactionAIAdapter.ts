@@ -121,7 +121,6 @@ const EVALUATE_RELATIONS_SCHEMA = {
 
 @injectable()
 export class FactionAIAdapter implements IFactionAI {
-  private readonly MODEL = 'openai/gpt-4.1-nano';
   private readonly MODULE = 'faction';
 
   async generateFaction(params: {
@@ -129,11 +128,11 @@ export class FactionAIAdapter implements IFactionAI {
     worldTheme: string;
     existingFactions: string[];
     locationContext?: string;
+    userId?: string;
   }): Promise<CreateFaction> {
-    log.debug('AI call', { promptId: 'generate_faction@v1', model: this.MODEL });
+    log.debug('AI call', { promptId: 'generate_faction@v1' });
     
     const completion = await chat({
-      model: this.MODEL,
       messages: [
         { role: 'system', content: GENERATE_FACTION_SYSTEM_PROMPT },
         { role: 'user', content: buildGenerateFactionUserPrompt(
@@ -146,7 +145,7 @@ export class FactionAIAdapter implements IFactionAI {
       tool_choice: { type: 'function', function: { name: 'generate_faction' } },
       temperature: 0.9,
       max_tokens: 1500,
-      metadata: buildMetadata(this.MODULE, 'generate_faction@v1', { world_id: params.worldId })
+      metadata: buildMetadata(this.MODULE, 'generate_faction@v1', params.userId || 'anonymous', { world_id: params.worldId })
     });
 
     const toolCall = completion.choices[0].message.tool_calls?.[0];
@@ -157,7 +156,6 @@ export class FactionAIAdapter implements IFactionAI {
     const args = JSON.parse(toolCall.function.arguments);
     log.info('AI success', { 
       ai: { 
-        model: this.MODEL, 
         prompt_id: 'generate_faction@v1', 
         usage: completion.usage 
       } 
@@ -181,11 +179,11 @@ export class FactionAIAdapter implements IFactionAI {
     faction: Faction;
     statusChange: { from: string; to: string; reason: string };
     worldContext: string;
+    userId?: string;
   }): Promise<{ ideology: string; tags: string[] }> {
-    log.debug('AI call', { promptId: 'update_doctrine@v1', model: this.MODEL });
+    log.debug('AI call', { promptId: 'update_doctrine@v1' });
     
     const completion = await chat({
-      model: this.MODEL,
       messages: [
         { role: 'system', content: UPDATE_DOCTRINE_SYSTEM_PROMPT },
         { role: 'user', content: buildDoctrineUpdateUserPrompt(
@@ -200,7 +198,7 @@ export class FactionAIAdapter implements IFactionAI {
       tool_choice: { type: 'function', function: { name: 'update_doctrine' } },
       temperature: 0.8,
       max_tokens: 1000,
-      metadata: buildMetadata(this.MODULE, 'update_doctrine@v1', { 
+      metadata: buildMetadata(this.MODULE, 'update_doctrine@v1', params.userId || 'anonymous', { 
         faction_id: params.faction.id,
         status_change: `${params.statusChange.from}_to_${params.statusChange.to}`
       })
@@ -214,7 +212,6 @@ export class FactionAIAdapter implements IFactionAI {
     const args = JSON.parse(toolCall.function.arguments);
     log.info('AI success', { 
       ai: { 
-        model: this.MODEL, 
         prompt_id: 'update_doctrine@v1', 
         usage: completion.usage 
       } 
@@ -231,13 +228,14 @@ export class FactionAIAdapter implements IFactionAI {
     factions: Faction[];
     currentRelations: FactionRelation[];
     beatContext: string;
+    userId?: string;
   }): Promise<Array<{
     sourceId: string;
     targetId: string;
     suggestedStance: DiplomaticStance;
     reason: string;
   }>> {
-    log.debug('AI call', { promptId: 'evaluate_relations@v1', model: this.MODEL });
+    log.debug('AI call', { promptId: 'evaluate_relations@v1' });
     
     const factionSummaries = params.factions.map(f => ({
       id: f.id,
@@ -248,7 +246,6 @@ export class FactionAIAdapter implements IFactionAI {
     }));
     
     const completion = await chat({
-      model: this.MODEL,
       messages: [
         { role: 'system', content: EVALUATE_RELATIONS_SYSTEM_PROMPT },
         { role: 'user', content: buildEvaluateRelationsUserPrompt(
@@ -265,7 +262,7 @@ export class FactionAIAdapter implements IFactionAI {
       tool_choice: { type: 'function', function: { name: 'evaluate_relations' } },
       temperature: 0.7,
       max_tokens: 2000,
-      metadata: buildMetadata(this.MODULE, 'evaluate_relations@v1', { 
+      metadata: buildMetadata(this.MODULE, 'evaluate_relations@v1', params.userId || 'anonymous', { 
         world_id: params.worldId,
         faction_count: params.factions.length
       })
@@ -279,7 +276,6 @@ export class FactionAIAdapter implements IFactionAI {
     const args = JSON.parse(toolCall.function.arguments);
     log.info('AI success', { 
       ai: { 
-        model: this.MODEL, 
         prompt_id: 'evaluate_relations@v1', 
         usage: completion.usage 
       },
@@ -294,10 +290,9 @@ export class FactionAIAdapter implements IFactionAI {
     targetAudience: string;
     topic: string;
   }): Promise<string> {
-    log.debug('AI call', { promptId: 'generate_propaganda@v1', model: this.MODEL });
+    log.debug('AI call', { promptId: 'generate_propaganda@v1' });
     
     const completion = await chat({
-      model: this.MODEL,
       messages: [
         { 
           role: 'system', 
@@ -316,7 +311,7 @@ Write 2-3 paragraphs of compelling propaganda that advances the faction's intere
       ],
       temperature: 0.9,
       max_tokens: 500,
-      metadata: buildMetadata(this.MODULE, 'generate_propaganda@v1', { 
+      metadata: buildMetadata(this.MODULE, 'generate_propaganda@v1', 'anonymous', { 
         faction_id: params.faction.id 
       })
     });
@@ -328,7 +323,6 @@ Write 2-3 paragraphs of compelling propaganda that advances the faction's intere
     
     log.info('AI success', { 
       ai: { 
-        model: this.MODEL, 
         prompt_id: 'generate_propaganda@v1', 
         usage: completion.usage 
       } 

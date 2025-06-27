@@ -255,7 +255,7 @@ export class CharacterAIAdapter implements ICharacterAI {
       tools: [GENERATE_CHARACTERS_SCHEMA],
       tool_choice: { type: 'function', function: { name: 'generate_characters' } },
       temperature: 0.8,
-      metadata: buildMetadata(this.MODULE, 'generate_character_batch@v1', {
+      metadata: buildMetadata(this.MODULE, 'generate_character_batch@v1', trace.user?.id || 'anonymous', {
         correlation: trace.reqId,
         world_id: context.worldId,
         faction_id: context.factionId,
@@ -301,7 +301,7 @@ export class CharacterAIAdapter implements ICharacterAI {
       tools: [EVALUATE_REACTION_SCHEMA],
       tool_choice: { type: 'function', function: { name: 'evaluate_reaction' } },
       temperature: 0.7,
-      metadata: buildMetadata(this.MODULE, 'evaluate_character_reaction@v1', {
+      metadata: buildMetadata(this.MODULE, 'evaluate_character_reaction@v1', trace.user?.id || 'anonymous', {
         correlation: trace.reqId,
         character_id: context.character.id,
         beat_id: context.beat.beatId,
@@ -364,7 +364,7 @@ export class CharacterAIAdapter implements ICharacterAI {
       tools: [ANALYZE_SPAWN_SCHEMA],
       tool_choice: { type: 'function', function: { name: 'analyze_spawn' } },
       temperature: 0.7,
-      metadata: buildMetadata(this.MODULE, 'analyze_spawn_need@v1', {
+      metadata: buildMetadata(this.MODULE, 'analyze_spawn_need@v1', trace.user?.id || 'anonymous', {
         correlation: trace.reqId,
         current_character_count: context.current_character_count
       })

@@ -3,6 +3,7 @@ import { log } from '../infra/logger';
 import { env } from '../../shared/config/env';
 import { modelRegistry } from './registry';
 import { validateMetadata, type AIMetadata } from './metadata';
+import { usageTracker } from './usage-tracker';
 
 const client = new OpenAI({
   apiKey: env.OPENROUTER_API_KEY,
@@ -57,6 +58,38 @@ export async function chat(params: ChatParams): Promise<any> {
       usage: completion.usage,
       ...params.metadata,
     });
+
+    // Track usage asynchronously - fire and forget to avoid blocking
+    if (completion.usage) {
+      const usageData = usageTracker.extractUsageFromResponse(
+        completion,
+        model,
+        params.metadata
+      );
+      
+      // Extract generation ID from response headers if available
+      // Note: OpenRouter may include this in x-generation-id header
+      const generationId = (completion as any).headers?.['x-generation-id'];
+      
+      // Estimate cost based on model and tokens
+      const totalCost = usageTracker.estimateCost(
+        model,
+        completion.usage.prompt_tokens || 0,
+        completion.usage.completion_tokens || 0
+      );
+      
+      // Track usage without awaiting to avoid blocking the response
+      usageTracker.trackUsage({
+        ...usageData,
+        generation_id: generationId,
+        total_cost: totalCost,
+      }).catch((err) => {
+        log.error('Failed to track usage asynchronously', err, {
+          user_id: params.metadata.user_id,
+          module: params.metadata.module,
+        });
+      });
+    }
     
     return completion;
   } catch (error) {

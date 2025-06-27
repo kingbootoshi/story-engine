@@ -62,7 +62,8 @@ export class FactionService {
       const generatedData = await this.ai.generateFaction({
         worldId: input.world_id,
         worldTheme: world.description,
-        existingFactions: existingNames
+        existingFactions: existingNames,
+        userId: world.user_id || 'anonymous'
       });
       
       factionData = { ...input, ...generatedData };

@@ -1,9 +1,8 @@
 import { injectable, inject } from 'tsyringe';
 import { createLogger } from '../../../core/infra/logger';
-import { eventBus } from '../../../core/infra/eventBus';
 import type { WorldRepo, WorldAI } from '../domain/ports';
 import type { WorldBeat } from '../domain/schema';
-import type { WorldEventLogged, StoryBeatCreated } from '../domain/events';
+import type { WorldEventLogged } from '../domain/events';
 import { formatEvent } from '../../../shared/utils/formatEvent';
 import { formatLocationsForAI } from '../../../shared/utils/formatLocationContext';
 import { formatFactionsForAI } from '../../../shared/utils/formatFactionContext';
@@ -118,7 +117,8 @@ export class StoryAIService {
       recentEvents,
       currentLocations: locationsContext,
       currentFactions: factionsContext,
-      currentCharacters: charactersContext
+      currentCharacters: charactersContext,
+      userId: world.user_id || 'anonymous'
     });
 
     const savedBeat = await this.repo.createBeat(

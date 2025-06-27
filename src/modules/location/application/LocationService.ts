@@ -16,6 +16,7 @@ import type {
   LocationWorldCompleteEvent 
 } from '../domain/events';
 import type { WorldCreatedEvent, StoryBeatCreated } from '../../world/domain/events';
+import type { WorldRepo } from '../../world/domain/ports';
 
 const logger = createLogger('location.service');
 
@@ -26,7 +27,8 @@ const logger = createLogger('location.service');
 export class LocationService {
   constructor(
     @inject('LocationRepository') private repo: LocationRepository,
-    @inject('LocationAI') private ai: LocationAI
+    @inject('LocationAI') private ai: LocationAI,
+    @inject('WorldRepo') private worldRepo: WorldRepo
   ) {
     this.subscribeToEvents();
   }
@@ -100,9 +102,14 @@ export class LocationService {
         correlation: event.worldId
       });
       
+      // Get the world to fetch the owner's user_id
+      const world = await this.worldRepo.getWorld(event.worldId);
+      const userId = world?.user_id || 'anonymous';
+      
       const regionResult = await this.ai.generateRegions({
         worldName: event.name,
-        worldDescription: event.description
+        worldDescription: event.description,
+        userId
       });
 
       logger.debug('AI generated regions', {
@@ -151,6 +158,7 @@ export class LocationService {
       const worldCtx = {
         worldName: event.name,
         worldDescription: event.description,
+        userId
       };
 
       // Process all regions in parallel
@@ -373,11 +381,16 @@ export class LocationService {
     });
 
     try {
+      // Get the world to fetch the owner's user_id
+      const world = await this.worldRepo.getWorld(event.worldId);
+      const userId = world?.user_id || 'anonymous';
+      
       // Step 1: Create decision context
       const decisionContext = {
         worldId: event.worldId,
         beatDirectives: event.directives.join('\n'),
-        emergentStorylines: event.emergent
+        emergentStorylines: event.emergent,
+        userId
       };
 
       // Step 2: Check if we should mutate locations
@@ -399,7 +412,7 @@ export class LocationService {
 
       // Step 3: Execute mutations if decided
       if (mutationDecision.shouldMutate) {
-        await this.executeMutations(event);
+        await this.executeMutations(event, userId);
       }
 
       logger.info('Completed beat reaction for locations', {
@@ -422,7 +435,7 @@ export class LocationService {
   /**
    * Execute location mutations based on story beat
    */
-  private async executeMutations(event: StoryBeatCreated): Promise<void> {
+  private async executeMutations(event: StoryBeatCreated, userId: string): Promise<void> {
     const startTime = Date.now();
     logger.info('Executing location mutations', {
       worldId: event.worldId,
@@ -441,7 +454,8 @@ export class LocationService {
         name: loc.name,
         status: loc.status,
         description: loc.description.substring(0, 200)
-      }))
+      })),
+      userId
     };
 
     const mutations = await this.ai.mutateLocations(context);

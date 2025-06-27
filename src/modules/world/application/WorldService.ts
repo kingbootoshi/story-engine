@@ -56,6 +56,12 @@ export class WorldService {
     });
     
     try {
+      // Get the world to fetch the owner's user_id
+      const world = await this.repo.getWorld(params.worldId);
+      if (!world) {
+        throw new Error(`World not found: ${params.worldId}`);
+      }
+      
       const previousArcs = await this.getPreviousArcSummaries(params.worldId);
       logger.debug('Retrieved previous arc summaries', { 
         worldId: params.worldId, 
@@ -93,7 +99,8 @@ export class WorldService {
         previousArcs,
         currentLocations: locationsContext,
         currentFactions: factionsContext,
-        currentCharacters: charactersContext
+        currentCharacters: charactersContext,
+        userId: world.user_id || 'anonymous'
       });
 
       if (!result.anchors || result.anchors.length !== 3) {
@@ -248,7 +255,8 @@ export class WorldService {
         recentEvents: recentEventsContext,
         currentLocations: locationsContext,
         currentFactions: factionsContext,
-        currentCharacters: charactersContext
+        currentCharacters: charactersContext,
+        userId: world.user_id || 'anonymous'
       });
 
       const savedBeat = await this.repo.createBeat(
@@ -460,10 +468,15 @@ export class WorldService {
       .map(b => `Beat ${b.beat_index} (${b.beat_name}): ${b.description.substring(0, 200)}...`)
       .join('\n\n');
 
+    // Get the world to fetch the owner's user_id
+    const world = await this.repo.getWorld(arc.world_id);
+    const userId = world?.user_id || 'anonymous';
+
     const summary = await this.ai.summarizeArc({
       arcName: arc.story_name,
       arcIdea: arc.story_idea,
-      beatDescriptions
+      beatDescriptions,
+      userId
     });
 
     return summary || 'Arc completed without significant world changes.';

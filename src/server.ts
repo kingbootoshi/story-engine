@@ -1,10 +1,10 @@
-import 'reflect-metadata';
 import { config } from 'dotenv';
+// Load environment variables FIRST before any other imports
+config();
+
+import 'reflect-metadata';
 import { createServer } from './core/bootstrap';
 import { createLogger } from './core/infra/logger';
-
-// Load environment variables
-config();
 
 const logger = createLogger('server');
 const PORT = process.env.PORT || 3001;
