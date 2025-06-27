@@ -1,0 +1,1 @@
+export { Factions } from './components/Factions';

@@ -8,6 +8,7 @@ import type { EngineModule } from './types';
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import { appRouter } from './trpc/rootRouter';
 import { createContext as buildTrpcContext } from './trpc/context';
+import { apiKeyAuthMiddleware } from './middleware/apiKeyAuth';
 
 export async function bootstrapModules(app: express.Express): Promise<void> {
   logger.info('🚀 Starting module bootstrap');
@@ -66,6 +67,10 @@ export async function createServer(): Promise<express.Application> {
   const app = express();
   
   app.use(express.json());
+  
+  // Add API key authentication middleware before tRPC
+  app.use(apiKeyAuthMiddleware);
+  logger.info('🔑 API key authentication middleware enabled');
   
   // Mount native tRPC batch handler BEFORE module bootstrap so that
   // `/api/trpc` is resolved prior to any 404 middleware.

@@ -4,6 +4,7 @@ import { locationRouter } from '../../modules/location/delivery/trpc/router';
 import { factionRouter } from '../../modules/faction/delivery/trpc/router';
 import { characterRouter } from '../../modules/character/delivery/trpc/router';
 import { usageRouter } from '../../modules/usage/delivery/trpc/router';
+import { authRouter } from '../../modules/auth/delivery/trpc/router';
 
 /**
  * Application-wide tRPC router.
@@ -25,6 +26,7 @@ export const appRouter = router({
   faction: factionRouter,
   character: characterRouter,
   usage: usageRouter,
+  auth: authRouter,
 });
 
 /**

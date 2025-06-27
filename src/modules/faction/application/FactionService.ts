@@ -314,8 +314,16 @@ export class FactionService {
     });
   }
 
-  async evaluateRelations(worldId: string, beatContext: string): Promise<void> {
+  async evaluateRelations(worldId: string, beatContext: string, userId?: string): Promise<void> {
     logger.info('Evaluating faction relations', { worldId });
+    
+    // Ensure we have a valid user context. If none supplied by caller, re-fetch
+    // the World entity to obtain its owner – prevents AI metadata validation
+    // errors due to "anonymous" placeholder.
+    if (!userId) {
+      const world = await this.worldRepo.getWorld(worldId);
+      userId = world?.user_id;
+    }
     
     const factions = await this.repo.findByWorldId(worldId);
     if (factions.length < 2) return;
@@ -325,12 +333,15 @@ export class FactionService {
     );
     const flatRelations = currentRelations.flat();
     
-    const suggestions = await this.ai.evaluateRelations({
+    const aiParams = {
       worldId,
       factions,
       currentRelations: flatRelations,
-      beatContext
-    });
+      beatContext,
+      ...(userId ? { userId } : {})
+    } as Parameters<typeof this.ai.evaluateRelations>[0];
+
+    const suggestions = await this.ai.evaluateRelations(aiParams);
     
     // ---------------------------------------------------------------------
     // The AI may return faction *names* instead of UUIDs. Convert them here so
@@ -395,8 +406,24 @@ export class FactionService {
     const { worldId, beatId, directives } = payload;
     logger.info('Factions reacting to new beat', { worldId, beatId });
     
+    // ---------------------------------------------------------------
+    // Re-acquire request context (user_id) from the World entity so
+    // that downstream AI metadata contains a valid UUID and passes
+    // schema validation.
+    // ---------------------------------------------------------------
+    const world = await this.worldRepo.getWorld(worldId);
+    if (!world) {
+      logger.error('World not found while reacting to beat – aborting', { worldId });
+      return;
+    }
+    const userId = world.user_id;
+    if (!userId) {
+      logger.error('World entity lacks user_id – aborting faction reaction', { worldId });
+      return;
+    }
+    
     const beatContext = directives.join('\n');
-    await this.evaluateRelations(worldId, beatContext);
+    await this.evaluateRelations(worldId, beatContext, userId);
   }
 
   private async checkTerritory(payload: any): Promise<void> {

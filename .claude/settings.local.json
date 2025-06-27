@@ -30,7 +30,8 @@
       "Bash(npm run test:*)",
       "Bash(git worktree:*)",
       "Bash(pnpm run:*)",
-      "WebFetch(domain:openrouter.ai)"
+      "WebFetch(domain:openrouter.ai)",
+      "Bash(npx shadcn@latest add:*)"
     ],
     "deny": []
   }

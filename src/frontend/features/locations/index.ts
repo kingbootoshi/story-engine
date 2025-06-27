@@ -1,0 +1,1 @@
+export { Locations } from './components/Locations';

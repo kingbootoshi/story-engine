@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { createLogger } from '../infra/logger';
 import crypto from 'crypto';
+import type { ApiKeyAuthRequest } from '../middleware/apiKeyAuth';
 
 export interface ILogger {
   http(msg: string, meta?: any): void;
@@ -29,6 +30,19 @@ export function createContext(req: Request, _res: Response): TrpcCtx {
       'user-agent': req.headers['user-agent']
     }
   });
+  
+  // ---------------------------------------------------------------------
+  // Check for API key authentication first (from middleware)
+  // ---------------------------------------------------------------------
+  const apiKeyReq = req as ApiKeyAuthRequest;
+  if (apiKeyReq.apiKeyUser) {
+    logger.debug('Using API key authentication', { userId: apiKeyReq.apiKeyUser.id });
+    return {
+      logger,
+      reqId,
+      user: apiKeyReq.apiKeyUser,
+    };
+  }
   
   // ---------------------------------------------------------------------
   // Token extraction – expects standard `Bearer <jwt>` header from Supabase
