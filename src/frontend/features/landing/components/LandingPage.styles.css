@@ -1,9 +1,22 @@
+/**
+ * Landing page styles using Tailwind CSS v4 approach
+ * Uses direct CSS color values and CSS custom properties for better compatibility
+ */
+
+/* Define custom theme colors for Tailwind v4 compatibility */
+@layer theme {
+  :root {
+    --color-blue-600: #2563eb;
+    --color-blue-700: #1d4ed8;
+  }
+}
+
 .landing-container {
   position: relative;
   width: 100%;
   height: 100vh;
   overflow: hidden;
-  color: theme('colors.white');
+  color: white; /* Direct CSS color instead of theme('colors.white') */
 }
 
 .background-video {
@@ -29,26 +42,26 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem 2rem;
+  padding: theme('spacing.6') theme('spacing.8'); /* Spacing still works with theme() */
 }
 
 .logo a {
   font-size: theme('fontSize.xl');
   font-weight: theme('fontWeight.bold');
-  color: theme('colors.white');
+  color: white; /* Direct CSS color */
   text-decoration: none;
 }
 
 .nav-links {
   display: flex;
-  gap: 1.5rem;
+  gap: theme('spacing.6');
 }
 
 .login-button {
-  padding: 0.5rem 1.5rem;
+  padding: theme('spacing.2') theme('spacing.6');
   background-color: rgba(255, 255, 255, 0.2);
   border-radius: theme('borderRadius.md');
-  color: theme('colors.white');
+  color: white; /* Direct CSS color */
   text-decoration: none;
   transition: background-color 0.3s ease;
 }
@@ -62,7 +75,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 2rem;
+  padding: theme('spacing.8');
 }
 
 .hero-section {
@@ -76,7 +89,7 @@
 .title {
   font-size: 4rem;
   font-weight: theme('fontWeight.bold');
-  margin-bottom: 2rem;
+  margin-bottom: theme('spacing.8');
   text-align: center;
   font-family: 'Cinzel', serif;
   letter-spacing: 0.1em;
@@ -84,9 +97,9 @@
 }
 
 .cta-button {
-  padding: 0.75rem 2rem;
-  background-color: theme('colors.blue.600');
-  color: theme('colors.white');
+  padding: theme('spacing.3') theme('spacing.8');
+  background-color: var(--color-blue-600); /* Using CSS custom property */
+  color: white; /* Direct CSS color */
   border-radius: theme('borderRadius.md');
   font-weight: theme('fontWeight.medium');
   text-decoration: none;
@@ -94,7 +107,7 @@
 }
 
 .cta-button:hover {
-  background-color: theme('colors.blue.700');
+  background-color: var(--color-blue-700); /* Using CSS custom property */
 }
 
 .tagline-section {
@@ -119,7 +132,7 @@
   
   .tagline {
     font-size: 1.25rem;
-    padding: 0 1rem;
+    padding: 0 theme('spacing.4');
   }
 }
 
@@ -133,6 +146,6 @@
   }
   
   .landing-header {
-    padding: 1rem;
+    padding: theme('spacing.4');
   }
 }

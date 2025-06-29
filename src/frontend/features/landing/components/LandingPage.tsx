@@ -1,10 +1,14 @@
 import { Link } from 'react-router-dom';
 import './LandingPage.styles.css';
 
+/**
+ * Landing page component with video background and hero section
+ * Features responsive design and call-to-action elements
+ */
 export function LandingPage() {
   return (
     <div className="landing-container">
-      {/* Video Background */}
+      {/* Video Background - Updated to use worldtree.mp4 */}
       <video 
         className="background-video" 
         autoPlay 
@@ -12,7 +16,7 @@ export function LandingPage() {
         muted 
         playsInline
       >
-        <source src="/world_frontend.mp4" type="video/mp4" />
+        <source src="/worldtree.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
       
