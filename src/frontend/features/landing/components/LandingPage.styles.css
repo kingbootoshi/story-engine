@@ -1,3 +1,17 @@
+/**
+ * Landing Page Styles
+ * 
+ * This file contains all styling for the LandingPage component.
+ * Uses Tailwind CSS v4 theme() function to access design tokens.
+ * 
+ * Key sections:
+ * - Background video container and overlay
+ * - Header navigation and branding
+ * - Hero section with title and CTA
+ * - Tagline section
+ * - Responsive breakpoints for mobile/tablet
+ */
+
 .landing-container {
   position: relative;
   width: 100%;
@@ -22,7 +36,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay */
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay for video readability */
 }
 
 .landing-header {
@@ -46,7 +60,7 @@
 
 .login-button {
   padding: 0.5rem 1.5rem;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.2); /* Translucent button background */
   border-radius: theme('borderRadius.md');
   color: theme('colors.white');
   text-decoration: none;
@@ -54,7 +68,7 @@
 }
 
 .login-button:hover {
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: rgba(255, 255, 255, 0.3); /* Slightly more opaque on hover */
 }
 
 .landing-main {
@@ -70,7 +84,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin-top: 10vh;
+  margin-top: 10vh; /* Push hero content down from top */
 }
 
 .title {
@@ -78,9 +92,9 @@
   font-weight: theme('fontWeight.bold');
   margin-bottom: 2rem;
   text-align: center;
-  font-family: 'Cinzel', serif;
+  font-family: 'Cinzel', serif; /* Elegant serif font for fantasy theme */
   letter-spacing: 0.1em;
-  text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Text shadow for readability over video */
 }
 
 .cta-button {
@@ -94,12 +108,12 @@
 }
 
 .cta-button:hover {
-  background-color: theme('colors.blue.700');
+  background-color: theme('colors.blue.700'); /* Darker blue on hover */
 }
 
 .tagline-section {
   margin-top: auto;
-  margin-bottom: 5vh;
+  margin-bottom: 5vh; /* Space from bottom of viewport */
   text-align: center;
 }
 
@@ -108,24 +122,24 @@
   max-width: 800px;
   margin: 0 auto;
   line-height: 1.5;
-  text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Text shadow for readability */
 }
 
-/* Responsive adjustments */
+/* Responsive design - Mobile first approach */
 @media (max-width: theme('screens.md')) {
   .title {
-    font-size: 3rem;
+    font-size: 3rem; /* Smaller title on tablets */
   }
   
   .tagline {
     font-size: 1.25rem;
-    padding: 0 1rem;
+    padding: 0 1rem; /* Add horizontal padding on smaller screens */
   }
 }
 
 @media (max-width: theme('screens.sm')) {
   .title {
-    font-size: 2.5rem;
+    font-size: 2.5rem; /* Even smaller title on mobile */
   }
   
   .tagline {
@@ -133,6 +147,6 @@
   }
   
   .landing-header {
-    padding: 1rem;
+    padding: 1rem; /* Reduce header padding on mobile */
   }
 }
