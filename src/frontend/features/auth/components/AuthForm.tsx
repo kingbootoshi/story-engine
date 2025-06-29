@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import './AuthForm.styles.css';
 

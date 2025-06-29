@@ -160,14 +160,13 @@
 /* Form slide animation */
 .auth-forms-wrapper {
   position: relative;
-  /* Remove overflow hidden to ensure all content is visible */
-  /* Set a specific height that accommodates the signup form */
+  /* Set a minimum height to ensure all content is visible */
   min-height: 350px;
 }
 
 .auth-form__form {
   transition: transform 0.5s ease, opacity 0.5s ease;
-  /* Change from absolute to relative positioning to ensure all content is visible */
+  /* Use relative positioning to ensure proper layout */
   position: relative;
   width: 100%;
 }
@@ -178,23 +177,20 @@
 }
 
 .auth-form__form--signup {
-  transform: translateX(100%);
+  transform: translateX(0);
   opacity: 0;
-  /* Ensure the signup form is hidden when not active */
   display: none;
 }
 
 .auth-form__form--login.slide-out {
   transform: translateX(-100%);
   opacity: 0;
-  /* Hide the login form when sliding out */
   display: none;
 }
 
 .auth-form__form--signup.slide-in {
   transform: translateX(0);
   opacity: 1;
-  /* Show the signup form when sliding in */
   display: block;
 }
 
