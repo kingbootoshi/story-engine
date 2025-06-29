@@ -11,6 +11,10 @@ import { Factions } from '@/features/factions/components/Factions';
 import { Characters } from '@/features/characters/components/Characters';
 import { ApiKeys } from '@/features/api-keys/components/ApiKeys';
 
+/**
+ * Private route component that checks authentication status
+ * Redirects to login page if user is not authenticated
+ */
 function PrivateRoute() {
   const { user, isInitialized } = useAuth();
   
@@ -22,12 +26,16 @@ function PrivateRoute() {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
   
   return <AppLayout />;
 }
 
+/**
+ * Application router configuration
+ * Defines all routes and their corresponding components
+ */
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -74,5 +82,10 @@ export const router = createBrowserRouter([
         element: <ApiKeys />,
       },
     ],
+  },
+  // Catch-all redirect to landing page
+  {
+    path: '*',
+    element: <Navigate to="/" replace />,
   },
 ]);

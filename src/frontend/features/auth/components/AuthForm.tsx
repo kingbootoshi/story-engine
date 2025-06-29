@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import './AuthForm.styles.css';
 
@@ -14,6 +15,9 @@ interface AuthFormProps {
  * Provides smooth transitions between auth modes and form validation
  */
 export function AuthForm({ onBack }: AuthFormProps) {
+  // Navigation hook for redirecting after successful auth
+  const navigate = useNavigate();
+  
   // Auth state and form management
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
@@ -27,7 +31,17 @@ export function AuthForm({ onBack }: AuthFormProps) {
   const [signupSlideIn, setSignupSlideIn] = useState(false);
   
   // Auth context for login/signup functionality
-  const { signIn, signUp } = useAuth();
+  const { user, signIn, signUp } = useAuth();
+
+  /**
+   * Redirect to dashboard when user is authenticated
+   */
+  useEffect(() => {
+    if (user) {
+      console.debug('[AuthForm] User authenticated, redirecting to dashboard');
+      navigate('/app/worlds');
+    }
+  }, [user, navigate]);
 
   /**
    * Reset form state to defaults
@@ -78,12 +92,14 @@ export function AuthForm({ onBack }: AuthFormProps) {
       if (isLogin) {
         // Login flow
         await signIn(email, password);
+        // Redirect will happen via the useEffect
       } else {
         // Signup flow
         if (password !== confirmPassword) {
           throw new Error('Passwords do not match');
         }
         await signUp(email, password);
+        // After signup, show a success message or redirect
       }
     } catch (err) {
       console.error('[AuthForm] Auth error:', err);
