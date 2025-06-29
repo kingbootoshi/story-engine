@@ -1,14 +1,27 @@
 /**
  * Landing page styles using Tailwind CSS v4 approach
- * Uses direct CSS color values for basic colors and theme() function for complex values
+ * Uses CSS custom properties for colors and theme() function for spacing/typography
+ * 
+ * Key changes for Tailwind v4:
+ * - Colors now use CSS custom properties (var(--color-*))
+ * - Define custom colors in @layer theme for consistency
+ * - Maintain theme() function for spacing, typography, and other design tokens
  */
+
+/* Define custom theme colors for Tailwind v4 compatibility */
+@layer theme {
+  :root {
+    --color-blue-600: #2563eb;
+    --color-blue-700: #1d4ed8;
+  }
+}
 
 .landing-container {
   position: relative;
   width: 100%;
   height: 100vh;
   overflow: hidden;
-  color: white; /* Direct CSS color instead of theme('colors.white') */
+  color: white; /* Direct CSS color for basic colors */
 }
 
 .background-video {
@@ -34,26 +47,26 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem 2rem;
+  padding: theme('spacing.6') theme('spacing.8'); /* Use theme() for spacing */
 }
 
 .logo a {
-  font-size: theme('fontSize.xl');
+  font-size: theme('fontSize.xl'); /* Use theme() for typography */
   font-weight: theme('fontWeight.bold');
-  color: white; /* Direct CSS color instead of theme('colors.white') */
+  color: white; /* Direct CSS color for basic colors */
   text-decoration: none;
 }
 
 .nav-links {
   display: flex;
-  gap: 1.5rem;
+  gap: theme('spacing.6'); /* Use theme() for spacing */
 }
 
 .login-button {
-  padding: 0.5rem 1.5rem;
+  padding: theme('spacing.2') theme('spacing.6'); /* Use theme() for spacing */
   background-color: rgba(255, 255, 255, 0.2);
-  border-radius: theme('borderRadius.md');
-  color: white; /* Direct CSS color instead of theme('colors.white') */
+  border-radius: theme('borderRadius.md'); /* Use theme() for border radius */
+  color: white; /* Direct CSS color for basic colors */
   text-decoration: none;
   transition: background-color 0.3s ease;
 }
@@ -67,7 +80,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 2rem;
+  padding: theme('spacing.8'); /* Use theme() for spacing */
 }
 
 .hero-section {
@@ -80,8 +93,8 @@
 
 .title {
   font-size: 4rem;
-  font-weight: theme('fontWeight.bold');
-  margin-bottom: 2rem;
+  font-weight: theme('fontWeight.bold'); /* Use theme() for font weight */
+  margin-bottom: theme('spacing.8'); /* Use theme() for spacing */
   text-align: center;
   font-family: 'Cinzel', serif;
   letter-spacing: 0.1em;
@@ -89,17 +102,17 @@
 }
 
 .cta-button {
-  padding: 0.75rem 2rem;
-  background-color: theme('colors.blue.600');
-  color: white; /* Direct CSS color instead of theme('colors.white') */
-  border-radius: theme('borderRadius.md');
-  font-weight: theme('fontWeight.medium');
+  padding: theme('spacing.3') theme('spacing.8'); /* Use theme() for spacing */
+  background-color: var(--color-blue-600); /* Use CSS custom property for Tailwind colors */
+  color: white; /* Direct CSS color for basic colors */
+  border-radius: theme('borderRadius.md'); /* Use theme() for border radius */
+  font-weight: theme('fontWeight.medium'); /* Use theme() for font weight */
   text-decoration: none;
   transition: background-color 0.3s ease;
 }
 
 .cta-button:hover {
-  background-color: theme('colors.blue.700');
+  background-color: var(--color-blue-700); /* Use CSS custom property for Tailwind colors */
 }
 
 .tagline-section {
@@ -116,7 +129,7 @@
   text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
-/* Responsive adjustments */
+/* Responsive adjustments using theme() for breakpoints */
 @media (max-width: theme('screens.md')) {
   .title {
     font-size: 3rem;
@@ -124,7 +137,7 @@
   
   .tagline {
     font-size: 1.25rem;
-    padding: 0 1rem;
+    padding: 0 theme('spacing.4'); /* Use theme() for spacing */
   }
 }
 
@@ -138,6 +151,6 @@
   }
   
   .landing-header {
-    padding: 1rem;
+    padding: theme('spacing.4'); /* Use theme() for spacing */
   }
 }
