@@ -27,7 +27,7 @@
   height: 100%;
   object-fit: cover;
   z-index: -1;
-  filter: blur(5px); /* Reduced blur by half */
+  filter: blur(2.5px); /* Reduced blur significantly */
 }
 
 .content-overlay {
