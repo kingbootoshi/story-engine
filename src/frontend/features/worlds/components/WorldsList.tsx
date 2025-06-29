@@ -3,15 +3,24 @@ import { Link, useNavigate } from 'react-router-dom';
 import { trpc } from '@/shared/lib/trpcClient';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@/shared/lib/trpcClient';
+import { WorldSphere } from './WorldSphere';
+import './WorldsList.styles.css';
 
+/**
+ * Helper types derived from tRPC router for type safety
+ */
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type World = RouterOutputs['world']['list'][number];
 
+/**
+ * WorldsList component displays all worlds and allows creating new ones
+ */
 export function WorldsList() {
   const [worlds, setWorlds] = useState<World[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
   // Form state for new world
@@ -20,10 +29,16 @@ export function WorldsList() {
     description: ''
   });
 
+  /**
+   * Fetch worlds on component mount
+   */
   useEffect(() => {
     fetchWorlds();
   }, []);
 
+  /**
+   * Fetch worlds from the API
+   */
   const fetchWorlds = async () => {
     try {
       const result = await trpc.world.list.query();
@@ -36,77 +51,73 @@ export function WorldsList() {
     }
   };
 
+  /**
+   * Create a new world
+   */
   const createWorld = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setError('');
       const created = await trpc.world.create.mutate(newWorld);
       console.debug('[WorldsList] Created world:', created);
       setShowCreateForm(false);
       setNewWorld({ name: '', description: '' });
       await fetchWorlds();
+      
+      // Navigate to the new world
+      navigate(`/app/worlds/${created.id}`);
     } catch (err) {
       console.error('[WorldsList] Failed to create world:', err);
       setError('Failed to create world');
     }
   };
 
-  if (isLoading) {
-    return (
-      <div style={{ padding: '2rem', textAlign: 'center' }}>
-        Loading worlds...
-      </div>
-    );
-  }
+  /**
+   * Filter worlds based on search query
+   */
+  const filteredWorlds = worlds.filter(world => 
+    world.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    world.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-      <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="worlds-list">
+      <header className="worlds-list__header">
         <div>
-          <Link to="/" style={{ marginBottom: '0.5rem', display: 'inline-block' }}>
-            ← Back to Dashboard
-          </Link>
-          <h1>Story Worlds</h1>
+          <h1 className="worlds-list__title">Your Story Worlds</h1>
+          <p className="worlds-list__subtitle">Create and manage dynamic narrative universes</p>
         </div>
         <button
           onClick={() => setShowCreateForm(!showCreateForm)}
-          style={{
-            padding: '0.75rem 1.5rem',
-            backgroundColor: '#4CAF50',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer'
-          }}
+          className="worlds-list__create-button"
         >
-          {showCreateForm ? 'Cancel' : 'Create New World'}
+          {showCreateForm ? (
+            <>
+              <span className="material-icons">close</span>
+              Cancel
+            </>
+          ) : (
+            <>
+              <span className="material-icons">add</span>
+              Create New World
+            </>
+          )}
         </button>
       </header>
 
       {error && (
-        <div style={{
-          backgroundColor: '#ffebee',
-          padding: '1rem',
-          marginBottom: '1rem',
-          border: '1px solid #ef5350',
-          borderRadius: '4px',
-          color: '#c62828'
-        }}>
+        <div className="worlds-list__error">
+          <span className="material-icons">error</span>
           {error}
         </div>
       )}
 
       {showCreateForm && (
-        <div style={{
-          backgroundColor: '#f5f5f5',
-          padding: '2rem',
-          marginBottom: '2rem',
-          borderRadius: '8px',
-          border: '1px solid #ddd'
-        }}>
-          <h2>Create New World</h2>
+        <div className="worlds-list__create-form">
+          <h2 className="worlds-list__form-title">Create New World</h2>
           <form onSubmit={createWorld}>
-            <div style={{ marginBottom: '1rem' }}>
-              <label htmlFor="name" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+            <div className="worlds-list__form-group">
+              <label htmlFor="name" className="worlds-list__form-label">
                 World Name *
               </label>
               <input
@@ -116,12 +127,12 @@ export function WorldsList() {
                 onChange={(e) => setNewWorld({ ...newWorld, name: e.target.value })}
                 required
                 placeholder="e.g., The Enchanted Kingdom"
-                style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                className="worlds-list__form-input"
               />
             </div>
 
-            <div style={{ marginBottom: '1rem' }}>
-              <label htmlFor="description" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+            <div className="worlds-list__form-group">
+              <label htmlFor="description" className="worlds-list__form-label">
                 Description *
               </label>
               <textarea
@@ -131,71 +142,107 @@ export function WorldsList() {
                 required
                 placeholder="Describe your world..."
                 rows={4}
-                style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                className="worlds-list__form-input worlds-list__form-textarea"
               />
             </div>
 
             <button
               type="submit"
-              style={{
-                padding: '0.75rem 1.5rem',
-                backgroundColor: '#4CAF50',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
+              className="worlds-list__form-button"
             >
+              <span className="material-icons">public</span>
               Create World
             </button>
           </form>
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-        {worlds.length === 0 ? (
-          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', color: '#666' }}>
-            No worlds created yet. Create your first world to get started!
-          </div>
-        ) : (
-          worlds.map((world) => (
-            <div
-              key={world.id}
-              onClick={() => navigate(`/app/worlds/${world.id}`)}
-              style={{
-                backgroundColor: 'white',
-                border: '1px solid #ddd',
-                borderRadius: '8px',
-                padding: '1.5rem',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
+      <div className="worlds-list__search">
+        <div className="worlds-list__search-input-container">
+          <span className="material-icons worlds-list__search-icon">search</span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search worlds..."
+            className="worlds-list__search-input"
+          />
+          {searchQuery && (
+            <button 
+              className="worlds-list__search-clear" 
+              onClick={() => setSearchQuery('')}
+              aria-label="Clear search"
             >
-              <h3 style={{ marginTop: 0, marginBottom: '0.5rem' }}>{world.name}</h3>
-              <p style={{ color: '#666', marginBottom: '1rem', fontSize: '0.9rem' }}>
-                {world.description}
-              </p>
-              <div style={{ fontSize: '0.875rem', color: '#999' }}>
-                {new Date(world.created_at).toLocaleDateString()}
-              </div>
-              {world.current_arc_id && (
-                <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#4CAF50' }}>
-                  ✓ Active Arc
-                </div>
-              )}
-            </div>
-          ))
-        )}
+              <span className="material-icons">close</span>
+            </button>
+          )}
+        </div>
+        <div className="worlds-list__count">
+          {filteredWorlds.length} {filteredWorlds.length === 1 ? 'world' : 'worlds'}
+        </div>
       </div>
+
+      {isLoading ? (
+        <div className="worlds-list__loading">
+          <div className="worlds-list__loading-spinner"></div>
+          <p>Loading worlds...</p>
+        </div>
+      ) : filteredWorlds.length === 0 ? (
+        <div className="worlds-list__empty">
+          {searchQuery ? (
+            <>
+              <span className="material-icons worlds-list__empty-icon">search_off</span>
+              <p>No worlds match your search</p>
+              <button 
+                onClick={() => setSearchQuery('')}
+                className="worlds-list__empty-button"
+              >
+                Clear Search
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="material-icons worlds-list__empty-icon">public_off</span>
+              <p>You haven't created any worlds yet</p>
+              <button 
+                onClick={() => setShowCreateForm(true)}
+                className="worlds-list__empty-button"
+              >
+                Create Your First World
+              </button>
+            </>
+          )}
+        </div>
+      ) : (
+        <div className="worlds-list__grid">
+          {filteredWorlds.map((world) => (
+            <Link 
+              key={world.id} 
+              to={`/app/worlds/${world.id}`}
+              className="worlds-list__card"
+            >
+              <div className="worlds-list__card-sphere">
+                <WorldSphere seed={world.id} />
+              </div>
+              <div className="worlds-list__card-content">
+                <h3 className="worlds-list__card-title">{world.name}</h3>
+                <p className="worlds-list__card-description">{world.description}</p>
+                <div className="worlds-list__card-footer">
+                  <span className="worlds-list__card-date">
+                    {new Date(world.created_at).toLocaleDateString()}
+                  </span>
+                  {world.current_arc_id && (
+                    <span className="worlds-list__card-badge">
+                      <span className="material-icons">auto_stories</span>
+                      Active Arc
+                    </span>
+                  )}
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

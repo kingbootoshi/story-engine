@@ -2,11 +2,20 @@ import { useState, useEffect } from 'react';
 import { trpc } from '@/shared/lib/trpcClient';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@/shared/lib/trpcClient';
+import './ApiKeys.styles.css';
 
+/**
+ * Type definitions for API keys
+ */
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type ApiKey = RouterOutputs['auth']['apiKeys']['list'][number];
 
+/**
+ * ApiKeys component for managing API keys
+ * Allows creating, revoking, and updating API keys
+ */
 export function ApiKeys() {
+  // State management
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -22,10 +31,16 @@ export function ApiKeys() {
   const [editingKeyId, setEditingKeyId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
 
+  /**
+   * Fetch API keys on component mount
+   */
   useEffect(() => {
     fetchApiKeys();
   }, []);
 
+  /**
+   * Fetch API keys from the server
+   */
   const fetchApiKeys = async () => {
     try {
       const keys = await trpc.auth.apiKeys.list.query();
@@ -38,6 +53,9 @@ export function ApiKeys() {
     }
   };
 
+  /**
+   * Create a new API key
+   */
   const handleCreateKey = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsCreating(true);
@@ -66,6 +84,7 @@ export function ApiKeys() {
       
       setKeyName('');
       setExpiresIn('never');
+      setShowCreateForm(false);
     } catch (err) {
       console.error('[ApiKeys] Failed to create key:', err);
       setError('Failed to create API key');
@@ -74,6 +93,9 @@ export function ApiKeys() {
     }
   };
 
+  /**
+   * Revoke an API key
+   */
   const handleRevokeKey = async (keyId: string) => {
     if (!confirm('Are you sure you want to revoke this API key? This action cannot be undone.')) {
       return;
@@ -90,6 +112,9 @@ export function ApiKeys() {
     }
   };
 
+  /**
+   * Update an API key's name
+   */
   const handleUpdateKey = async (keyId: string) => {
     try {
       await trpc.auth.apiKeys.update.mutate({
@@ -109,133 +134,105 @@ export function ApiKeys() {
     }
   };
 
+  /**
+   * Start editing an API key
+   */
   const startEditing = (key: ApiKey) => {
     setEditingKeyId(key.id);
     setEditingName(key.name);
   };
 
+  /**
+   * Cancel editing an API key
+   */
   const cancelEditing = () => {
     setEditingKeyId(null);
     setEditingName('');
   };
 
+  /**
+   * Copy text to clipboard
+   */
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    // Simple feedback - in production you'd want a toast notification
     alert('API key copied to clipboard!');
   };
 
-  if (isLoading) {
-    return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading API keys...</div>;
-  }
-
   return (
-    <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-      <header style={{ marginBottom: '2rem' }}>
-        <h1>API Keys</h1>
-        <p style={{ color: '#666' }}>
-          Manage API keys for SDK authentication. These keys allow programmatic access to your worlds.
-        </p>
+    <div className="api-keys">
+      <header className="api-keys__header">
+        <div>
+          <h1 className="api-keys__title">API Keys</h1>
+          <p className="api-keys__subtitle">
+            Manage API keys for SDK authentication and programmatic access
+          </p>
+        </div>
+        <button
+          onClick={() => setShowCreateForm(!showCreateForm)}
+          className="api-keys__create-button"
+        >
+          {showCreateForm ? (
+            <>
+              <span className="material-icons">close</span>
+              Cancel
+            </>
+          ) : (
+            <>
+              <span className="material-icons">vpn_key</span>
+              Create New API Key
+            </>
+          )}
+        </button>
       </header>
 
       {error && (
-        <div style={{
-          backgroundColor: '#ffebee',
-          padding: '1rem',
-          marginBottom: '1rem',
-          border: '1px solid #ef5350',
-          borderRadius: '4px',
-          color: '#c62828'
-        }}>
+        <div className="api-keys__error">
+          <span className="material-icons">error</span>
           {error}
         </div>
       )}
 
       {/* New API Key Display */}
       {newApiKey && (
-        <div style={{
-          backgroundColor: '#e8f5e9',
-          padding: '1.5rem',
-          marginBottom: '2rem',
-          border: '1px solid #4caf50',
-          borderRadius: '8px'
-        }}>
-          <h3 style={{ marginTop: 0, color: '#2e7d32' }}>New API Key Created</h3>
-          <p style={{ marginBottom: '1rem' }}>
+        <div className="api-keys__new-key">
+          <div className="api-keys__new-key-header">
+            <h3 className="api-keys__new-key-title">
+              <span className="material-icons">vpn_key</span>
+              New API Key Created
+            </h3>
+            <button 
+              className="api-keys__new-key-close"
+              onClick={() => setNewApiKey(null)}
+              aria-label="Close"
+            >
+              <span className="material-icons">close</span>
+            </button>
+          </div>
+          <p className="api-keys__new-key-warning">
             <strong>Important:</strong> Copy this key now. You won't be able to see it again!
           </p>
-          <div style={{
-            backgroundColor: '#f5f5f5',
-            padding: '1rem',
-            borderRadius: '4px',
-            fontFamily: 'monospace',
-            fontSize: '0.875rem',
-            wordBreak: 'break-all',
-            marginBottom: '1rem'
-          }}>
+          <div className="api-keys__new-key-value">
             {newApiKey}
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div className="api-keys__new-key-actions">
             <button
               onClick={() => copyToClipboard(newApiKey)}
-              style={{
-                padding: '0.5rem 1rem',
-                backgroundColor: '#4CAF50',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
+              className="api-keys__new-key-copy"
             >
+              <span className="material-icons">content_copy</span>
               Copy to Clipboard
-            </button>
-            <button
-              onClick={() => setNewApiKey(null)}
-              style={{
-                padding: '0.5rem 1rem',
-                backgroundColor: '#f5f5f5',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Close
             </button>
           </div>
         </div>
       )}
 
-      {/* Create Button */}
-      <div style={{ marginBottom: '2rem' }}>
-        <button
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          style={{
-            padding: '0.75rem 1.5rem',
-            backgroundColor: '#2196F3',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '1rem'
-          }}
-        >
-          {showCreateForm ? 'Cancel' : 'Create New API Key'}
-        </button>
-      </div>
-
       {/* Create Form */}
       {showCreateForm && !newApiKey && (
-        <div style={{
-          backgroundColor: 'white',
-          padding: '1.5rem',
-          borderRadius: '8px',
-          border: '1px solid #ddd',
-          marginBottom: '2rem'
-        }}>
-          <h3 style={{ marginTop: 0 }}>Create New API Key</h3>
+        <div className="api-keys__create-form">
+          <h3 className="api-keys__form-title">Create New API Key</h3>
           <form onSubmit={handleCreateKey}>
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem' }}>
+            <div className="api-keys__form-group">
+              <label className="api-keys__form-label">
                 Key Name *
               </label>
               <input
@@ -244,33 +241,21 @@ export function ApiKeys() {
                 onChange={(e) => setKeyName(e.target.value)}
                 required
                 placeholder="e.g., Production App, Development Testing"
-                style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  fontSize: '1rem'
-                }}
+                className="api-keys__form-input"
               />
-              <small style={{ color: '#666' }}>
+              <small className="api-keys__form-help">
                 A descriptive name to help you identify this key
               </small>
             </div>
 
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem' }}>
+            <div className="api-keys__form-group">
+              <label className="api-keys__form-label">
                 Expiration
               </label>
               <select
                 value={expiresIn}
                 onChange={(e) => setExpiresIn(e.target.value as any)}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  fontSize: '1rem'
-                }}
+                className="api-keys__form-select"
               >
                 <option value="never">Never expires</option>
                 <option value="30">30 days</option>
@@ -279,34 +264,23 @@ export function ApiKeys() {
               </select>
             </div>
 
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div className="api-keys__form-actions">
               <button
                 type="submit"
                 disabled={isCreating || !keyName.trim()}
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#4CAF50',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: isCreating ? 'not-allowed' : 'pointer',
-                  opacity: isCreating ? 0.6 : 1
-                }}
+                className={`api-keys__form-button ${isCreating ? 'api-keys__form-button--loading' : ''}`}
               >
-                {isCreating ? 'Creating...' : 'Create Key'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowCreateForm(false)}
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#f5f5f5',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
-                Cancel
+                {isCreating ? (
+                  <>
+                    <div className="api-keys__button-spinner"></div>
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <span className="material-icons">add</span>
+                    Create Key
+                  </>
+                )}
               </button>
             </div>
           </form>
@@ -314,215 +288,147 @@ export function ApiKeys() {
       )}
 
       {/* API Keys Table */}
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        border: '1px solid #ddd',
-        overflow: 'hidden'
-      }}>
-        <table style={{
-          width: '100%',
-          borderCollapse: 'collapse'
-        }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f5f5f5' }}>
-              <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '1px solid #ddd' }}>
-                Name
-              </th>
-              <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '1px solid #ddd' }}>
-                Key Prefix
-              </th>
-              <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '1px solid #ddd' }}>
-                Status
-              </th>
-              <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '1px solid #ddd' }}>
-                Created
-              </th>
-              <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '1px solid #ddd' }}>
-                Last Used
-              </th>
-              <th style={{ padding: '1rem', textAlign: 'left', borderBottom: '1px solid #ddd' }}>
-                Expires
-              </th>
-              <th style={{ padding: '1rem', textAlign: 'right', borderBottom: '1px solid #ddd' }}>
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {apiKeys.length === 0 ? (
+      <div className="api-keys__table-container">
+        {isLoading ? (
+          <div className="api-keys__loading">
+            <div className="api-keys__loading-spinner"></div>
+            <p>Loading API keys...</p>
+          </div>
+        ) : apiKeys.length === 0 ? (
+          <div className="api-keys__empty">
+            <span className="material-icons api-keys__empty-icon">vpn_key_off</span>
+            <p>No API keys yet. Create one to get started!</p>
+            <button 
+              onClick={() => setShowCreateForm(true)}
+              className="api-keys__empty-button"
+            >
+              <span className="material-icons">add</span>
+              Create API Key
+            </button>
+          </div>
+        ) : (
+          <table className="api-keys__table">
+            <thead>
               <tr>
-                <td colSpan={7} style={{
-                  padding: '3rem',
-                  textAlign: 'center',
-                  color: '#666'
-                }}>
-                  No API keys yet. Create one to get started!
-                </td>
+                <th>Name</th>
+                <th>Key Prefix</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Last Used</th>
+                <th>Expires</th>
+                <th>Actions</th>
               </tr>
-            ) : (
-              apiKeys.map((key) => (
-                <tr key={key.id}>
-                  <td style={{ padding: '1rem', borderBottom: '1px solid #eee' }}>
+            </thead>
+            <tbody>
+              {apiKeys.map((key) => (
+                <tr key={key.id} className={!key.is_active ? 'api-keys__row--inactive' : ''}>
+                  <td>
                     {editingKeyId === key.id ? (
                       <input
                         type="text"
                         value={editingName}
                         onChange={(e) => setEditingName(e.target.value)}
-                        style={{
-                          padding: '0.25rem 0.5rem',
-                          border: '1px solid #ddd',
-                          borderRadius: '4px',
-                          width: '200px'
-                        }}
+                        className="api-keys__edit-input"
+                        autoFocus
                       />
                     ) : (
-                      <strong>{key.name}</strong>
+                      <span className="api-keys__key-name">{key.name}</span>
                     )}
                   </td>
-                  <td style={{ 
-                    padding: '1rem', 
-                    borderBottom: '1px solid #eee',
-                    fontFamily: 'monospace',
-                    fontSize: '0.875rem'
-                  }}>
-                    {key.key_prefix}
-                  </td>
-                  <td style={{ padding: '1rem', borderBottom: '1px solid #eee' }}>
-                    <span style={{
-                      backgroundColor: key.is_active ? '#e8f5e9' : '#ffebee',
-                      color: key.is_active ? '#2e7d32' : '#c62828',
-                      padding: '0.25rem 0.5rem',
-                      borderRadius: '4px',
-                      fontSize: '0.875rem'
-                    }}>
+                  <td className="api-keys__key-prefix">{key.key_prefix}</td>
+                  <td>
+                    <span className={`api-keys__status ${key.is_active ? 'api-keys__status--active' : 'api-keys__status--revoked'}`}>
                       {key.is_active ? 'Active' : 'Revoked'}
                     </span>
                   </td>
-                  <td style={{ padding: '1rem', borderBottom: '1px solid #eee' }}>
-                    {new Date(key.created_at).toLocaleDateString()}
-                  </td>
-                  <td style={{ padding: '1rem', borderBottom: '1px solid #eee' }}>
-                    {key.last_used_at 
-                      ? new Date(key.last_used_at).toLocaleDateString()
-                      : 'Never'
-                    }
-                  </td>
-                  <td style={{ padding: '1rem', borderBottom: '1px solid #eee' }}>
-                    {key.expires_at 
-                      ? new Date(key.expires_at).toLocaleDateString()
-                      : 'Never'
-                    }
-                  </td>
-                  <td style={{ 
-                    padding: '1rem', 
-                    borderBottom: '1px solid #eee',
-                    textAlign: 'right'
-                  }}>
+                  <td>{new Date(key.created_at).toLocaleDateString()}</td>
+                  <td>{key.last_used_at ? new Date(key.last_used_at).toLocaleDateString() : 'Never'}</td>
+                  <td>{key.expires_at ? new Date(key.expires_at).toLocaleDateString() : 'Never'}</td>
+                  <td>
                     {editingKeyId === key.id ? (
-                      <>
+                      <div className="api-keys__edit-actions">
                         <button
                           onClick={() => handleUpdateKey(key.id)}
-                          style={{
-                            padding: '0.25rem 0.5rem',
-                            backgroundColor: '#4CAF50',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '0.875rem',
-                            marginRight: '0.5rem'
-                          }}
+                          className="api-keys__action-button api-keys__action-button--save"
+                          disabled={!editingName.trim()}
                         >
-                          Save
+                          <span className="material-icons">save</span>
                         </button>
                         <button
                           onClick={cancelEditing}
-                          style={{
-                            padding: '0.25rem 0.5rem',
-                            backgroundColor: '#f5f5f5',
-                            border: '1px solid #ddd',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '0.875rem'
-                          }}
+                          className="api-keys__action-button api-keys__action-button--cancel"
                         >
-                          Cancel
+                          <span className="material-icons">close</span>
                         </button>
-                      </>
+                      </div>
                     ) : (
-                      <>
+                      <div className="api-keys__actions">
                         {key.is_active && (
-                          <button
-                            onClick={() => startEditing(key)}
-                            style={{
-                              padding: '0.25rem 0.5rem',
-                              backgroundColor: '#2196F3',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              fontSize: '0.875rem',
-                              marginRight: '0.5rem'
-                            }}
-                          >
-                            Edit
-                          </button>
+                          <>
+                            <button
+                              onClick={() => startEditing(key)}
+                              className="api-keys__action-button api-keys__action-button--edit"
+                              title="Edit name"
+                            >
+                              <span className="material-icons">edit</span>
+                            </button>
+                            <button
+                              onClick={() => handleRevokeKey(key.id)}
+                              className="api-keys__action-button api-keys__action-button--revoke"
+                              title="Revoke key"
+                            >
+                              <span className="material-icons">delete</span>
+                            </button>
+                          </>
                         )}
-                        {key.is_active && (
-                          <button
-                            onClick={() => handleRevokeKey(key.id)}
-                            style={{
-                              padding: '0.25rem 0.5rem',
-                              backgroundColor: '#f44336',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              fontSize: '0.875rem'
-                            }}
-                          >
-                            Revoke
-                          </button>
-                        )}
-                      </>
+                      </div>
                     )}
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* Usage Instructions */}
-      <div style={{
-        marginTop: '2rem',
-        backgroundColor: '#f5f5f5',
-        padding: '1.5rem',
-        borderRadius: '8px',
-        border: '1px solid #ddd'
-      }}>
-        <h3 style={{ marginTop: 0 }}>How to use API keys</h3>
+      <div className="api-keys__instructions">
+        <h3 className="api-keys__instructions-title">
+          <span className="material-icons">help_outline</span>
+          How to use API keys
+        </h3>
         <p>Include your API key in the Authorization header of your requests:</p>
-        <pre style={{
-          backgroundColor: '#333',
-          color: '#fff',
-          padding: '1rem',
-          borderRadius: '4px',
-          overflow: 'auto'
-        }}>
-{`Authorization: Bearer YOUR_API_KEY
-
-// Example with curl
-curl -H "Authorization: Bearer YOUR_API_KEY" \\
-  https://api.storyengine.dev/trpc/world.list
-
-// Example with JavaScript SDK
-const client = new StoryEngineClient({
+        <div className="api-keys__code">
+          <code>Authorization: Bearer YOUR_API_KEY</code>
+        </div>
+        
+        <h4 className="api-keys__instructions-subtitle">Example with curl</h4>
+        <div className="api-keys__code">
+          <pre><code>curl -H "Authorization: Bearer YOUR_API_KEY" \
+  https://api.storyengine.dev/trpc/world.list</code></pre>
+        </div>
+        
+        <h4 className="api-keys__instructions-subtitle">Example with JavaScript SDK</h4>
+        <div className="api-keys__code">
+          <pre><code>const client = new StoryEngineClient({
   apiKey: 'YOUR_API_KEY'
-});`}
-        </pre>
+});</code></pre>
+        </div>
+        
+        <div className="api-keys__security-tips">
+          <h4 className="api-keys__instructions-subtitle">
+            <span className="material-icons">security</span>
+            Security Best Practices
+          </h4>
+          <ul className="api-keys__tips-list">
+            <li>Never commit API keys to version control</li>
+            <li>Use environment variables to store keys</li>
+            <li>Rotate keys regularly (every 90 days recommended)</li>
+            <li>Set expiration dates when creating keys</li>
+            <li>Revoke unused keys immediately</li>
+            <li>Use different keys for different environments (dev, staging, prod)</li>
+          </ul>
+        </div>
       </div>
     </div>
   );

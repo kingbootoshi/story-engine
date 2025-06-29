@@ -1,0 +1,182 @@
+/**
+ * Styles for the main application layout
+ * Uses Tailwind's theme function for consistent design language
+ */
+
+.app-layout {
+  min-height: 100vh;
+  position: relative;
+  color: white;
+}
+
+.app-layout__background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
+  filter: blur(5px) brightness(0.4);
+}
+
+.app-layout__overlay {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.app-layout__header {
+  background-color: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: theme('spacing.4') theme('spacing.8');
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.app-layout__logo {
+  font-family: 'Cinzel', serif;
+  font-size: theme('fontSize.2xl');
+  font-weight: theme('fontWeight.bold');
+}
+
+.app-layout__logo-link {
+  color: white;
+  text-decoration: none;
+  background: linear-gradient(to right, #ffffff, #a5b4fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+}
+
+.app-layout__nav {
+  display: flex;
+  gap: theme('spacing.6');
+}
+
+.app-layout__nav-link {
+  display: flex;
+  align-items: center;
+  gap: theme('spacing.2');
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  padding: theme('spacing.2') theme('spacing.3');
+  border-radius: theme('borderRadius.md');
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.app-layout__nav-link:hover {
+  color: white;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.app-layout__nav-link--active {
+  color: white;
+}
+
+.app-layout__nav-link--active::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(to right, #a5b4fc, #3b82f6);
+  border-radius: theme('borderRadius.full');
+}
+
+.app-layout__user {
+  display: flex;
+  align-items: center;
+  gap: theme('spacing.4');
+}
+
+.app-layout__user-email {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: theme('fontSize.sm');
+}
+
+.app-layout__sign-out {
+  display: flex;
+  align-items: center;
+  gap: theme('spacing.2');
+  padding: theme('spacing.2') theme('spacing.3');
+  background-color: rgba(239, 68, 68, 0.1);
+  color: white;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: theme('borderRadius.md');
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: theme('fontSize.sm');
+}
+
+.app-layout__sign-out:hover {
+  background-color: rgba(239, 68, 68, 0.2);
+  transform: translateY(-2px);
+}
+
+.app-layout__main {
+  flex: 1;
+  position: relative;
+}
+
+/* Responsive adjustments */
+@media (max-width: theme('screens.lg')) {
+  .app-layout__header {
+    padding: theme('spacing.4');
+  }
+}
+
+@media (max-width: theme('screens.md')) {
+  .app-layout__header {
+    flex-direction: column;
+    gap: theme('spacing.4');
+    padding: theme('spacing.4');
+  }
+  
+  .app-layout__nav {
+    width: 100%;
+    justify-content: center;
+    order: 3;
+  }
+  
+  .app-layout__user {
+    width: 100%;
+    justify-content: space-between;
+    order: 2;
+  }
+}
+
+@media (max-width: theme('screens.sm')) {
+  .app-layout__nav {
+    gap: theme('spacing.2');
+  }
+  
+  .app-layout__nav-link {
+    font-size: theme('fontSize.sm');
+    padding: theme('spacing.2');
+  }
+  
+  .app-layout__nav-link .material-icons {
+    font-size: theme('fontSize.lg');
+  }
+  
+  .app-layout__user {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: theme('spacing.2');
+  }
+  
+  .app-layout__sign-out {
+    width: 100%;
+    justify-content: center;
+  }
+}

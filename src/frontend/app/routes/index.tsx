@@ -3,7 +3,6 @@ import { useAuth, Login } from '@/features/auth';
 import { LandingPage } from '@/features/landing';
 import { AppLayout } from '@/app/layout/AppLayout';
 import { Dashboard } from '@/app/pages/Dashboard';
-import { Playground } from '@/app/pages/Playground';
 import { WorldsList } from '@/features/worlds/components/WorldsList';
 import { WorldDetail } from '@/features/worlds/components/WorldDetail';
 import { Locations } from '@/features/locations/components/Locations';
@@ -52,10 +51,6 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <Dashboard />,
-      },
-      {
-        path: 'playground',
-        element: <Playground />,
       },
       {
         path: 'worlds',

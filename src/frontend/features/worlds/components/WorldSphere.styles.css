@@ -1,0 +1,31 @@
+/**
+ * Styles for the WorldSphere component
+ */
+
+.world-sphere {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.world-sphere canvas {
+  border-radius: 50%;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  }
+  50% {
+    transform: translateY(-10px);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+  }
+  100% {
+    transform: translateY(0px);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  }
+}
