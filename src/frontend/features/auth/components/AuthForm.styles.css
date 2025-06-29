@@ -1,0 +1,206 @@
+/**
+ * Styles for the animated authentication form
+ * Uses Tailwind's theme function for consistent design language
+ */
+
+.auth-form-container {
+  background-color: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: theme('borderRadius.xl');
+  padding: theme('spacing.8');
+  width: 100%;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+.auth-form__back-button {
+  position: absolute;
+  top: theme('spacing.4');
+  left: theme('spacing.4');
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: theme('fontSize.xl');
+  cursor: pointer;
+  transition: color 0.3s ease;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.auth-form__back-button:hover {
+  color: white;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.auth-form__header {
+  text-align: center;
+  margin-bottom: theme('spacing.6');
+}
+
+.auth-form__title {
+  font-family: 'Cinzel', serif;
+  font-size: theme('fontSize.3xl');
+  font-weight: theme('fontWeight.bold');
+  color: white;
+  margin-bottom: theme('spacing.2');
+  letter-spacing: 0.05em;
+}
+
+.auth-form__tabs {
+  display: flex;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: theme('spacing.6');
+}
+
+.auth-form__tab {
+  flex: 1;
+  padding: theme('spacing.3');
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Cinzel', serif;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.auth-form__tab--active {
+  color: white;
+}
+
+.auth-form__tab--active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: white;
+  animation: tabIndicator 0.3s ease forwards;
+}
+
+@keyframes tabIndicator {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.auth-form__error {
+  background-color: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: white;
+  padding: theme('spacing.3');
+  border-radius: theme('borderRadius.md');
+  margin-bottom: theme('spacing.4');
+  font-size: theme('fontSize.sm');
+}
+
+.auth-form__form-group {
+  margin-bottom: theme('spacing.4');
+}
+
+.auth-form__label {
+  display: block;
+  margin-bottom: theme('spacing.2');
+  color: rgba(255, 255, 255, 0.8);
+  font-family: 'Cinzel', serif;
+  font-size: theme('fontSize.sm');
+}
+
+.auth-form__input {
+  width: 100%;
+  padding: theme('spacing.3');
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: theme('borderRadius.md');
+  color: white;
+  transition: border-color 0.3s ease, background-color 0.3s ease;
+}
+
+.auth-form__input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.5);
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.auth-form__button {
+  width: 100%;
+  padding: theme('spacing.3') theme('spacing.4');
+  background-color: transparent;
+  color: white;
+  border: 2px solid white;
+  border-radius: theme('borderRadius.md');
+  font-family: 'Cinzel', serif;
+  font-weight: theme('fontWeight.medium');
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: theme('spacing.6');
+}
+
+.auth-form__button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.auth-form__button--submitting {
+  animation: pulse 1.5s infinite;
+  opacity: 0.8;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+}
+
+/* Form slide animation */
+.auth-forms-wrapper {
+  position: relative;
+  overflow: hidden;
+  min-height: 250px;
+}
+
+.auth-form__form {
+  transition: transform 0.5s ease, opacity 0.5s ease;
+  position: absolute;
+  width: 100%;
+}
+
+.auth-form__form--login {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.auth-form__form--signup {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.auth-form__form--login.slide-out {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+.auth-form__form--signup.slide-in {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+/* Responsive adjustments */
+@media (max-width: theme('screens.sm')) {
+  .auth-form-container {
+    padding: theme('spacing.6');
+  }
+  
+  .auth-form__title {
+    font-size: theme('fontSize.2xl');
+  }
+  
+  .auth-form__button {
+    padding: theme('spacing.2') theme('spacing.4');
+  }
+}

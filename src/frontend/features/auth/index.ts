@@ -1,4 +1,4 @@
 export { AuthProvider } from './components/AuthProvider';
 export { Login } from './components/Login';
-export { AuthModal } from './components/AuthModal';
+export { AuthForm } from './components/AuthForm';
 export { useAuth } from './hooks/useAuth';
