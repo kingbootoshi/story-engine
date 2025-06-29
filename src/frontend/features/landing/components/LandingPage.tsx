@@ -1,46 +1,45 @@
 import { Link } from 'react-router-dom';
+import './LandingPage.styles.css';
 
 export function LandingPage() {
   return (
-    <div>
-      <header>
-        <nav>
-          <Link to="/">Story Engine</Link>
-          <div>
-            <Link to="/login">Login</Link>
-          </div>
-        </nav>
-      </header>
+    <div className="landing-container">
+      {/* Video Background */}
+      <video 
+        className="background-video" 
+        autoPlay 
+        loop 
+        muted 
+        playsInline
+      >
+        <source src="/world_frontend.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
       
-      <main>
-        <section>
-          <h1>Welcome to Story Engine</h1>
-          <p>Create dynamic, self-evolving game-world narratives</p>
-          <Link to="/login">Get Started</Link>
-        </section>
+      {/* Content Overlay */}
+      <div className="content-overlay">
+        <header className="landing-header">
+          <div className="logo">
+            <Link to="/">Story Engine</Link>
+          </div>
+          <nav className="nav-links">
+            <Link to="/login" className="login-button">Login</Link>
+          </nav>
+        </header>
         
-        <section>
-          <h2>Features</h2>
-          <div>
-            <div>
-              <h3>World Building</h3>
-              <p>Create immersive worlds with rich lore and history</p>
+        <main className="landing-main">
+          <section className="hero-section">
+            <h1 className="title">Story Engine</h1>
+            <div className="cta-container">
+              <Link to="/login" className="cta-button">Get Started</Link>
             </div>
-            <div>
-              <h3>Character Management</h3>
-              <p>Design complex characters with unique personalities</p>
-            </div>
-            <div>
-              <h3>Dynamic Narratives</h3>
-              <p>Generate evolving storylines based on your world's events</p>
-            </div>
-          </div>
-        </section>
-      </main>
-      
-      <footer>
-        <p>&copy; 2024 Story Engine. All rights reserved.</p>
-      </footer>
+          </section>
+          
+          <section className="tagline-section">
+            <p className="tagline">Create, manage, and design self-evolving AI universes that you and players can participate in.</p>
+          </section>
+        </main>
+      </div>
     </div>
   );
 }

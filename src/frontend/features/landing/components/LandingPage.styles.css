@@ -1,0 +1,138 @@
+.landing-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  color: theme('colors.white');
+}
+
+.background-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
+}
+
+.content-overlay {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay */
+}
+
+.landing-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+}
+
+.logo a {
+  font-size: theme('fontSize.xl');
+  font-weight: theme('fontWeight.bold');
+  color: theme('colors.white');
+  text-decoration: none;
+}
+
+.nav-links {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.login-button {
+  padding: 0.5rem 1.5rem;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: theme('borderRadius.md');
+  color: theme('colors.white');
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+}
+
+.login-button:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.landing-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2rem;
+}
+
+.hero-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10vh;
+}
+
+.title {
+  font-size: 4rem;
+  font-weight: theme('fontWeight.bold');
+  margin-bottom: 2rem;
+  text-align: center;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.cta-button {
+  padding: 0.75rem 2rem;
+  background-color: theme('colors.blue.600');
+  color: theme('colors.white');
+  border-radius: theme('borderRadius.md');
+  font-weight: theme('fontWeight.medium');
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+}
+
+.cta-button:hover {
+  background-color: theme('colors.blue.700');
+}
+
+.tagline-section {
+  margin-top: auto;
+  margin-bottom: 5vh;
+  text-align: center;
+}
+
+.tagline {
+  font-size: 1.5rem;
+  max-width: 800px;
+  margin: 0 auto;
+  line-height: 1.5;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Responsive adjustments */
+@media (max-width: theme('screens.md')) {
+  .title {
+    font-size: 3rem;
+  }
+  
+  .tagline {
+    font-size: 1.25rem;
+    padding: 0 1rem;
+  }
+}
+
+@media (max-width: theme('screens.sm')) {
+  .title {
+    font-size: 2.5rem;
+  }
+  
+  .tagline {
+    font-size: 1rem;
+  }
+  
+  .landing-header {
+    padding: 1rem;
+  }
+}
