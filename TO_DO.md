@@ -1,18 +1,32 @@
+# general to do b4 launch
+
+- add robust error handling for the server and modules to ensure the server
+NEVER crashes
+- add smart ai logic and small ai logic
+
+smart models
+- [global] handle all initial seeding (locations/factions/characters)
+- [story] handle ALL story telling (arc creation, beat progression, arc complete summarization)
+- [character] manager picks what characters are affected by beat
+- [location] manager picks what locations are affected by beat
+- [faction] handle update diplomatic relations affected by beat
+
+small models
+- [character] handle all chosen characters reactions to beat (in parallel)
+- [location] handle all locations reactions to beat (in parallel)
+
 # modules to do:
 
 ## worlds
-- ensure that world beat is the only event that locations/factions/characters react to
-- every single module should only react to world.beat event, nothing else
-- each entity in location, each faction, and each character have their own individual AI that
-reacts indepdently based on the world beat. default "no change" and change
-
-(that ensures that the golden rule stays simple and complexity doesn't happen dev side)
 
 ## locations
+- implement manager then react agent logic
 
 ## factions
+- remove the 'listen to location' change event bus 
 
 ## characters
+- implement manager then react agent logic
 
 ## misc
 - i want to have a world map that gets created especially since we provide the x/y coordinates of locations 

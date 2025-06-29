@@ -601,9 +601,9 @@ export function Locations() {
                         {location.status}
                       </span>
                     </div>
-                    {location.tags.length > 0 && (
+                    {location.tags && location.tags.length > 0 && (
                       <div style={{ marginTop: '0.25rem' }}>
-                        {location.tags.map((tag, index) => (
+                        {(location.tags ?? []).map((tag, index) => (
                           <span
                             key={index}
                             style={{
@@ -681,11 +681,11 @@ export function Locations() {
                   {selectedLocation.description}
                 </p>
                 
-                {selectedLocation.tags.length > 0 && (
+                {selectedLocation.tags && selectedLocation.tags.length > 0 && (
                   <div style={{ marginTop: '1rem' }}>
                     <strong>Tags:</strong>
                     <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                      {selectedLocation.tags.map((tag, index) => (
+                      {(selectedLocation.tags ?? []).map((tag, index) => (
                         <span
                           key={index}
                           style={{
