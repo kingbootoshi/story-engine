@@ -1,5 +1,4 @@
 /** @type {import('tailwindcss').Config} */
-import { colors } from 'tailwindcss/colors'
 import defaultTheme from 'tailwindcss/defaultTheme'
 
 export default {
@@ -9,10 +8,10 @@ export default {
   ],
   theme: {
     extend: {
-      // Include all default Tailwind colors to make them available to theme() function
+      // Use defaultTheme.colors to ensure proper color resolution
       colors: {
-        ...colors,
-        // Ensure basic colors are available
+        ...defaultTheme.colors,
+        // Explicitly define basic colors for theme() function compatibility
         white: '#ffffff',
         black: '#000000',
         transparent: 'transparent',
