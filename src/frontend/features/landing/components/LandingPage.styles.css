@@ -27,6 +27,7 @@
   height: 100%;
   object-fit: cover;
   z-index: -1;
+  filter: blur(5px); /* Reduced blur by half */
 }
 
 .content-overlay {
@@ -35,7 +36,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay */
+  background-color: rgba(0, 0, 0, 0.4); /* Slightly more transparent overlay */
 }
 
 .landing-main {
@@ -58,9 +59,7 @@
 .title {
   display: flex;
   flex-direction: column;
-  font-size: 6rem;
-  font-weight: theme('fontWeight.bold');
-  margin-bottom: theme('spacing.8');
+  margin-bottom: theme('spacing.6');
   font-family: 'Cinzel', serif;
   letter-spacing: 0.1em;
   text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
@@ -68,11 +67,22 @@
 }
 
 .title-story {
-  font-size: 6rem;
+  font-size: 7rem;
+  font-weight: theme('fontWeight.bold');
 }
 
 .title-engine {
-  font-size: 6rem;
+  font-size: 7rem;
+  font-weight: theme('fontWeight.bold');
+}
+
+.subtitle {
+  font-size: 1.5rem;
+  max-width: 800px;
+  margin: 0 auto 2rem auto;
+  line-height: 1.5;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  font-family: 'Cinzel', serif;
 }
 
 .cta-button {
@@ -84,6 +94,8 @@
   font-weight: theme('fontWeight.medium');
   text-decoration: none;
   transition: all 0.3s ease;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.05em;
 }
 
 .cta-button:hover {
@@ -93,29 +105,22 @@
 
 /* Responsive adjustments */
 @media (max-width: theme('screens.md')) {
-  .title {
+  .title-story, .title-engine {
     font-size: 5rem;
   }
   
-  .title-story {
-    font-size: 5rem;
-  }
-  
-  .title-engine {
-    font-size: 5rem;
+  .subtitle {
+    font-size: 1.25rem;
+    padding: 0 theme('spacing.4');
   }
 }
 
 @media (max-width: theme('screens.sm')) {
-  .title {
+  .title-story, .title-engine {
     font-size: 4rem;
   }
   
-  .title-story {
-    font-size: 4rem;
-  }
-  
-  .title-engine {
-    font-size: 4rem;
+  .subtitle {
+    font-size: 1rem;
   }
 }

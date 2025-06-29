@@ -28,6 +28,9 @@ export function LandingPage() {
               <span className="title-story">Story</span>
               <span className="title-engine">Engine</span>
             </h1>
+            <p className="subtitle">
+              Create, design, and grow self-evolving AI universes that you and players can participate in.
+            </p>
             <div className="cta-container">
               <Link to="/login" className="cta-button">Begin Your Journey</Link>
             </div>
