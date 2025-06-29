@@ -1,6 +1,6 @@
 /**
- * Enhanced landing page styles using Tailwind CSS v4 approach
- * Creates an immersive, cinematic experience with a full-screen video background
+ * Immersive landing page styles with zoom effect
+ * Creates a cinematic experience with a full-screen video background
  */
 
 /* Define custom theme colors for Tailwind v4 compatibility */
@@ -27,6 +27,7 @@
   height: 100%;
   object-fit: cover;
   z-index: -1;
+  transition: transform 1.5s ease-in-out;
 }
 
 .content-overlay {
@@ -37,66 +38,32 @@
   flex-direction: column;
   /* Reduced opacity for clearer background visibility */
   background-color: rgba(0, 0, 0, 0.3);
-}
-
-.landing-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: theme('spacing.6') theme('spacing.8');
-}
-
-.logo a {
-  font-size: theme('fontSize.xl');
-  font-weight: theme('fontWeight.bold');
-  color: white;
-  text-decoration: none;
-  text-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
-  letter-spacing: 0.05em;
-}
-
-.nav-links {
-  display: flex;
-  gap: theme('spacing.6');
-}
-
-.login-button {
-  padding: theme('spacing.2') theme('spacing.6');
-  background-color: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: theme('borderRadius.md');
-  color: white;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(5px);
-}
-
-.login-button:hover {
-  background-color: rgba(255, 255, 255, 0.25);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: opacity 1.5s ease-in-out;
 }
 
 .landing-main {
   flex: 1;
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: center;
   padding: theme('spacing.8');
 }
 
-.hero-section {
+.hero-content {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin-top: 10vh;
+  text-align: center;
+  max-width: 900px;
+  margin: 0 auto;
+  transition: opacity 1.5s ease-in-out, transform 1.5s ease-in-out;
 }
 
 .title {
   font-size: 5rem;
   font-weight: theme('fontWeight.bold');
-  margin-bottom: theme('spacing.8');
+  margin-bottom: theme('spacing.6');
   text-align: center;
   font-family: 'Cinzel', serif;
   letter-spacing: 0.15em;
@@ -104,42 +71,59 @@
   animation: fadeIn 1.5s ease-out;
 }
 
-.cta-container {
-  animation: fadeIn 2s ease-out;
-}
-
-.cta-button {
-  padding: theme('spacing.3') theme('spacing.8');
-  background-color: var(--color-blue-600);
-  color: white;
-  border-radius: theme('borderRadius.md');
-  font-weight: theme('fontWeight.medium');
-  text-decoration: none;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  letter-spacing: 0.05em;
-}
-
-.cta-button:hover {
-  background-color: var(--color-blue-700);
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-}
-
-.tagline-section {
-  margin-top: auto;
-  margin-bottom: 5vh;
-  text-align: center;
-  animation: fadeIn 2.5s ease-out;
-}
-
 .tagline {
   font-size: 1.75rem;
   max-width: 800px;
   margin: 0 auto;
+  margin-bottom: theme('spacing.10');
   line-height: 1.5;
   text-shadow: 0 0 15px rgba(0, 0, 0, 0.8);
   letter-spacing: 0.03em;
+  animation: fadeIn 2s ease-out;
+}
+
+.cta-container {
+  margin-top: theme('spacing.6');
+  animation: fadeIn 2.5s ease-out;
+}
+
+.enter-button {
+  padding: theme('spacing.4') theme('spacing.10');
+  background-color: rgba(67, 97, 238, 0.8);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: theme('borderRadius.md');
+  font-weight: theme('fontWeight.medium');
+  font-size: 1.25rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(5px);
+}
+
+.enter-button:hover {
+  background-color: rgba(58, 86, 228, 0.9);
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.enter-button:active {
+  transform: translateY(-1px);
+}
+
+/* Zoom effect when entering the world */
+.zooming .background-video {
+  transform: scale(1.5);
+}
+
+.zooming .content-overlay {
+  opacity: 0;
+}
+
+.zooming .hero-content {
+  opacity: 0;
+  transform: scale(0.8);
 }
 
 /* Animations */
@@ -158,6 +142,11 @@
     font-size: 1.5rem;
     padding: 0 theme('spacing.4');
   }
+  
+  .enter-button {
+    padding: theme('spacing.3') theme('spacing.8');
+    font-size: 1.1rem;
+  }
 }
 
 @media (max-width: theme('screens.sm')) {
@@ -167,9 +156,11 @@
   
   .tagline {
     font-size: 1.25rem;
+    margin-bottom: theme('spacing.6');
   }
   
-  .landing-header {
-    padding: theme('spacing.4');
+  .enter-button {
+    padding: theme('spacing.2') theme('spacing.6');
+    font-size: 1rem;
   }
 }
