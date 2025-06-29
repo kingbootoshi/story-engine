@@ -8,7 +8,7 @@ import './LandingPage.styles.css';
 export function LandingPage() {
   return (
     <div className="landing-container">
-      {/* Video Background - Updated to use worldtree.mp4 */}
+      {/* Video Background */}
       <video 
         className="background-video" 
         autoPlay 
@@ -22,25 +22,15 @@ export function LandingPage() {
       
       {/* Content Overlay */}
       <div className="content-overlay">
-        <header className="landing-header">
-          <div className="logo">
-            <Link to="/">Story Engine</Link>
-          </div>
-          <nav className="nav-links">
-            <Link to="/login" className="login-button">Login</Link>
-          </nav>
-        </header>
-        
         <main className="landing-main">
           <section className="hero-section">
-            <h1 className="title">Story Engine</h1>
+            <h1 className="title">
+              <span className="title-story">Story</span>
+              <span className="title-engine">Engine</span>
+            </h1>
             <div className="cta-container">
-              <Link to="/login" className="cta-button">Get Started</Link>
+              <Link to="/login" className="cta-button">Begin Your Journey</Link>
             </div>
-          </section>
-          
-          <section className="tagline-section">
-            <p className="tagline">Create, manage, and design self-evolving AI universes that you and players can participate in.</p>
           </section>
         </main>
       </div>
