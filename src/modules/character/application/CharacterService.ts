@@ -1,6 +1,7 @@
 import { injectable, inject } from 'tsyringe';
 import { createLogger } from '../../../core/infra/logger';
 import { eventBus } from '../../../core/infra/eventBus';
+import type { DomainEvent } from '../../../core/types';
 import type { ICharacterRepository, ICharacterAI } from '../domain/ports';
 import type { Character, CreateCharacter, UpdateCharacter } from '../domain/schema';
 import type * as Events from '../domain/events';
@@ -34,12 +35,12 @@ export class CharacterService {
   }
 
   private setupEventHandlers(): void {
-    eventBus.on('faction.seeding.complete', async (evt: { payload: FactionSeedingComplete }) => {
-      await this.seedCharacters(evt.payload);
+    eventBus.on('faction.seeding.complete', async (evt: DomainEvent<FactionSeedingComplete>) => {
+      await this.seedCharacters(evt);
     });
     
-    eventBus.on('world.beat.created', async (evt: { payload: StoryBeatCreated }) => {
-      await this.processBeatReactions(evt.payload);
+    eventBus.on('world.beat.created', async (evt: DomainEvent<StoryBeatCreated>) => {
+      await this.processBeatReactions(evt);
     });
   }
 
@@ -117,10 +118,18 @@ export class CharacterService {
     await this.repo.delete(id);
   }
 
-  private async seedCharacters(payload: FactionSeedingComplete): Promise<void> {
-    const { worldId } = payload;
+  private async seedCharacters(event: DomainEvent<FactionSeedingComplete>): Promise<void> {
+    const { worldId } = event.payload;
     logger.info('Seeding characters for world', { worldId });
     
+    // Use user_id from the event
+    const userId = event.user_id;
+    if (!userId) {
+      logger.error('Event missing user_id', { worldId });
+      throw new Error('Event missing user_id');
+    }
+    
+    // Still need to get world description for AI context
     const world = await this.worldRepo.getWorld(worldId);
     if (!world) return;
     
@@ -131,7 +140,7 @@ export class CharacterService {
     const traceCtx: TrpcCtx = {
       reqId: `seed-${worldId}`,
       logger,
-      user: undefined
+      user: { id: userId }
     };
     
     // ------------------------------------------------------------------
@@ -232,9 +241,16 @@ export class CharacterService {
     });
   }
 
-  private async processBeatReactions(payload: StoryBeatCreated): Promise<void> {
-    const { worldId, beatId, beatIndex, directives, emergent } = payload;
+  private async processBeatReactions(event: DomainEvent<StoryBeatCreated>): Promise<void> {
+    const { worldId, beatId, beatIndex, directives, emergent } = event.payload;
     logger.info('Processing character reactions to beat', { worldId, beatId, beatIndex });
+    
+    // Use user_id from the event
+    const userId = event.user_id;
+    if (!userId) {
+      logger.error('Event missing user_id', { worldId });
+      throw new Error('Event missing user_id');
+    }
     
     const [characters, factions, locations] = await Promise.all([
       this.repo.findByWorldId(worldId),
@@ -259,7 +275,7 @@ export class CharacterService {
     const traceCtx: TrpcCtx = {
       reqId: `beat-${beatId}`,
       logger,
-      user: undefined
+      user: { id: userId }
     };
     
     const beat = await this.worldRepo.getBeat(beatId);
@@ -305,7 +321,7 @@ export class CharacterService {
         
         if (!reaction.affected) return;
         
-        await this.applyCharacterReaction(character, reaction, beatIndex, beatId);
+        await this.applyCharacterReaction(character, reaction, beatIndex, beatId, userId);
       }));
     }
     
@@ -317,7 +333,8 @@ export class CharacterService {
     character: Character,
     reaction: any,
     beatIndex: number,
-    beatId: string
+    beatId: string,
+    userId: string
   ): Promise<void> {
     const updates: UpdateCharacter = {};
     let hasChanges = false;
@@ -434,10 +451,11 @@ export class CharacterService {
       eventBus.emit<WorldEventLogged>('world.event.logged', {
         v: 1,
         worldId: character.world_id,
+        userId: userId,
         eventId: `char-${character.id}-beat-${beatIndex}`,
         impact: reaction.world_event.impact,
         description: reaction.world_event.description
-      });
+      }, userId);
     }
   }
 }

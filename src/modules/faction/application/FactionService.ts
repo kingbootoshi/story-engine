@@ -1,6 +1,7 @@
 import { injectable, inject } from 'tsyringe';
 import { createLogger } from '../../../core/infra/logger';
 import { eventBus } from '../../../core/infra/eventBus';
+import type { DomainEvent } from '../../../core/types';
 import type { IFactionRepository, IFactionAI } from '../domain/ports';
 import type { 
   Faction, 
@@ -14,6 +15,7 @@ import type * as Events from '../domain/events';
 import type { WorldRepo } from '../../world/domain/ports';
 import type { LocationRepository } from '../../location/domain/ports';
 import type { LocationWorldCompleteEvent } from '../../location/domain/events';
+import type { StoryBeatCreated } from '../../world/domain/events';
 import { resolveFactionIdentifier } from '../../../shared/utils/resolveFactionIdentifier';
 
 const logger = createLogger('faction.service');
@@ -30,12 +32,12 @@ export class FactionService {
   }
 
   private setupEventHandlers(): void {
-    eventBus.on('location.world.complete', async (evt: { payload: LocationWorldCompleteEvent }) => {
-      await this.seedFactions(evt.payload);
+    eventBus.on('location.world.complete', async (evt: DomainEvent<LocationWorldCompleteEvent>) => {
+      await this.seedFactions(evt);
     });
     
-    eventBus.on('world.beat.created', async (evt: any) => {
-      await this.reactToBeat(evt.payload);
+    eventBus.on('world.beat.created', async (evt: DomainEvent<StoryBeatCreated>) => {
+      await this.reactToBeat(evt);
     });
     
     eventBus.on('location.status_changed', async (evt: any) => {
@@ -51,10 +53,16 @@ export class FactionService {
     });
     
     let factionData = input;
+    let userId = 'anonymous';
     
     if (enrichAI) {
       const world = await this.worldRepo.getWorld(input.world_id);
       if (!world) throw new Error('World not found');
+      
+      userId = world.user_id;
+      if (!userId) {
+        throw new Error('World missing user_id');
+      }
       
       const existingFactions = await this.repo.findByWorldId(input.world_id);
       const existingNames = existingFactions.map(f => `${f.name}: ${f.ideology}`);
@@ -63,10 +71,17 @@ export class FactionService {
         worldId: input.world_id,
         worldTheme: world.description,
         existingFactions: existingNames,
-        userId: world.user_id || 'anonymous'
+        userId
       });
       
       factionData = { ...input, ...generatedData };
+    } else {
+      // If not enriching with AI, still need to get userId for event
+      const world = await this.worldRepo.getWorld(input.world_id);
+      if (!world || !world.user_id) {
+        throw new Error('World not found or missing user_id');
+      }
+      userId = world.user_id;
     }
     
     const faction = await this.repo.create(factionData);
@@ -76,7 +91,7 @@ export class FactionService {
       worldId: faction.world_id,
       factionId: faction.id,
       name: faction.name
-    });
+    }, userId);
     
     return faction;
   }
@@ -371,10 +386,18 @@ export class FactionService {
     }
   }
 
-  private async seedFactions(payload: LocationWorldCompleteEvent): Promise<void> {
-    const { worldId } = payload;
+  private async seedFactions(event: DomainEvent<LocationWorldCompleteEvent>): Promise<void> {
+    const { worldId } = event.payload;
     logger.info('Seeding initial factions for world', { worldId });
     
+    // Use user_id from the event
+    const userId = event.user_id;
+    if (!userId) {
+      logger.error('Event missing user_id', { worldId });
+      throw new Error('Event missing user_id for faction seeding');
+    }
+    
+    // Still need to get world description for AI context
     const world = await this.worldRepo.getWorld(worldId);
     if (!world) return;
     
@@ -387,7 +410,8 @@ export class FactionService {
       const factionData = await this.ai.generateFaction({
         worldId,
         worldTheme: world.description,
-        existingFactions: existingNames
+        existingFactions: existingNames,
+        userId
       });
       
       await this.create(factionData);
@@ -399,26 +423,17 @@ export class FactionService {
       v: 1,
       worldId,
       factionCount: initialFactionCount
-    });
+    }, userId);
   }
 
-  private async reactToBeat(payload: any): Promise<void> {
-    const { worldId, beatId, directives } = payload;
+  private async reactToBeat(event: DomainEvent<StoryBeatCreated>): Promise<void> {
+    const { worldId, beatId, directives } = event.payload;
     logger.info('Factions reacting to new beat', { worldId, beatId });
     
-    // ---------------------------------------------------------------
-    // Re-acquire request context (user_id) from the World entity so
-    // that downstream AI metadata contains a valid UUID and passes
-    // schema validation.
-    // ---------------------------------------------------------------
-    const world = await this.worldRepo.getWorld(worldId);
-    if (!world) {
-      logger.error('World not found while reacting to beat – aborting', { worldId });
-      return;
-    }
-    const userId = world.user_id;
+    // Use user_id from the event
+    const userId = event.user_id;
     if (!userId) {
-      logger.error('World entity lacks user_id – aborting faction reaction', { worldId });
+      logger.error('Event lacks user_id – aborting faction reaction', { worldId });
       return;
     }
     

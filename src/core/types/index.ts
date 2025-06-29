@@ -7,6 +7,7 @@ export interface DomainEvent<T = any> {
   topic: string;
   payload: T;
   ts: string;
+  user_id?: string;
 }
 
 export interface EngineModule {

@@ -2,6 +2,7 @@ import { injectable, inject } from 'tsyringe';
 import { eventBus } from '../../../core/infra/eventBus';
 import { createLogger } from '../../../core/infra/logger';
 import { resolveLocationIdentifier } from '../../../shared/utils/resolveLocationIdentifier';
+import type { DomainEvent } from '../../../core/types';
 import type { LocationRepository, LocationAI } from '../domain/ports';
 import type { 
   Location, 
@@ -16,7 +17,6 @@ import type {
   LocationWorldCompleteEvent 
 } from '../domain/events';
 import type { WorldCreatedEvent, StoryBeatCreated } from '../../world/domain/events';
-import type { WorldRepo } from '../../world/domain/ports';
 
 const logger = createLogger('location.service');
 
@@ -27,8 +27,7 @@ const logger = createLogger('location.service');
 export class LocationService {
   constructor(
     @inject('LocationRepository') private repo: LocationRepository,
-    @inject('LocationAI') private ai: LocationAI,
-    @inject('WorldRepo') private worldRepo: WorldRepo
+    @inject('LocationAI') private ai: LocationAI
   ) {
     this.subscribeToEvents();
   }
@@ -37,26 +36,26 @@ export class LocationService {
    * Subscribe to world events
    */
   private subscribeToEvents() {
-    eventBus.on('world.created', (event) => this.handleWorldCreated(event.payload));
-    eventBus.on('world.beat.created', (event) => this.handleBeatCreated(event.payload));
+    eventBus.on('world.created', (event) => this.handleWorldCreated(event));
+    eventBus.on('world.beat.created', (event) => this.handleBeatCreated(event));
     logger.info('LocationService subscribed to events');
   }
 
   /**
    * Handle world creation by generating initial locations
    */
-  private async handleWorldCreated(event: WorldCreatedEvent) {
+  private async handleWorldCreated(event: DomainEvent<WorldCreatedEvent>) {
     logger.info('Handling world.created event', { 
-      worldId: event.worldId,
-      correlation: event.worldId 
+      worldId: event.payload.worldId,
+      correlation: event.payload.worldId 
     });
     
     try {
       await this.seedInitialMap(event);
     } catch (error) {
       logger.error('Failed to handle world.created', error, { 
-        worldId: event.worldId,
-        correlation: event.worldId 
+        worldId: event.payload.worldId,
+        correlation: event.payload.worldId 
       });
     }
   }
@@ -64,21 +63,21 @@ export class LocationService {
   /**
    * Handle beat creation by potentially mutating locations
    */
-  private async handleBeatCreated(event: StoryBeatCreated) {
+  private async handleBeatCreated(event: DomainEvent<StoryBeatCreated>) {
     logger.info('Handling world.beat.created event', { 
-      worldId: event.worldId,
-      beatId: event.beatId,
-      beatIndex: event.beatIndex,
-      correlation: event.worldId 
+      worldId: event.payload.worldId,
+      beatId: event.payload.beatId,
+      beatIndex: event.payload.beatIndex,
+      correlation: event.payload.worldId 
     });
     
     try {
       await this.reactToBeat(event);
     } catch (error) {
       logger.error('Failed to handle world.beat.created', error, { 
-        worldId: event.worldId,
-        beatId: event.beatId,
-        correlation: event.worldId 
+        worldId: event.payload.worldId,
+        beatId: event.payload.beatId,
+        correlation: event.payload.worldId 
       });
     }
   }
@@ -86,11 +85,11 @@ export class LocationService {
   /**
    * Generate initial world map using individual AI agents
    */
-  async seedInitialMap(event: WorldCreatedEvent): Promise<void> {
+  async seedInitialMap(event: DomainEvent<WorldCreatedEvent>): Promise<void> {
     const startTime = Date.now();
     logger.info('Seeding initial map for world', { 
-      worldId: event.worldId,
-      correlation: event.worldId 
+      worldId: event.payload.worldId,
+      correlation: event.payload.worldId 
     });
 
     try {
@@ -98,24 +97,27 @@ export class LocationService {
       
       // Step 1: Generate regions
       logger.info('Generating regions', {
-        worldId: event.worldId,
-        correlation: event.worldId
+        worldId: event.payload.worldId,
+        correlation: event.payload.worldId
       });
       
-      // Get the world to fetch the owner's user_id
-      const world = await this.worldRepo.getWorld(event.worldId);
-      const userId = world?.user_id || 'anonymous';
+      // Use user_id from the event
+      const userId = event.user_id;
+      if (!userId) {
+        logger.error('Event missing user_id', { worldId: event.payload.worldId });
+        throw new Error('Event missing user_id for world creation');
+      }
       
       const regionResult = await this.ai.generateRegions({
-        worldName: event.name,
-        worldDescription: event.description,
+        worldName: event.payload.name,
+        worldDescription: event.payload.description,
         userId
       });
 
       logger.debug('AI generated regions', {
-        worldId: event.worldId,
+        worldId: event.payload.worldId,
         regionCount: regionResult.regions.length,
-        correlation: event.worldId
+        correlation: event.payload.worldId
       });
 
       // Ensure regions is an array
@@ -126,7 +128,7 @@ export class LocationService {
       // Save regions to database
       const savedRegions = await this.repo.createBulk(
         regionsArray.map(region => ({
-          world_id: event.worldId,
+          world_id: event.payload.worldId,
           parent_location_id: null,
           name: region.name,
           type: 'region' as const,
@@ -144,7 +146,7 @@ export class LocationService {
       for (const region of savedRegions) {
         const locationEvent: LocationCreatedEvent = {
           v: 1,
-          worldId: event.worldId,
+          worldId: event.payload.worldId,
           locationId: region.id,
           name: region.name,
           type: region.type,
@@ -156,18 +158,18 @@ export class LocationService {
       // Step 2: Generate locations for each region
       // Create world context to avoid re-serializing for each region
       const worldCtx = {
-        worldName: event.name,
-        worldDescription: event.description,
+        worldName: event.payload.name,
+        worldDescription: event.payload.description,
         userId
       };
 
       // Process all regions in parallel
       const regionTasks = savedRegions.map(async (region) => {
         logger.info('Generating locations for region', {
-          worldId: event.worldId,
+          worldId: event.payload.worldId,
           regionId: region.id,
           regionName: region.name,
-          correlation: event.worldId
+          correlation: event.payload.worldId
         });
 
         // Track existing locations in this region
@@ -193,7 +195,7 @@ export class LocationService {
 
         const savedCities = await this.repo.createBulk(
           citiesArray.map(city => ({
-            world_id: event.worldId,
+            world_id: event.payload.worldId,
             parent_location_id: region.id,
             name: city.name,
             type: 'city' as const,
@@ -218,7 +220,7 @@ export class LocationService {
         for (const city of savedCities) {
           const locationEvent: LocationCreatedEvent = {
             v: 1,
-            worldId: event.worldId,
+            worldId: event.payload.worldId,
             locationId: city.id,
             name: city.name,
             type: city.type,
@@ -243,7 +245,7 @@ export class LocationService {
 
         const savedLandmarks = await this.repo.createBulk(
           landmarksArray.map(landmark => ({
-            world_id: event.worldId,
+            world_id: event.payload.worldId,
             parent_location_id: region.id,
             name: landmark.name,
             type: 'landmark' as const,
@@ -268,7 +270,7 @@ export class LocationService {
         for (const landmark of savedLandmarks) {
           const locationEvent: LocationCreatedEvent = {
             v: 1,
-            worldId: event.worldId,
+            worldId: event.payload.worldId,
             locationId: landmark.id,
             name: landmark.name,
             type: landmark.type,
@@ -293,7 +295,7 @@ export class LocationService {
 
         const savedWilderness = await this.repo.createBulk(
           wildernessArray.map(wild => ({
-            world_id: event.worldId,
+            world_id: event.payload.worldId,
             parent_location_id: region.id,
             name: wild.name,
             type: 'wilderness' as const,
@@ -309,7 +311,7 @@ export class LocationService {
         for (const wild of savedWilderness) {
           const locationEvent: LocationCreatedEvent = {
             v: 1,
-            worldId: event.worldId,
+            worldId: event.payload.worldId,
             locationId: wild.id,
             name: wild.name,
             type: wild.type,
@@ -319,12 +321,12 @@ export class LocationService {
         }
 
         logger.info('Completed location generation for region', {
-          worldId: event.worldId,
+          worldId: event.payload.worldId,
           regionName: region.name,
           cityCount: savedCities.length,
           landmarkCount: savedLandmarks.length,
           wildernessCount: savedWilderness.length,
-          correlation: event.worldId
+          correlation: event.payload.worldId
         });
 
         // Return counts for aggregation
@@ -344,25 +346,25 @@ export class LocationService {
       // Step 3: Emit location.world.complete event
       const completionEvent: LocationWorldCompleteEvent = {
         v: 1,
-        worldId: event.worldId,
+        worldId: event.payload.worldId,
         regionCount: savedRegions.length,
         totalLocationCount: totalLocationCount
       };
       
-      eventBus.emit('location.world.complete', completionEvent);
+      eventBus.emit('location.world.complete', completionEvent, userId);
 
       logger.info('Successfully created all locations for world', {
-        worldId: event.worldId,
+        worldId: event.payload.worldId,
         regionCount: savedRegions.length,
         totalLocationCount: totalLocationCount,
         duration_ms: Date.now() - startTime,
-        correlation: event.worldId
+        correlation: event.payload.worldId
       });
 
     } catch (error) {
       logger.error('Failed to seed initial map', error, {
-        worldId: event.worldId,
-        correlation: event.worldId
+        worldId: event.payload.worldId,
+        correlation: event.payload.worldId
       });
       throw error;
     }
@@ -371,43 +373,46 @@ export class LocationService {
   /**
    * React to story beat by mutating locations
    */
-  async reactToBeat(event: StoryBeatCreated): Promise<void> {
+  async reactToBeat(event: DomainEvent<StoryBeatCreated>): Promise<void> {
     const startTime = Date.now();
     logger.info('Processing beat for location reactions', {
-      worldId: event.worldId,
-      beatId: event.beatId,
-      beatIndex: event.beatIndex,
-      correlation: event.worldId
+      worldId: event.payload.worldId,
+      beatId: event.payload.beatId,
+      beatIndex: event.payload.beatIndex,
+      correlation: event.payload.worldId
     });
 
     try {
-      // Get the world to fetch the owner's user_id
-      const world = await this.worldRepo.getWorld(event.worldId);
-      const userId = world?.user_id || 'anonymous';
+      // Use user_id from the event
+      const userId = event.user_id;
+      if (!userId) {
+        logger.error('Event missing user_id', { worldId: event.payload.worldId });
+        throw new Error('Event missing user_id for world creation');
+      }
       
       // Step 1: Create decision context
       const decisionContext = {
-        worldId: event.worldId,
-        beatDirectives: event.directives.join('\n'),
-        emergentStorylines: event.emergent,
+        worldId: event.payload.worldId,
+        beatDirectives: event.payload.directives.join('\n'),
+        emergentStorylines: event.payload.emergent,
         userId
       };
 
       // Step 2: Check if we should mutate locations
       logger.info('Running location mutation decision', {
-        worldId: event.worldId,
-        beatId: event.beatId,
-        correlation: event.worldId
+        worldId: event.payload.worldId,
+        beatId: event.payload.beatId,
+        correlation: event.payload.worldId
       });
 
       const mutationDecision = await this.ai.decideMutation(decisionContext);
 
       logger.info('Location decision made', {
-        worldId: event.worldId,
-        beatId: event.beatId,
+        worldId: event.payload.worldId,
+        beatId: event.payload.beatId,
         shouldMutate: mutationDecision.shouldMutate,
         mutationReason: mutationDecision.think,
-        correlation: event.worldId
+        correlation: event.payload.worldId
       });
 
       // Step 3: Execute mutations if decided
@@ -416,18 +421,18 @@ export class LocationService {
       }
 
       logger.info('Completed beat reaction for locations', {
-        worldId: event.worldId,
-        beatId: event.beatId,
+        worldId: event.payload.worldId,
+        beatId: event.payload.beatId,
         mutationsExecuted: mutationDecision.shouldMutate,
         duration_ms: Date.now() - startTime,
-        correlation: event.worldId
+        correlation: event.payload.worldId
       });
 
     } catch (error) {
       logger.error('Failed to react to beat', error, {
-        worldId: event.worldId,
-        beatId: event.beatId,
-        correlation: event.worldId
+        worldId: event.payload.worldId,
+        beatId: event.payload.beatId,
+        correlation: event.payload.worldId
       });
     }
   }
@@ -435,20 +440,20 @@ export class LocationService {
   /**
    * Execute location mutations based on story beat
    */
-  private async executeMutations(event: StoryBeatCreated, userId: string): Promise<void> {
+  private async executeMutations(event: DomainEvent<StoryBeatCreated>, userId: string): Promise<void> {
     const startTime = Date.now();
     logger.info('Executing location mutations', {
-      worldId: event.worldId,
-      beatId: event.beatId,
-      correlation: event.worldId
+      worldId: event.payload.worldId,
+      beatId: event.payload.beatId,
+      correlation: event.payload.worldId
     });
 
-    const locations = await this.repo.findByWorldId(event.worldId);
+    const locations = await this.repo.findByWorldId(event.payload.worldId);
     
     const context = {
-      worldId: event.worldId,
-      beatDirectives: event.directives.join('\n'),
-      emergentStorylines: event.emergent,
+      worldId: event.payload.worldId,
+      beatDirectives: event.payload.directives.join('\n'),
+      emergentStorylines: event.payload.emergent,
       currentLocations: locations.map(loc => ({
         id: loc.id,
         name: loc.name,
@@ -461,10 +466,10 @@ export class LocationService {
     const mutations = await this.ai.mutateLocations(context);
 
     logger.info('AI suggested location mutations', {
-      worldId: event.worldId,
-      beatId: event.beatId,
+      worldId: event.payload.worldId,
+      beatId: event.payload.beatId,
       updateCount: mutations.updates.length,
-      correlation: event.worldId
+      correlation: event.payload.worldId
     });
 
     for (const update of mutations.updates) {
@@ -474,9 +479,9 @@ export class LocationService {
       if (!resolvedLocationId) {
         logger.warn('Could not resolve location identifier', {
           identifier: update.locationId,
-          worldId: event.worldId,
-          beatId: event.beatId,
-          correlation: event.worldId
+          worldId: event.payload.worldId,
+          beatId: event.payload.beatId,
+          correlation: event.payload.worldId
         });
         continue;
       }
@@ -486,7 +491,7 @@ export class LocationService {
           timestamp: new Date().toISOString(),
           event: update.reason,
           previous_status: locations.find(l => l.id === resolvedLocationId)?.status,
-          beat_index: event.beatIndex
+          beat_index: event.payload.beatIndex
         };
 
         await this.repo.updateStatus(resolvedLocationId, update.newStatus, historicalEvent);
@@ -495,14 +500,14 @@ export class LocationService {
         if (location) {
           const statusEvent: LocationStatusChangedEvent = {
             v: 1,
-            worldId: event.worldId,
+            worldId: event.payload.worldId,
             locationId: resolvedLocationId,
             locationName: location.name,
             oldStatus: location.status,
             newStatus: update.newStatus,
             reason: update.reason,
-            beatId: event.beatId,
-            beatIndex: event.beatIndex
+            beatId: event.payload.beatId,
+            beatIndex: event.payload.beatIndex
           };
           eventBus.emit('location.status_changed', statusEvent);
         }
@@ -518,11 +523,11 @@ export class LocationService {
     }
 
     logger.info('Completed location mutations', {
-      worldId: event.worldId,
-      beatId: event.beatId,
+      worldId: event.payload.worldId,
+      beatId: event.payload.beatId,
       updatesApplied: mutations.updates.length,
       duration_ms: Date.now() - startTime,
-      correlation: event.worldId
+      correlation: event.payload.worldId
     });
   }
 

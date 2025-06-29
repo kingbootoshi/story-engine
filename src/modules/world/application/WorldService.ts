@@ -5,7 +5,6 @@ import type { WorldRepo, WorldAI } from '../domain/ports';
 import type { World, WorldArc, WorldBeat, WorldEvent } from '../domain/schema';
 import type * as Events from '../domain/events';
 import type { WorldArcCreationParams, BeatProgressionParams } from './types';
-import { randomUUID } from 'crypto';
 import { formatEvent } from '../../../shared/utils/formatEvent';
 import { formatLocationsForAI } from '../../../shared/utils/formatLocationContext';
 import { formatFactionsForAI } from '../../../shared/utils/formatFactionContext';
@@ -27,15 +26,18 @@ export class WorldService {
   ) {}
 
   async createWorld(name: string, description: string, ownerId?: string): Promise<World> {
-    const resolvedOwnerId = ownerId ?? randomUUID();
-    logger.info('Creating world', { name, descLen: description.length, ownerId: resolvedOwnerId });
-    const world = await this.repo.createWorld({ name, description, user_id: resolvedOwnerId });
+    if (!ownerId) {
+      throw new Error('Cannot create world without an owner ID');
+    }
+    logger.info('Creating world', { name, descLen: description.length, ownerId });
+    const world = await this.repo.createWorld({ name, description, user_id: ownerId });
     
     eventBus.emit<Events.WorldCreatedEvent>('world.created', { 
-      worldId: world.id, 
+      worldId: world.id,
+      userId: world.user_id,
       name, 
       description 
-    });
+    }, world.user_id);
     
     return world;
   }
@@ -100,7 +102,7 @@ export class WorldService {
         currentLocations: locationsContext,
         currentFactions: factionsContext,
         currentCharacters: charactersContext,
-        userId: world.user_id || 'anonymous'
+        userId: world.user_id
       });
 
       if (!result.anchors || result.anchors.length !== 3) {
@@ -144,9 +146,10 @@ export class WorldService {
 
       eventBus.emit<Events.WorldArcCreatedEvent>('world.arcCreated', {
         worldId: params.worldId,
+        userId: world.user_id,
         arcId: arc.id,
         arcName: arc.story_name
-      });
+      }, world.user_id);
 
       logger.success('Arc created', {
         arcId: arc.id,
@@ -256,7 +259,7 @@ export class WorldService {
         currentLocations: locationsContext,
         currentFactions: factionsContext,
         currentCharacters: charactersContext,
-        userId: world.user_id || 'anonymous'
+        userId: world.user_id
       });
 
       const savedBeat = await this.repo.createBeat(
@@ -283,13 +286,14 @@ export class WorldService {
       eventBus.emit<Events.StoryBeatCreated>('world.beat.created', {
         v: 1,
         worldId: params.worldId,
+        userId: world.user_id,
         beatId: savedBeat.id,
         beatIndex: nextBeatIndex,
         directives: savedBeat.world_directives ?? [],
         emergent: savedBeat.emergent_storylines ?? [],
         arcId: params.arcId,
         beatName: savedBeat.beat_name,
-      });
+      }, world.user_id);
 
       logger.logArcProgression(
         params.worldId,
@@ -310,6 +314,9 @@ export class WorldService {
     logger.info('Completing arc', { worldId, arcId });
     
     try {
+      const world = await this.repo.getWorld(worldId);
+      if (!world) throw new Error('World not found');
+      
       const beats = await this.repo.getArcBeats(arcId);
       const arc = await this.repo.getArc(arcId);
       
@@ -336,10 +343,11 @@ export class WorldService {
 
       eventBus.emit<Events.WorldArcCompletedEvent>('world.arcCompleted', {
         worldId,
+        userId: world.user_id,
         arcId,
         arcName: arc.story_name,
         summary
-      });
+      }, world.user_id);
 
       logger.success('Arc completed', { worldId, arcId });
     } catch (error) {
@@ -353,6 +361,9 @@ export class WorldService {
    * The caller only needs to provide `world_id`, `event_type`, `impact_level`, `description`.
    */
   async recordWorldEvent(event: Pick<WorldEvent, 'world_id' | 'event_type' | 'impact_level' | 'description'>): Promise<WorldEvent> {
+    const world = await this.repo.getWorld(event.world_id);
+    if (!world) throw new Error('World not found');
+    
     const arc = await this.repo.getArcByWorld(event.world_id);
     if (!arc?.current_beat_id) {
       throw new Error('No current beat found – cannot record event');
@@ -371,10 +382,11 @@ export class WorldService {
 
     eventBus.emit<Events.WorldEventLoggedEvent>('world.eventLogged', {
       worldId: event.world_id,
+      userId: world.user_id,
       eventId: savedEvent.id,
       eventType: savedEvent.event_type,
       impactLevel: savedEvent.impact_level
-    });
+    }, world.user_id);
 
     return savedEvent;
   }
@@ -384,6 +396,9 @@ export class WorldService {
    * Replaces recordWorldEvent with new event-driven approach.
    */
   async logEvent(data: Pick<WorldEvent, 'world_id' | 'event_type' | 'impact_level' | 'description'>): Promise<WorldEvent> {
+    const world = await this.repo.getWorld(data.world_id);
+    if (!world) throw new Error('World not found');
+    
     const arc = await this.repo.getArcByWorld(data.world_id);
     if (!arc?.current_beat_id) {
       throw new Error('No current beat found – cannot record event');
@@ -412,10 +427,11 @@ export class WorldService {
     eventBus.emit<Events.WorldEventLogged>('world.event.logged', {
       v: 1,
       worldId: data.world_id,
+      userId: world.user_id,
       eventId: savedEvent.id,
       impact: data.impact_level as 'minor' | 'moderate' | 'major' | 'catastrophic',
       description: data.description
-    });
+    }, world.user_id);
 
     return savedEvent;
   }
@@ -470,7 +486,10 @@ export class WorldService {
 
     // Get the world to fetch the owner's user_id
     const world = await this.repo.getWorld(arc.world_id);
-    const userId = world?.user_id || 'anonymous';
+    if (!world || !world.user_id) {
+      throw new Error('World not found or missing user_id');
+    }
+    const userId = world.user_id;
 
     const summary = await this.ai.summarizeArc({
       arcName: arc.story_name,

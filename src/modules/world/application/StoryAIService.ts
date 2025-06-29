@@ -118,7 +118,7 @@ export class StoryAIService {
       currentLocations: locationsContext,
       currentFactions: factionsContext,
       currentCharacters: charactersContext,
-      userId: world.user_id || 'anonymous'
+      userId: world.user_id
     });
 
     const savedBeat = await this.repo.createBeat(

@@ -7,7 +7,7 @@ const logger = createLogger('eventBus');
 class TypedEventBus {
   private emitter = new EventEmitter();
   
-  emit<T = any>(topic: string, payload: T & { _hop?: number }): boolean {
+  emit<T = any>(topic: string, payload: T & { _hop?: number }, userId?: string): boolean {
     const hop = (payload._hop ?? 0) + 1;
     
     if (hop > 8) {
@@ -23,10 +23,11 @@ class TypedEventBus {
     const event: DomainEvent<T & { _hop: number }> = {
       topic,
       payload: enrichedPayload,
-      ts: new Date().toISOString()
+      ts: new Date().toISOString(),
+      user_id: userId
     };
     
-    logger.debug('[eventBus] emitted', { topic, hop });
+    logger.debug('[eventBus] emitted', { topic, hop, user_id: userId });
     
     return this.emitter.emit(topic, event);
   }
