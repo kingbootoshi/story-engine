@@ -161,9 +161,52 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// ---------------------------------------------------------------------------
+// Logger helpers
+// ---------------------------------------------------------------------------
+
+// Helper alias for the simple logging methods that share the same signature.
+type LoggerMethod = (message: string, meta?: Record<string, unknown>) => void;
+
+/**
+ * Public contract exposed by `createLogger()`.
+ *
+ * We intentionally list only the methods that callers should rely on – this
+ * prevents accidental dependence on internals and, critically, keeps the
+ * compiler from leaking private members in the exported function type (see
+ * TS4094 build error during production build).
+ */
+export interface PublicLogger {
+  error: LoggerMethod;
+  warn: LoggerMethod;
+  info: LoggerMethod;
+  debug: LoggerMethod;
+  http: LoggerMethod;
+  success: LoggerMethod;
+  logAPICall: (...args: any[]) => void;
+  logAICall: (...args: any[]) => void;
+  logDBOperation: (
+    operation: string,
+    table: string,
+    data?: unknown,
+    result?: unknown,
+    error?: unknown
+  ) => void;
+  logArcProgression: (
+    worldId: string,
+    arcId: string,
+    beatIndex: number,
+    action: string,
+    details?: Record<string, unknown>
+  ) => void;
+}
+
 /**
  * Create a logger with module context
  */
-export function createModuleLogger(moduleName: string) {
-  return createLogger(`ai.${moduleName}`);
+export function createModuleLogger(moduleName: string): PublicLogger {
+  // `as unknown as` is required because our helper returns the broader Logger
+  // class which contains additional private members. The assertion is safe –
+  // all listed methods exist and maintain the correct runtime behaviour.
+  return createLogger(`ai.${moduleName}`) as unknown as PublicLogger;
 }

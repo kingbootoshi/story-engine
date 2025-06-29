@@ -19,7 +19,7 @@
     "validate-schema": "ts-node scripts/validate-schema.ts",
     "lint-logs": "ts-node scripts/lint-logs.ts",
     "prod:build": "tsc -p tsconfig.build.json",
-    "start": "pm2 start dist/server.js --name story-engine-api",
+    "start": "pm2 start ecosystem.config.cjs",
     "stop": "pm2 stop story-engine-api",
     "restart": "pm2 restart story-engine-api",
     "logs": "pm2 logs story-engine-api"
