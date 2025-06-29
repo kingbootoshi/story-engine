@@ -1,5 +1,5 @@
 import { injectable, inject } from 'tsyringe';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
 import { createLogger } from '../../../core/infra/logger';
 import type { IApiKeyRepository, IApiKeyService } from '../domain/ports';

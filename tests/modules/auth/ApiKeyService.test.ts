@@ -2,9 +2,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ApiKeyService } from '../../../src/modules/auth/application/ApiKeyService';
 import type { IApiKeyRepository } from '../../../src/modules/auth/domain/ports';
 import type { ApiKey, CreateApiKeyInput } from '../../../src/modules/auth/domain/schema';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
-vi.mock('bcrypt');
+vi.mock('bcryptjs');
 
 describe('ApiKeyService', () => {
   let service: ApiKeyService;
