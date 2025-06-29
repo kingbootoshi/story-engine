@@ -171,7 +171,7 @@
 /* Auth section styles */
 .auth-section {
   width: 100%;
-  max-width: 400px;
+  max-width: 450px; /* Increased from 400px to ensure form fits */
   animation: slideInFromBottom 0.8s ease-out forwards;
 }
 
@@ -197,6 +197,7 @@
   }
   
   .auth-section {
-    max-width: 320px;
+    max-width: 350px; /* Adjusted for better mobile fit */
+    padding: 0 theme('spacing.4');
   }
 }

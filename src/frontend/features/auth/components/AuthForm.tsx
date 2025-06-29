@@ -132,104 +132,106 @@ export function AuthForm({ onBack }: AuthFormProps) {
       
       <div className="auth-forms-wrapper">
         {/* Login Form */}
-        <form 
-          onSubmit={handleSubmit} 
-          className={`auth-form__form auth-form__form--login ${loginSlideOut ? 'slide-out' : ''}`}
-          style={{ display: (!isLogin && signupSlideIn) ? 'none' : 'block' }}
-        >
-          <div className="auth-form__form-group">
-            <label htmlFor="login-email" className="auth-form__label">
-              Email
-            </label>
-            <input
-              id="login-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="auth-form__input"
-            />
-          </div>
-          
-          <div className="auth-form__form-group">
-            <label htmlFor="login-password" className="auth-form__label">
-              Password
-            </label>
-            <input
-              id="login-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="auth-form__input"
-            />
-          </div>
-          
-          <button 
-            type="submit" 
-            className={`auth-form__button ${isSubmitting ? 'auth-form__button--submitting' : ''}`}
-            disabled={isSubmitting}
+        {(isLogin || loginSlideOut) && (
+          <form 
+            onSubmit={handleSubmit} 
+            className={`auth-form__form auth-form__form--login ${loginSlideOut ? 'slide-out' : ''}`}
           >
-            {isSubmitting ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
+            <div className="auth-form__form-group">
+              <label htmlFor="login-email" className="auth-form__label">
+                Email
+              </label>
+              <input
+                id="login-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="auth-form__input"
+              />
+            </div>
+            
+            <div className="auth-form__form-group">
+              <label htmlFor="login-password" className="auth-form__label">
+                Password
+              </label>
+              <input
+                id="login-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="auth-form__input"
+              />
+            </div>
+            
+            <button 
+              type="submit" 
+              className={`auth-form__button ${isSubmitting ? 'auth-form__button--submitting' : ''}`}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Logging in...' : 'Login'}
+            </button>
+          </form>
+        )}
         
         {/* Signup Form */}
-        <form 
-          onSubmit={handleSubmit} 
-          className={`auth-form__form auth-form__form--signup ${signupSlideIn ? 'slide-in' : ''}`}
-          style={{ display: (isLogin && !loginSlideOut) ? 'none' : 'block' }}
-        >
-          <div className="auth-form__form-group">
-            <label htmlFor="signup-email" className="auth-form__label">
-              Email
-            </label>
-            <input
-              id="signup-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="auth-form__input"
-            />
-          </div>
-          
-          <div className="auth-form__form-group">
-            <label htmlFor="signup-password" className="auth-form__label">
-              Password
-            </label>
-            <input
-              id="signup-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="auth-form__input"
-            />
-          </div>
-          
-          <div className="auth-form__form-group">
-            <label htmlFor="signup-confirm-password" className="auth-form__label">
-              Confirm Password
-            </label>
-            <input
-              id="signup-confirm-password"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              className="auth-form__input"
-            />
-          </div>
-          
-          <button 
-            type="submit" 
-            className={`auth-form__button ${isSubmitting ? 'auth-form__button--submitting' : ''}`}
-            disabled={isSubmitting}
+        {(!isLogin || signupSlideIn) && (
+          <form 
+            onSubmit={handleSubmit} 
+            className={`auth-form__form auth-form__form--signup ${signupSlideIn ? 'slide-in' : ''}`}
           >
-            {isSubmitting ? 'Creating Account...' : 'Create Account'}
-          </button>
-        </form>
+            <div className="auth-form__form-group">
+              <label htmlFor="signup-email" className="auth-form__label">
+                Email
+              </label>
+              <input
+                id="signup-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="auth-form__input"
+              />
+            </div>
+            
+            <div className="auth-form__form-group">
+              <label htmlFor="signup-password" className="auth-form__label">
+                Password
+              </label>
+              <input
+                id="signup-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="auth-form__input"
+              />
+            </div>
+            
+            <div className="auth-form__form-group">
+              <label htmlFor="signup-confirm-password" className="auth-form__label">
+                Confirm Password
+              </label>
+              <input
+                id="signup-confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                className="auth-form__input"
+              />
+            </div>
+            
+            <button 
+              type="submit" 
+              className={`auth-form__button ${isSubmitting ? 'auth-form__button--submitting' : ''}`}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Creating Account...' : 'Create Account'}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );
