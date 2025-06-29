@@ -1,5 +1,5 @@
 /**
- * Immersive landing page styles with simultaneous zoom and fade transition
+ * Immersive landing page styles with dramatic zoom effect and transitions
  * Creates a cinematic experience with a full-screen video background
  */
 
@@ -39,7 +39,7 @@ body.fade-in-page {
   height: 100%;
   object-fit: cover;
   z-index: -1;
-  transition: transform 2.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+  transition: transform 1.5s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
 .content-overlay {
@@ -50,7 +50,7 @@ body.fade-in-page {
   flex-direction: column;
   /* Reduced opacity for clearer background visibility */
   background-color: rgba(0, 0, 0, 0.25);
-  transition: opacity 2.5s ease-in-out;
+  transition: opacity 1.5s ease-in-out;
 }
 
 .landing-main {
@@ -69,7 +69,7 @@ body.fade-in-page {
   text-align: center;
   max-width: 900px;
   margin: 0 auto;
-  transition: opacity 2.5s ease-in-out, transform 2.5s ease-in-out;
+  transition: opacity 1.5s ease-in-out, transform 1.5s ease-in-out;
 }
 
 .title {
@@ -124,18 +124,37 @@ body.fade-in-page {
   transform: translateY(-1px);
 }
 
-/* Combined zoom and fade transition */
-.transitioning .background-video {
+/* Fade overlay for transitions */
+.fade-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: black;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 100;
+  transition: opacity 1.5s ease-in-out;
+}
+
+/* Dramatic zoom effect when entering the world - tripled the zoom scale */
+.zooming .background-video {
   transform: scale(3);
 }
 
-.transitioning .content-overlay {
-  background-color: rgba(0, 0, 0, 0.95); /* Fade to black while zooming */
+.zooming .content-overlay {
+  opacity: 0;
 }
 
-.transitioning .hero-content {
+.zooming .hero-content {
   opacity: 0;
   transform: scale(0.8);
+}
+
+/* Fade to black transition */
+.fading-to-black .fade-overlay {
+  opacity: 1;
 }
 
 /* Animations */

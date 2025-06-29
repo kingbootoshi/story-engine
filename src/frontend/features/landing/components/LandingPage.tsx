@@ -3,19 +3,25 @@ import { useNavigate } from 'react-router-dom';
 import './LandingPage.styles.css';
 
 export function LandingPage() {
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isZooming, setIsZooming] = useState(false);
+  const [isFadingToBlack, setIsFadingToBlack] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const navigate = useNavigate();
 
   // Handle the zoom effect and navigation
   const handleEnterWorld = () => {
-    // Start simultaneous zoom and fade transition
-    setIsTransitioning(true);
+    // Start zoom animation
+    setIsZooming(true);
     
-    // Navigate to login page after animation completes
+    // After zoom completes, start fade to black
+    setTimeout(() => {
+      setIsFadingToBlack(true);
+    }, 1500);
+    
+    // Navigate to login page after both animations complete
     setTimeout(() => {
       navigate('/login');
-    }, 2500); // Slightly shorter transition for better UX
+    }, 3000); // 1.5s for zoom + 1.5s for fade to black
   };
 
   // Add fade-in effect when component mounts
@@ -28,7 +34,7 @@ export function LandingPage() {
   }, []);
 
   return (
-    <div className={`landing-container ${isTransitioning ? 'transitioning' : ''}`}>
+    <div className={`landing-container ${isZooming ? 'zooming' : ''} ${isFadingToBlack ? 'fading-to-black' : ''}`}>
       {/* Video Background */}
       <video 
         ref={videoRef}
@@ -61,6 +67,9 @@ export function LandingPage() {
           </div>
         </main>
       </div>
+      
+      {/* Fade to black overlay */}
+      <div className="fade-overlay"></div>
     </div>
   );
 }
