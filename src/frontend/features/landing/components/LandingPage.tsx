@@ -4,21 +4,37 @@ import './LandingPage.styles.css';
 
 export function LandingPage() {
   const [isZooming, setIsZooming] = useState(false);
+  const [isFadingToBlack, setIsFadingToBlack] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const navigate = useNavigate();
 
   // Handle the zoom effect and navigation
   const handleEnterWorld = () => {
+    // Start zoom animation
     setIsZooming(true);
     
-    // Navigate to login page after zoom animation completes
+    // After zoom completes, start fade to black
+    setTimeout(() => {
+      setIsFadingToBlack(true);
+    }, 1500);
+    
+    // Navigate to login page after both animations complete
     setTimeout(() => {
       navigate('/login');
-    }, 1500); // Match this with the CSS animation duration
+    }, 3000); // 1.5s for zoom + 1.5s for fade to black
   };
 
+  // Add fade-in effect when component mounts
+  useEffect(() => {
+    document.body.classList.add('fade-in-page');
+    
+    return () => {
+      document.body.classList.remove('fade-in-page');
+    };
+  }, []);
+
   return (
-    <div className={`landing-container ${isZooming ? 'zooming' : ''}`}>
+    <div className={`landing-container ${isZooming ? 'zooming' : ''} ${isFadingToBlack ? 'fading-to-black' : ''}`}>
       {/* Video Background */}
       <video 
         ref={videoRef}
@@ -51,6 +67,9 @@ export function LandingPage() {
           </div>
         </main>
       </div>
+      
+      {/* Fade to black overlay */}
+      <div className="fade-overlay"></div>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 /**
- * Immersive landing page styles with zoom effect
+ * Immersive landing page styles with dramatic zoom effect and transitions
  * Creates a cinematic experience with a full-screen video background
  */
 
@@ -9,6 +9,18 @@
     --color-blue-600: #4361ee;
     --color-blue-700: #3a56e4;
   }
+}
+
+/* Global transition styles */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: black;
+}
+
+/* Fade-in effect for page transitions */
+body.fade-in-page {
+  animation: fadeFromBlack 1.5s ease-out forwards;
 }
 
 .landing-container {
@@ -27,7 +39,7 @@
   height: 100%;
   object-fit: cover;
   z-index: -1;
-  transition: transform 1.5s ease-in-out;
+  transition: transform 1.5s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
 .content-overlay {
@@ -37,7 +49,7 @@
   display: flex;
   flex-direction: column;
   /* Reduced opacity for clearer background visibility */
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: rgba(0, 0, 0, 0.25);
   transition: opacity 1.5s ease-in-out;
 }
 
@@ -61,7 +73,7 @@
 }
 
 .title {
-  font-size: 5rem;
+  font-size: 5.5rem;
   font-weight: theme('fontWeight.bold');
   margin-bottom: theme('spacing.6');
   text-align: center;
@@ -112,9 +124,23 @@
   transform: translateY(-1px);
 }
 
-/* Zoom effect when entering the world */
+/* Fade overlay for transitions */
+.fade-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: black;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 100;
+  transition: opacity 1.5s ease-in-out;
+}
+
+/* Dramatic zoom effect when entering the world - tripled the zoom scale */
 .zooming .background-video {
-  transform: scale(1.5);
+  transform: scale(3);
 }
 
 .zooming .content-overlay {
@@ -126,16 +152,26 @@
   transform: scale(0.8);
 }
 
+/* Fade to black transition */
+.fading-to-black .fade-overlay {
+  opacity: 1;
+}
+
 /* Animations */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes fadeFromBlack {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 /* Responsive adjustments */
 @media (max-width: theme('screens.md')) {
   .title {
-    font-size: 3.5rem;
+    font-size: 4rem;
   }
   
   .tagline {
@@ -151,7 +187,7 @@
 
 @media (max-width: theme('screens.sm')) {
   .title {
-    font-size: 2.75rem;
+    font-size: 3rem;
   }
   
   .tagline {
