@@ -3,7 +3,7 @@ import './LandingPage.styles.css';
 
 /**
  * Landing page component with video background and hero section
- * Features responsive design and call-to-action elements
+ * Features responsive design, call-to-action elements, and fade-in animations
  */
 export function LandingPage() {
   return (
