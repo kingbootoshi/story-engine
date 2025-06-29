@@ -1,11 +1,30 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { AuthModal } from '@/features/auth/components/AuthModal';
 import './LandingPage.styles.css';
 
 /**
  * Landing page component with video background and hero section
  * Features responsive design, call-to-action elements, and fade-in animations
+ * Includes integrated authentication modal
  */
 export function LandingPage() {
+  // State to control the visibility of the auth modal
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  /**
+   * Opens the authentication modal
+   */
+  const openAuthModal = () => {
+    setIsAuthModalOpen(true);
+  };
+
+  /**
+   * Closes the authentication modal
+   */
+  const closeAuthModal = () => {
+    setIsAuthModalOpen(false);
+  };
+
   return (
     <div className="landing-container">
       {/* Video Background */}
@@ -32,11 +51,17 @@ export function LandingPage() {
               Create, design, and grow self-evolving AI universes that you and players can participate in.
             </p>
             <div className="cta-container">
-              <Link to="/login" className="cta-button">Begin Your Journey</Link>
+              <button onClick={openAuthModal} className="cta-button">Begin Your Journey</button>
             </div>
           </section>
         </main>
       </div>
+
+      {/* Authentication Modal */}
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={closeAuthModal} 
+      />
     </div>
   );
 }
