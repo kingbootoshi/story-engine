@@ -1,7 +1,5 @@
 # general to do b4 launch
 
-- add robust error handling for the server and modules to ensure the server
-NEVER crashes
 - add smart ai logic and small ai logic
 
 smart models
@@ -14,6 +12,9 @@ smart models
 small models
 - [character] handle all chosen characters reactions to beat (in parallel)
 - [location] handle all locations reactions to beat (in parallel)
+
+- CLEAN UP, ensure all modules/adapters have
+schemas, tool calls, and types defined and seperate properly
 
 # modules to do:
 

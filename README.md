@@ -137,6 +137,35 @@ The system uses a sparse generation strategy:
 - Dynamic beats are created as needed, incorporating real events
 - This allows maximum flexibility while maintaining narrative coherence
 
+## Production Deployment
+
+### Prerequisites
+
+Install PM2 globally for process management:
+```bash
+npm install pm2 -g
+```
+
+### Building for Production
+
+1. Build the TypeScript code:
+```bash
+npm run prod:build
+```
+
+2. Start the server with PM2:
+```bash
+npm start
+```
+
+### Production Management
+
+- View logs: `npm run logs`
+- Stop server: `npm run stop`
+- Restart server: `npm run restart`
+
+PM2 will automatically restart the server if it crashes, ensuring high availability.
+
 ## Contributing
 
 Feel free to submit issues and enhancement requests!

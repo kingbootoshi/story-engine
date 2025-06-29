@@ -1,7 +1,13 @@
 import { injectable } from 'tsyringe';
 import { z } from 'zod';
-import { chat } from '../../../../core/ai/client';
-import { buildMetadata } from '../../../../core/ai/metadata';
+import { 
+  chat, 
+  buildMetadata, 
+  safeParseJSON, 
+  extractToolCall, 
+  retryWithBackoff,
+  AIValidationError
+} from '../../../../core/ai';
 import { createLogger } from '../../../../core/infra/logger';
 import type { 
   LocationAI, 
@@ -72,23 +78,31 @@ export class LocationAIAdapter implements LocationAI {
     try {
       const messages = buildWorldMapPrompt(context);
       
-      const completion = await chat({
-        messages,
-        tools: [{ type: 'function', function: WORLD_MAP_GENERATION_SCHEMA }],
-        tool_choice: { type: 'function', function: { name: 'generate_world_map' } },
-        temperature: 0.8,
-        metadata: buildMetadata('location', 'generate_world_map@v1', context.userId || 'anonymous', {
-          world_name: context.worldName,
-          correlation: context.worldName
-        })
-      });
+      const completion = await retryWithBackoff(
+        () => chat({
+          messages,
+          tools: [{ type: 'function', function: WORLD_MAP_GENERATION_SCHEMA }],
+          tool_choice: { type: 'function', function: { name: 'generate_world_map' } },
+          temperature: 0.8,
+          metadata: buildMetadata('location', 'generate_world_map@v1', context.userId || 'anonymous', {
+            world_name: context.worldName,
+            correlation: context.worldName
+          })
+        }),
+        { maxAttempts: 3 },
+        { worldName: context.worldName }
+      );
 
-      const toolCall = completion.choices[0]?.message?.tool_calls?.[0];
-      if (!toolCall || !toolCall.function) {
-        throw new Error('No tool call in AI response');
-      }
+      const toolCall = extractToolCall(
+        completion,
+        'generate_world_map',
+        { worldName: context.worldName }
+      );
 
-      const result = JSON.parse(toolCall.function.arguments);
+      const result = safeParseJSON(
+        toolCall.function.arguments,
+        { worldName: context.worldName }
+      );
       
       const duration_ms = Date.now() - startTime;
       logger.info('AI world map generation complete', {
@@ -102,7 +116,8 @@ export class LocationAIAdapter implements LocationAI {
 
       const validationResult = validateMapGenerationResult(result);
       if (!validationResult.success) {
-        logger.error('Schema validation failed for world map', validationResult.error, {
+        logger.error('Schema validation failed for world map', {
+          error: validationResult.error,
           worldName: context.worldName
         });
         throw new Error('Invalid world map generation result');
@@ -111,11 +126,13 @@ export class LocationAIAdapter implements LocationAI {
       return result;
       
     } catch (error) {
-      logger.error('Failed to generate world map', error, {
+      logger.error('Failed to generate world map', {
+        error: error instanceof Error ? error.message : String(error),
+        rawResponse: (error as any).rawResponse,
         worldName: context.worldName,
         correlation: context.worldName
       });
-      throw error;
+      throw new Error('AI returned an invalid response');
     }
   }
 
@@ -135,51 +152,68 @@ export class LocationAIAdapter implements LocationAI {
     try {
       const messages = buildRegionGenerationPrompt(context);
       
-      const completion = await chat({
-        messages,
-        tools: [{ type: 'function', function: REGION_GENERATION_SCHEMA }],
-        tool_choice: { type: 'function', function: { name: 'generate_regions' } },
-        temperature: 0.8,
-        metadata: buildMetadata('location', 'generate_regions@v1', context.userId || 'anonymous', {
-          world_name: context.worldName,
-          correlation: context.worldName
-        })
-      });
+      const completion = await retryWithBackoff(
+        () => chat({
+          messages,
+          tools: [{ type: 'function', function: REGION_GENERATION_SCHEMA }],
+          tool_choice: { type: 'function', function: { name: 'generate_regions' } },
+          temperature: 0.8,
+          metadata: buildMetadata('location', 'generate_regions@v1', context.userId || 'anonymous', {
+            world_name: context.worldName,
+            correlation: context.worldName
+          })
+        }),
+        { maxAttempts: 3 },
+        { worldName: context.worldName }
+      );
 
-      const toolCall = completion.choices[0]?.message?.tool_calls?.[0];
-      if (!toolCall || !toolCall.function) {
-        throw new Error('No tool call in AI response');
-      }
+      const toolCall = extractToolCall(
+        completion,
+        'generate_regions',
+        { worldName: context.worldName }
+      );
 
-      const result = JSON.parse(toolCall.function.arguments);
+      const result = safeParseJSON(
+        toolCall.function.arguments,
+        { worldName: context.worldName }
+      );
       
       // Validate the result structure
-      if (!result || !Array.isArray(result.regions)) {
+      const validationResult = RegionGenerationResultSchema.safeParse(result);
+      if (!validationResult.success) {
         logger.error('Invalid region generation result structure', {
           worldName: context.worldName,
-          result,
+          errors: validationResult.error.errors,
           correlation: context.worldName
         });
-        throw new Error('Invalid region generation result: regions must be an array');
+        throw new AIValidationError(
+          validationResult.error,
+          result,
+          { worldName: context.worldName }
+        );
       }
       
       const duration_ms = Date.now() - startTime;
       logger.info('AI region generation complete', {
         worldName: context.worldName,
-        regionCount: result.regions.length,
+        regionCount: validationResult.data.regions.length,
         duration_ms,
         tokens: completion.usage,
         correlation: context.worldName
       });
 
-      return result;
+      return validationResult.data;
       
     } catch (error) {
-      logger.error('Failed to generate regions', error, {
+      logger.error('Failed to generate regions', {
+        error: error instanceof Error ? error.message : String(error),
+        rawResponse: (error as any).rawResponse,
+        ...{
         worldName: context.worldName,
         correlation: context.worldName
+      }
       });
-      throw error;
+      throw new Error('AI returned an invalid response');
     }
   }
 
@@ -200,55 +234,72 @@ export class LocationAIAdapter implements LocationAI {
     try {
       const messages = buildCityGenerationPrompt(context);
       
-      const completion = await chat({
-        messages,
-        tools: [{ type: 'function', function: CITY_GENERATION_SCHEMA }],
-        tool_choice: { type: 'function', function: { name: 'generate_cities' } },
-        temperature: 0.8,
-        metadata: buildMetadata('location', 'generate_cities@v1', context.userId || 'anonymous', {
-          world_name: context.worldName,
-          region_name: context.regionName,
-          correlation: context.worldName
-        })
-      });
+      const completion = await retryWithBackoff(
+        () => chat({
+          messages,
+          tools: [{ type: 'function', function: CITY_GENERATION_SCHEMA }],
+          tool_choice: { type: 'function', function: { name: 'generate_cities' } },
+          temperature: 0.8,
+          metadata: buildMetadata('location', 'generate_cities@v1', context.userId || 'anonymous', {
+            world_name: context.worldName,
+            region_name: context.regionName,
+            correlation: context.worldName
+          })
+        }),
+        { maxAttempts: 3 },
+        { worldName: context.worldName, regionName: context.regionName }
+      );
 
-      const toolCall = completion.choices[0]?.message?.tool_calls?.[0];
-      if (!toolCall || !toolCall.function) {
-        throw new Error('No tool call in AI response');
-      }
+      const toolCall = extractToolCall(
+        completion,
+        'generate_cities',
+        { worldName: context.worldName, regionName: context.regionName }
+      );
 
-      const result = JSON.parse(toolCall.function.arguments);
+      const result = safeParseJSON(
+        toolCall.function.arguments,
+        { worldName: context.worldName, regionName: context.regionName }
+      );
       
       // Validate the result structure
-      if (!result || !Array.isArray(result.cities)) {
+      const validationResult = CityGenerationResultSchema.safeParse(result);
+      if (!validationResult.success) {
         logger.error('Invalid city generation result structure', {
           worldName: context.worldName,
           regionName: context.regionName,
-          result,
+          errors: validationResult.error.errors,
           correlation: context.worldName
         });
-        throw new Error('Invalid city generation result: cities must be an array');
+        throw new AIValidationError(
+          validationResult.error,
+          result,
+          { worldName: context.worldName, regionName: context.regionName }
+        );
       }
       
       const duration_ms = Date.now() - startTime;
       logger.info('AI city generation complete', {
         worldName: context.worldName,
         regionName: context.regionName,
-        cityCount: result.cities.length,
+        cityCount: validationResult.data.cities.length,
         duration_ms,
         tokens: completion.usage,
         correlation: context.worldName
       });
 
-      return result;
+      return validationResult.data;
       
     } catch (error) {
-      logger.error('Failed to generate cities', error, {
+      logger.error('Failed to generate cities', {
+        error: error instanceof Error ? error.message : String(error),
+        rawResponse: (error as any).rawResponse,
+        ...{
         worldName: context.worldName,
         regionName: context.regionName,
         correlation: context.worldName
+      }
       });
-      throw error;
+      throw new Error('AI returned an invalid response');
     }
   }
 
@@ -269,55 +320,72 @@ export class LocationAIAdapter implements LocationAI {
     try {
       const messages = buildLandmarkGenerationPrompt(context);
       
-      const completion = await chat({
-        messages,
-        tools: [{ type: 'function', function: LANDMARK_GENERATION_SCHEMA }],
-        tool_choice: { type: 'function', function: { name: 'generate_landmarks' } },
-        temperature: 0.8,
-        metadata: buildMetadata('location', 'generate_landmarks@v1', context.userId || 'anonymous', {
-          world_name: context.worldName,
-          region_name: context.regionName,
-          correlation: context.worldName
-        })
-      });
+      const completion = await retryWithBackoff(
+        () => chat({
+          messages,
+          tools: [{ type: 'function', function: LANDMARK_GENERATION_SCHEMA }],
+          tool_choice: { type: 'function', function: { name: 'generate_landmarks' } },
+          temperature: 0.8,
+          metadata: buildMetadata('location', 'generate_landmarks@v1', context.userId || 'anonymous', {
+            world_name: context.worldName,
+            region_name: context.regionName,
+            correlation: context.worldName
+          })
+        }),
+        { maxAttempts: 3 },
+        { worldName: context.worldName, regionName: context.regionName }
+      );
 
-      const toolCall = completion.choices[0]?.message?.tool_calls?.[0];
-      if (!toolCall || !toolCall.function) {
-        throw new Error('No tool call in AI response');
-      }
+      const toolCall = extractToolCall(
+        completion,
+        'generate_landmarks',
+        { worldName: context.worldName, regionName: context.regionName }
+      );
 
-      const result = JSON.parse(toolCall.function.arguments);
+      const result = safeParseJSON(
+        toolCall.function.arguments,
+        { worldName: context.worldName, regionName: context.regionName }
+      );
       
       // Validate the result structure
-      if (!result || !Array.isArray(result.landmarks)) {
+      const validationResult = LandmarkGenerationResultSchema.safeParse(result);
+      if (!validationResult.success) {
         logger.error('Invalid landmark generation result structure', {
           worldName: context.worldName,
           regionName: context.regionName,
-          result,
+          errors: validationResult.error.errors,
           correlation: context.worldName
         });
-        throw new Error('Invalid landmark generation result: landmarks must be an array');
+        throw new AIValidationError(
+          validationResult.error,
+          result,
+          { worldName: context.worldName, regionName: context.regionName }
+        );
       }
       
       const duration_ms = Date.now() - startTime;
       logger.info('AI landmark generation complete', {
         worldName: context.worldName,
         regionName: context.regionName,
-        landmarkCount: result.landmarks.length,
+        landmarkCount: validationResult.data.landmarks.length,
         duration_ms,
         tokens: completion.usage,
         correlation: context.worldName
       });
 
-      return result;
+      return validationResult.data;
       
     } catch (error) {
-      logger.error('Failed to generate landmarks', error, {
+      logger.error('Failed to generate landmarks', {
+        error: error instanceof Error ? error.message : String(error),
+        rawResponse: (error as any).rawResponse,
+        ...{
         worldName: context.worldName,
         regionName: context.regionName,
         correlation: context.worldName
+      }
       });
-      throw error;
+      throw new Error('AI returned an invalid response');
     }
   }
 
@@ -338,55 +406,72 @@ export class LocationAIAdapter implements LocationAI {
     try {
       const messages = buildWildernessGenerationPrompt(context);
       
-      const completion = await chat({
-        messages,
-        tools: [{ type: 'function', function: WILDERNESS_GENERATION_SCHEMA }],
-        tool_choice: { type: 'function', function: { name: 'generate_wilderness' } },
-        temperature: 0.8,
-        metadata: buildMetadata('location', 'generate_wilderness@v1', context.userId || 'anonymous', {
-          world_name: context.worldName,
-          region_name: context.regionName,
-          correlation: context.worldName
-        })
-      });
+      const completion = await retryWithBackoff(
+        () => chat({
+          messages,
+          tools: [{ type: 'function', function: WILDERNESS_GENERATION_SCHEMA }],
+          tool_choice: { type: 'function', function: { name: 'generate_wilderness' } },
+          temperature: 0.8,
+          metadata: buildMetadata('location', 'generate_wilderness@v1', context.userId || 'anonymous', {
+            world_name: context.worldName,
+            region_name: context.regionName,
+            correlation: context.worldName
+          })
+        }),
+        { maxAttempts: 3 },
+        { worldName: context.worldName, regionName: context.regionName }
+      );
 
-      const toolCall = completion.choices[0]?.message?.tool_calls?.[0];
-      if (!toolCall || !toolCall.function) {
-        throw new Error('No tool call in AI response');
-      }
+      const toolCall = extractToolCall(
+        completion,
+        'generate_wilderness',
+        { worldName: context.worldName, regionName: context.regionName }
+      );
 
-      const result = JSON.parse(toolCall.function.arguments);
+      const result = safeParseJSON(
+        toolCall.function.arguments,
+        { worldName: context.worldName, regionName: context.regionName }
+      );
       
       // Validate the result structure
-      if (!result || !Array.isArray(result.wilderness)) {
+      const validationResult = WildernessGenerationResultSchema.safeParse(result);
+      if (!validationResult.success) {
         logger.error('Invalid wilderness generation result structure', {
           worldName: context.worldName,
           regionName: context.regionName,
-          result,
+          errors: validationResult.error.errors,
           correlation: context.worldName
         });
-        throw new Error('Invalid wilderness generation result: wilderness must be an array');
+        throw new AIValidationError(
+          validationResult.error,
+          result,
+          { worldName: context.worldName, regionName: context.regionName }
+        );
       }
       
       const duration_ms = Date.now() - startTime;
       logger.info('AI wilderness generation complete', {
         worldName: context.worldName,
         regionName: context.regionName,
-        wildernessCount: result.wilderness.length,
+        wildernessCount: validationResult.data.wilderness.length,
         duration_ms,
         tokens: completion.usage,
         correlation: context.worldName
       });
 
-      return result;
+      return validationResult.data;
       
     } catch (error) {
-      logger.error('Failed to generate wilderness', error, {
+      logger.error('Failed to generate wilderness', {
+        error: error instanceof Error ? error.message : String(error),
+        rawResponse: (error as any).rawResponse,
+        ...{
         worldName: context.worldName,
         regionName: context.regionName,
         correlation: context.worldName
+      }
       });
-      throw error;
+      throw new Error('AI returned an invalid response');
     }
   }
 
@@ -407,23 +492,31 @@ export class LocationAIAdapter implements LocationAI {
     try {
       const messages = buildLocationMutationPrompt(context);
       
-      const completion = await chat({
-        messages,
-        tools: [{ type: 'function', function: LOCATION_MUTATION_SCHEMA }],
-        tool_choice: { type: 'function', function: { name: 'mutate_locations' } },
-        temperature: 0.7,
-        metadata: buildMetadata('location', 'mutate_locations@v1', context.userId || 'anonymous', {
-          world_id: context.worldId,
-          correlation: context.worldId
-        })
-      });
+      const completion = await retryWithBackoff(
+        () => chat({
+          messages,
+          tools: [{ type: 'function', function: LOCATION_MUTATION_SCHEMA }],
+          tool_choice: { type: 'function', function: { name: 'mutate_locations' } },
+          temperature: 0.7,
+          metadata: buildMetadata('location', 'mutate_locations@v1', context.userId || 'anonymous', {
+            world_id: context.worldId,
+            correlation: context.worldId
+          })
+        }),
+        { maxAttempts: 3 },
+        { worldId: context.worldId }
+      );
 
-      const toolCall = completion.choices[0]?.message?.tool_calls?.[0];
-      if (!toolCall || !toolCall.function) {
-        throw new Error('No tool call in AI response');
-      }
+      const toolCall = extractToolCall(
+        completion,
+        'mutate_locations',
+        { worldId: context.worldId }
+      );
 
-      const result = JSON.parse(toolCall.function.arguments);
+      const result = safeParseJSON(
+        toolCall.function.arguments,
+        { worldId: context.worldId }
+      );
       
       const duration_ms = Date.now() - startTime;
       logger.info('AI location mutation analysis complete', {
@@ -436,7 +529,8 @@ export class LocationAIAdapter implements LocationAI {
 
       const validationResult = validateLocationMutations(result);
       if (!validationResult.success) {
-        logger.error('Schema validation failed for mutations', validationResult.error, {
+        logger.error('Schema validation failed for mutations', {
+          error: validationResult.error,
           worldId: context.worldId
         });
         throw new Error('Invalid location mutations result');
@@ -445,11 +539,15 @@ export class LocationAIAdapter implements LocationAI {
       return result;
       
     } catch (error) {
-      logger.error('Failed to analyze location mutations', error, {
+      logger.error('Failed to analyze location mutations', {
+        error: error instanceof Error ? error.message : String(error),
+        rawResponse: (error as any).rawResponse,
+        ...{
         worldId: context.worldId,
         correlation: context.worldId
+      }
       });
-      throw error;
+      throw new Error('AI returned an invalid response');
     }
   }
 
@@ -467,41 +565,68 @@ export class LocationAIAdapter implements LocationAI {
     try {
       const messages = buildMutationDecisionPrompt(context);
       
-      const completion = await chat({
-        messages,
-        tools: [{ type: 'function', function: MUTATION_DECISION_SCHEMA }],
-        tool_choice: { type: 'function', function: { name: 'decide_mutation' } },
-        temperature: 0.7,
-        metadata: buildMetadata('location', 'decide_mutation@v1', context.userId || 'anonymous', {
-          world_id: context.worldId,
-          correlation: context.worldId
-        })
-      });
+      const completion = await retryWithBackoff(
+        () => chat({
+          messages,
+          tools: [{ type: 'function', function: MUTATION_DECISION_SCHEMA }],
+          tool_choice: { type: 'function', function: { name: 'decide_mutation' } },
+          temperature: 0.7,
+          metadata: buildMetadata('location', 'decide_mutation@v1', context.userId || 'anonymous', {
+            world_id: context.worldId,
+            correlation: context.worldId
+          })
+        }),
+        { maxAttempts: 3 },
+        { worldId: context.worldId }
+      );
 
-      const toolCall = completion.choices[0]?.message?.tool_calls?.[0];
-      if (!toolCall || !toolCall.function) {
-        throw new Error('No tool call in AI response');
-      }
+      const toolCall = extractToolCall(
+        completion,
+        'decide_mutation',
+        { worldId: context.worldId }
+      );
 
-      const result = JSON.parse(toolCall.function.arguments);
+      const result = safeParseJSON(
+        toolCall.function.arguments,
+        { worldId: context.worldId }
+      );
       
       const duration_ms = Date.now() - startTime;
+      const decisionValidation = MutationDecisionResultSchema.safeParse(result);
+      if (!decisionValidation.success) {
+        logger.error('Invalid mutation decision result', {
+          worldId: context.worldId,
+          errors: decisionValidation.error.errors,
+          correlation: context.worldId
+        });
+        throw new AIValidationError(
+          decisionValidation.error,
+          result,
+          { worldId: context.worldId }
+        );
+      }
+      
       logger.info('AI mutation decision complete', {
         worldId: context.worldId,
-        shouldMutate: result.shouldMutate,
+        shouldMutate: decisionValidation.data.shouldMutate,
+        think: decisionValidation.data.think.substring(0, 100),
         duration_ms,
         tokens: completion.usage,
         correlation: context.worldId
       });
 
-      return result;
+      return decisionValidation.data;
       
     } catch (error) {
-      logger.error('Failed to decide mutation', error, {
+      logger.error('Failed to decide mutation', {
+        error: error instanceof Error ? error.message : String(error),
+        rawResponse: (error as any).rawResponse,
+        ...{
         worldId: context.worldId,
         correlation: context.worldId
+      }
       });
-      throw error;
+      throw new Error('AI returned an invalid response');
     }
   }
 
@@ -574,11 +699,15 @@ Provide an enriched description that:
       return enrichedDescription;
       
     } catch (error) {
-      logger.error('Failed to enrich description', error, {
+      logger.error('Failed to enrich description', {
+        error: error instanceof Error ? error.message : String(error),
+        rawResponse: (error as any).rawResponse,
+        ...{
         locationId: context.location.id,
         correlation: context.location.world_id
+      }
       });
-      throw error;
+      throw new Error('AI returned an invalid response');
     }
   }
 }
@@ -608,6 +737,59 @@ const LocationMutationsSchema = z.object({
     descriptionAppend: z.string().optional(),
     reason: z.string()
   }))
+});
+
+const RegionGenerationResultSchema = z.object({
+  regions: z.array(z.object({
+    name: z.string(),
+    description: z.string(),
+    tags: z.array(z.string()),
+    relative_position: z.object({
+      x: z.number(),
+      y: z.number()
+    })
+  }))
+});
+
+const CityGenerationResultSchema = z.object({
+  cities: z.array(z.object({
+    name: z.string(),
+    description: z.string(),
+    tags: z.array(z.string()),
+    relative_position: z.object({
+      x: z.number(),
+      y: z.number()
+    })
+  }))
+});
+
+const LandmarkGenerationResultSchema = z.object({
+  landmarks: z.array(z.object({
+    name: z.string(),
+    description: z.string(),
+    tags: z.array(z.string()),
+    relative_position: z.object({
+      x: z.number(),
+      y: z.number()
+    })
+  }))
+});
+
+const WildernessGenerationResultSchema = z.object({
+  wilderness: z.array(z.object({
+    name: z.string(),
+    description: z.string(),
+    tags: z.array(z.string()),
+    relative_position: z.object({
+      x: z.number(),
+      y: z.number()
+    })
+  }))
+});
+
+const MutationDecisionResultSchema = z.object({
+  think: z.string(),
+  shouldMutate: z.boolean()
 });
 
 function validateMapGenerationResult(result: any) {
