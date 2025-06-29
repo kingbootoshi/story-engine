@@ -1,34 +1,9 @@
-/**
- * Immersive landing page styles with dramatic zoom effect and transitions
- * Creates a cinematic experience with a full-screen video background
- */
-
-/* Define custom theme colors for Tailwind v4 compatibility */
-@layer theme {
-  :root {
-    --color-blue-600: #4361ee;
-    --color-blue-700: #3a56e4;
-  }
-}
-
-/* Global transition styles */
-body {
-  margin: 0;
-  padding: 0;
-  background-color: black;
-}
-
-/* Fade-in effect for page transitions */
-body.fade-in-page {
-  animation: fadeFromBlack 1.5s ease-out forwards;
-}
-
 .landing-container {
   position: relative;
   width: 100%;
   height: 100vh;
   overflow: hidden;
-  color: white;
+  color: theme('colors.white');
 }
 
 .background-video {
@@ -39,7 +14,6 @@ body.fade-in-page {
   height: 100%;
   object-fit: cover;
   z-index: -1;
-  transition: transform 3s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
 .content-overlay {
@@ -48,154 +22,117 @@ body.fade-in-page {
   height: 100%;
   display: flex;
   flex-direction: column;
-  /* Reduced opacity for clearer background visibility */
-  background-color: rgba(0, 0, 0, 0.25);
-  transition: opacity 3s ease-in-out;
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay */
+}
+
+.landing-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+}
+
+.logo a {
+  font-size: theme('fontSize.xl');
+  font-weight: theme('fontWeight.bold');
+  color: theme('colors.white');
+  text-decoration: none;
+}
+
+.nav-links {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.login-button {
+  padding: 0.5rem 1.5rem;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: theme('borderRadius.md');
+  color: theme('colors.white');
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+}
+
+.login-button:hover {
+  background-color: rgba(255, 255, 255, 0.3);
 }
 
 .landing-main {
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: theme('spacing.8');
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2rem;
 }
 
-.hero-content {
+.hero-section {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  max-width: 900px;
-  margin: 0 auto;
-  transition: opacity 3s ease-in-out, transform 3s ease-in-out;
+  margin-top: 10vh;
 }
 
 .title {
-  font-size: 5.5rem;
+  font-size: 4rem;
   font-weight: theme('fontWeight.bold');
-  margin-bottom: theme('spacing.6');
+  margin-bottom: 2rem;
   text-align: center;
   font-family: 'Cinzel', serif;
-  letter-spacing: 0.15em;
-  text-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
-  animation: fadeIn 1.5s ease-out;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.cta-button {
+  padding: 0.75rem 2rem;
+  background-color: theme('colors.blue.600');
+  color: theme('colors.white');
+  border-radius: theme('borderRadius.md');
+  font-weight: theme('fontWeight.medium');
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+}
+
+.cta-button:hover {
+  background-color: theme('colors.blue.700');
+}
+
+.tagline-section {
+  margin-top: auto;
+  margin-bottom: 5vh;
+  text-align: center;
 }
 
 .tagline {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   max-width: 800px;
   margin: 0 auto;
-  margin-bottom: theme('spacing.10');
   line-height: 1.5;
-  text-shadow: 0 0 15px rgba(0, 0, 0, 0.8);
-  letter-spacing: 0.03em;
-  animation: fadeIn 2s ease-out;
-}
-
-.cta-container {
-  margin-top: theme('spacing.6');
-  animation: fadeIn 2.5s ease-out;
-}
-
-.enter-button {
-  padding: theme('spacing.4') theme('spacing.10');
-  background-color: rgba(67, 97, 238, 0.8);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: theme('borderRadius.md');
-  font-weight: theme('fontWeight.medium');
-  font-size: 1.25rem;
-  letter-spacing: 0.1em;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(5px);
-}
-
-.enter-button:hover {
-  background-color: rgba(58, 86, 228, 0.9);
-  transform: translateY(-3px) scale(1.05);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-}
-
-.enter-button:active {
-  transform: translateY(-1px);
-}
-
-/* Fade overlay for transitions */
-.fade-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: black;
-  opacity: 0;
-  pointer-events: none;
-  z-index: 100;
-  transition: opacity 3s ease-in-out;
-}
-
-/* Combined zoom and fade effect - synchronized timing */
-.transitioning .background-video {
-  transform: scale(3);
-}
-
-.transitioning .content-overlay {
-  opacity: 0;
-}
-
-.transitioning .hero-content {
-  opacity: 0;
-  transform: scale(0.8);
-}
-
-.transitioning .fade-overlay {
-  opacity: 1;
-}
-
-/* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fadeFromBlack {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
 /* Responsive adjustments */
 @media (max-width: theme('screens.md')) {
-  .title {
-    font-size: 4rem;
-  }
-  
-  .tagline {
-    font-size: 1.5rem;
-    padding: 0 theme('spacing.4');
-  }
-  
-  .enter-button {
-    padding: theme('spacing.3') theme('spacing.8');
-    font-size: 1.1rem;
-  }
-}
-
-@media (max-width: theme('screens.sm')) {
   .title {
     font-size: 3rem;
   }
   
   .tagline {
     font-size: 1.25rem;
-    margin-bottom: theme('spacing.6');
+    padding: 0 1rem;
+  }
+}
+
+@media (max-width: theme('screens.sm')) {
+  .title {
+    font-size: 2.5rem;
   }
   
-  .enter-button {
-    padding: theme('spacing.2') theme('spacing.6');
+  .tagline {
     font-size: 1rem;
+  }
+  
+  .landing-header {
+    padding: 1rem;
   }
 }

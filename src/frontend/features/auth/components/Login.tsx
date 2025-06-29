@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import './Login.styles.css';
 
 export function Login() {
   const [email, setEmail] = useState('');
@@ -11,19 +10,6 @@ export function Login() {
   
   const { signIn } = useAuth();
   const navigate = useNavigate();
-
-  // Add fade-in effect when component mounts
-  useEffect(() => {
-    // Add a small delay to ensure the fade-from-black effect is visible
-    const timer = setTimeout(() => {
-      document.body.classList.add('fade-in-page');
-    }, 100);
-    
-    return () => {
-      clearTimeout(timer);
-      document.body.classList.remove('fade-in-page');
-    };
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,49 +28,47 @@ export function Login() {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        <h1 className="login-title">Welcome Back</h1>
-        <form onSubmit={handleSubmit} className="login-form">
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="form-input"
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="form-input"
-            />
-          </div>
+    <div style={{ padding: '2rem', maxWidth: '400px', margin: '0 auto' }}>
+      <h1>Login</h1>
+      <form onSubmit={handleSubmit}>
+        <div style={{ marginBottom: '1rem' }}>
+          <label htmlFor="email" style={{ display: 'block', marginBottom: '0.5rem' }}>
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            style={{ width: '100%', padding: '0.5rem' }}
+          />
+        </div>
+        
+        <div style={{ marginBottom: '1rem' }}>
+          <label htmlFor="password" style={{ display: 'block', marginBottom: '0.5rem' }}>
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            style={{ width: '100%', padding: '0.5rem' }}
+          />
+        </div>
 
-          {error && (
-            <div className="error-message">
-              {error}
-            </div>
-          )}
+        {error && (
+          <div style={{ color: 'red', marginBottom: '1rem' }}>
+            {error}
+          </div>
+        )}
 
-          <button 
-            type="submit" 
-            disabled={isLoading} 
-            className="login-button"
-          >
-            {isLoading ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
-      </div>
+        <button type="submit" disabled={isLoading} style={{ padding: '0.5rem 1rem' }}>
+          {isLoading ? 'Logging in...' : 'Login'}
+        </button>
+      </form>
     </div>
   );
 }
