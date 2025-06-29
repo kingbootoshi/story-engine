@@ -3,25 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import './LandingPage.styles.css';
 
 export function LandingPage() {
-  const [isZooming, setIsZooming] = useState(false);
-  const [isFadingToBlack, setIsFadingToBlack] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const navigate = useNavigate();
 
   // Handle the zoom effect and navigation
   const handleEnterWorld = () => {
-    // Start zoom animation
-    setIsZooming(true);
+    // Start zoom and fade animations simultaneously
+    setIsTransitioning(true);
     
-    // After zoom completes, start fade to black
-    setTimeout(() => {
-      setIsFadingToBlack(true);
-    }, 1500);
-    
-    // Navigate to login page after both animations complete
+    // Navigate to login page after animations complete
     setTimeout(() => {
       navigate('/login');
-    }, 3000); // 1.5s for zoom + 1.5s for fade to black
+    }, 3000); // 3s for combined zoom and fade
   };
 
   // Add fade-in effect when component mounts
@@ -34,7 +28,7 @@ export function LandingPage() {
   }, []);
 
   return (
-    <div className={`landing-container ${isZooming ? 'zooming' : ''} ${isFadingToBlack ? 'fading-to-black' : ''}`}>
+    <div className={`landing-container ${isTransitioning ? 'transitioning' : ''}`}>
       {/* Video Background */}
       <video 
         ref={videoRef}
