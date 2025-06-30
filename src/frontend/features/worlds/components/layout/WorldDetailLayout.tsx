@@ -177,7 +177,6 @@ export function WorldDetailLayout() {
           <>
             <ArcControlPanel
               currentArc={currentArc}
-              beats={beats}
               isProgressing={isProgressing}
               onProgressArc={handleProgressArc}
             />

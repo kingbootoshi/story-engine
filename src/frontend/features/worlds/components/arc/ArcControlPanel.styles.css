@@ -318,3 +318,57 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Arc Details Section */
+.world-detail__arc-details {
+  margin-top: theme('spacing.4');
+  padding-top: theme('spacing.4');
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.world-detail__arc-detail-section {
+  margin-bottom: theme('spacing.4');
+}
+
+.world-detail__arc-detail-section:last-child {
+  margin-bottom: 0;
+}
+
+.world-detail__arc-detail-title {
+  font-family: 'Cinzel', serif;
+  font-size: theme('fontSize.base');
+  font-weight: theme('fontWeight.semibold');
+  margin: 0 0 theme('spacing.2') 0;
+  color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  gap: theme('spacing.2');
+}
+
+.world-detail__arc-detail-title::before {
+  content: '';
+  width: 4px;
+  height: 16px;
+  background: linear-gradient(to bottom, #10b981, #3b82f6);
+  border-radius: 2px;
+}
+
+.world-detail__arc-detail-text {
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  margin: 0;
+  font-size: theme('fontSize.sm');
+  background: rgba(255, 255, 255, 0.05);
+  padding: theme('spacing.3');
+  border-radius: theme('borderRadius.md');
+  border-left: 3px solid rgba(59, 130, 246, 0.3);
+}
+
+.world-detail__arc-detail-placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+  text-align: center;
+  margin: 0;
+  padding: theme('spacing.4');
+  font-size: theme('fontSize.sm');
+}

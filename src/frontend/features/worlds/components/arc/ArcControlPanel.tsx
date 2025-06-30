@@ -1,13 +1,12 @@
-import type { Arc, Beat } from '../../types';
+import type { Arc } from '../../types';
 
 interface ArcControlPanelProps {
-  currentArc: Arc;
-  beats: Beat[];
+  currentArc: NonNullable<Arc>;
   isProgressing: boolean;
   onProgressArc: () => void;
 }
 
-export function ArcControlPanel({ currentArc, beats, isProgressing, onProgressArc }: ArcControlPanelProps) {
+export function ArcControlPanel({ currentArc, isProgressing, onProgressArc }: ArcControlPanelProps) {
   return (
     <div className="world-detail__arc-control-panel">
       <div className="world-detail__arc-header">
@@ -39,17 +38,41 @@ export function ArcControlPanel({ currentArc, beats, isProgressing, onProgressAr
           )}
         </button>
       </div>
-      
-      {/* Progress Bar with Beat Markers */}
-      <div className="world-detail__arc-progress">
-        <div className="world-detail__progress-bar-enhanced">
-          <div 
-            className="world-detail__progress-fill-enhanced"
-            style={{ width: `${(beats.length / 15) * 100}%` }}
-          >
-            <div className="world-detail__progress-glow"></div>
+
+      {/* Arc Details Section */}
+      <div className="world-detail__arc-details">
+        {/* Story Idea */}
+        {currentArc.story_idea && (
+          <div className="world-detail__arc-detail-section">
+            <h4 className="world-detail__arc-detail-title">Story Concept</h4>
+            <p className="world-detail__arc-detail-text">{currentArc.story_idea}</p>
           </div>
-        </div>
+        )}
+
+        {/* Detailed Description */}
+        {currentArc.detailed_description && (
+          <div className="world-detail__arc-detail-section">
+            <h4 className="world-detail__arc-detail-title">Narrative Description</h4>
+            <p className="world-detail__arc-detail-text">{currentArc.detailed_description}</p>
+          </div>
+        )}
+
+        {/* Summary */}
+        {currentArc.summary && (
+          <div className="world-detail__arc-detail-section">
+            <h4 className="world-detail__arc-detail-title">Arc Summary</h4>
+            <p className="world-detail__arc-detail-text">{currentArc.summary}</p>
+          </div>
+        )}
+
+        {/* If no detailed info is available, show a placeholder */}
+        {!currentArc.story_idea && !currentArc.detailed_description && !currentArc.summary && (
+          <div className="world-detail__arc-detail-section">
+            <p className="world-detail__arc-detail-placeholder">
+              Arc details will be generated as the story progresses...
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
