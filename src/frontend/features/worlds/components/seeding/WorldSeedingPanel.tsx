@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import './WorldSeedingPanel.styles.css';
 
 interface WorldSeedingPanelProps {
@@ -102,10 +103,7 @@ export function WorldSeedingPanel({
   return (
     <div className="world-seeding-panel">
       <div className="world-seeding-panel__header">
-        <h2 className="world-seeding-panel__title">Welcome to Your New World</h2>
-        <p className="world-seeding-panel__subtitle">
-          Your world is currently empty. Choose how you'd like to populate it:
-        </p>
+        <h2 className="world-seeding-panel__title">Populate Your World</h2>
       </div>
 
       <div className="world-seeding-panel__options">
@@ -140,38 +138,52 @@ export function WorldSeedingPanel({
         </div>
       </div>
 
-      {showConfirm && (
-        <div className="world-seeding-panel__confirm">
-          <div className="world-seeding-panel__confirm-content">
-            <h3 className="world-seeding-panel__confirm-title">Generate World with AI?</h3>
-            <p className="world-seeding-panel__confirm-text">
+      {showConfirm && createPortal(
+        <div className="world-seeding-modal">
+          <div className="world-seeding-modal__backdrop" onClick={handleCancel} />
+          <div className="world-seeding-modal__content">
+            <h3 className="world-seeding-modal__title">Generate World with AI?</h3>
+            <p className="world-seeding-modal__text">
               This will create approximately:
             </p>
-            <ul className="world-seeding-panel__confirm-list">
-              <li>3-5 major regions</li>
-              <li>25-40 unique locations</li>
-              <li>2-4 competing factions</li>
-              <li>15-30 diverse characters</li>
-            </ul>
-            <p className="world-seeding-panel__confirm-text">
+            <div className="world-seeding-modal__details">
+              <div className="world-seeding-modal__detail-item">
+                <span className="world-seeding-modal__icon">✦</span>
+                <span>3-5 major regions</span>
+              </div>
+              <div className="world-seeding-modal__detail-item">
+                <span className="world-seeding-modal__icon">✦</span>
+                <span>25-40 unique locations</span>
+              </div>
+              <div className="world-seeding-modal__detail-item">
+                <span className="world-seeding-modal__icon">✦</span>
+                <span>2-4 competing factions</span>
+              </div>
+              <div className="world-seeding-modal__detail-item">
+                <span className="world-seeding-modal__icon">✦</span>
+                <span>15-30 diverse characters</span>
+              </div>
+            </div>
+            <p className="world-seeding-modal__duration">
               This process typically takes 30-60 seconds.
             </p>
-            <div className="world-seeding-panel__confirm-actions">
+            <div className="world-seeding-modal__actions">
               <button 
-                className="world-seeding-panel__button world-seeding-panel__button--primary"
+                className="world-seeding-modal__button world-seeding-modal__button--primary"
                 onClick={handleConfirm}
               >
                 Start Generation
               </button>
               <button 
-                className="world-seeding-panel__button world-seeding-panel__button--secondary"
+                className="world-seeding-modal__button world-seeding-modal__button--secondary"
                 onClick={handleCancel}
               >
                 Cancel
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

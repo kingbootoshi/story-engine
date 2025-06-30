@@ -313,11 +313,13 @@ export function WorldDetailLayout() {
         {/* Desktop View - Unified Gamemaster Panel */}
         <div className={`world-detail__unified-panel world-detail__unified-panel--${viewDensity}`}>
           {/* Left Section - Locations */}
-          <LocationSection
-            groupedLocations={groupedLocations}
-            totalLocationCount={totalLocationCount}
-            onLocationClick={handleLocationClick}
-          />
+          <div className="world-detail__section">
+            <LocationSection
+              groupedLocations={groupedLocations}
+              totalLocationCount={totalLocationCount}
+              onLocationClick={handleLocationClick}
+            />
+          </div>
 
           {/* Center Section - World Info & Events */}
           <div className="world-detail__section world-detail__section--center">
