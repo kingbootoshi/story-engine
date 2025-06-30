@@ -25,28 +25,6 @@ export interface CharacterGenerationContext {
   availableLocations: Array<{ id: string; name: string }>;
 }
 
-export interface CharacterSelectionContext {
-  beat: {
-    description: string;
-    directives: string[];
-    emergent: string[];
-    beatIndex: number;
-    beatId: string;
-  };
-  worldTheme: string;
-  characters: Array<{
-    id: string;
-    name: string;
-    story_role: string;
-    location: string | null;
-    faction: string | null;
-    personality_traits: string[];
-    motivations: string[];
-  }>;
-  factions: Array<{ id: string; name: string }>;
-  locations: Array<{ id: string; name: string }>;
-}
-
 export interface CharacterReactionContext {
   beat: {
     description: string;
@@ -75,7 +53,6 @@ export interface CharacterReactionContext {
     available_locations: Array<{ id: string; name: string }>;
     available_factions: Array<{ id: string; name: string }>;
   };
-  selectionReason?: string;
 }
 
 export interface SpawnAnalysisContext {
@@ -95,11 +72,6 @@ export interface ICharacterAI {
     context: CharacterGenerationContext,
     trace: TrpcCtx
   ): Promise<CharacterBatch[]>;
-  
-  selectAffectedCharacters(
-    context: CharacterSelectionContext,
-    trace: TrpcCtx
-  ): Promise<Array<{ characterId: string; reason: string }>>;
   
   evaluateCharacterReaction(
     context: CharacterReactionContext,

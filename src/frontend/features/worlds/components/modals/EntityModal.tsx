@@ -57,29 +57,19 @@ export function EntityModal({ isOpen, onClose, title, children }: EntityModalPro
   );
 }
 
-// Location Modal - Updated to show all fields
+// Location Modal
 interface LocationModalProps {
   location: {
     id: string;
-    world_id: string;
-    parent_location_id: string | null;
     name: string;
     type: string;
     status: string;
-    description: string;
-    tags: string[];
-    relative_x: number | null;
-    relative_y: number | null;
-    controlling_faction_id: string | null;
-    historical_events: Array<{
-      timestamp: string;
-      event: string;
-      previous_status?: string;
-      beat_index?: number;
-    }>;
-    last_significant_change: string | null;
+    description?: string;
+    population?: number;
+    notable_features?: string[];
+    key_npcs?: string[];
+    political_influence?: string;
     created_at: string;
-    updated_at: string;
   } | null;
   isOpen: boolean;
   onClose: () => void;
@@ -103,10 +93,10 @@ export function LocationModal({ location, isOpen, onClose }: LocationModalProps)
               {location.status}
             </span>
           </div>
-          {location.relative_x !== null && location.relative_y !== null && (
+          {location.population && (
             <div className="entity-modal__info-item">
-              <span className="entity-modal__info-label">Coordinates:</span>
-              <span className="entity-modal__info-value">({location.relative_x}, {location.relative_y})</span>
+              <span className="entity-modal__info-label">Population:</span>
+              <span className="entity-modal__info-value">{location.population.toLocaleString()}</span>
             </div>
           )}
         </div>
@@ -119,27 +109,23 @@ export function LocationModal({ location, isOpen, onClose }: LocationModalProps)
         </div>
       )}
 
-      {location.tags && location.tags.length > 0 && (
+      {location.notable_features && location.notable_features.length > 0 && (
         <div className="entity-modal__section">
-          <h3 className="entity-modal__section-title">Tags</h3>
+          <h3 className="entity-modal__section-title">Notable Features</h3>
           <ul className="entity-modal__list">
-            {location.tags.map((tag, index) => (
-              <li key={index} className="entity-modal__list-item">{tag}</li>
+            {location.notable_features.map((feature, index) => (
+              <li key={index} className="entity-modal__list-item">{feature}</li>
             ))}
           </ul>
         </div>
       )}
 
-      {location.historical_events && location.historical_events.length > 0 && (
+      {location.key_npcs && location.key_npcs.length > 0 && (
         <div className="entity-modal__section">
-          <h3 className="entity-modal__section-title">Historical Events</h3>
+          <h3 className="entity-modal__section-title">Key NPCs</h3>
           <ul className="entity-modal__list">
-            {location.historical_events.map((event, index) => (
-              <li key={index} className="entity-modal__list-item">
-                <strong>{new Date(event.timestamp).toLocaleDateString()}</strong>: {event.event}
-                {event.previous_status && ` (Previously: ${event.previous_status})`}
-                {event.beat_index !== undefined && ` [Beat ${event.beat_index}]`}
-              </li>
+            {location.key_npcs.map((npc, index) => (
+              <li key={index} className="entity-modal__list-item">{npc}</li>
             ))}
           </ul>
         </div>
@@ -148,38 +134,25 @@ export function LocationModal({ location, isOpen, onClose }: LocationModalProps)
       <div className="entity-modal__meta">
         <span className="entity-modal__meta-text">
           Created {new Date(location.created_at).toLocaleDateString()}
-          {location.last_significant_change && ` • Last change: ${new Date(location.last_significant_change).toLocaleDateString()}`}
         </span>
       </div>
     </EntityModal>
   );
 }
 
-// Character Modal - Updated to show all fields
+// Character Modal
 interface CharacterModalProps {
   character: {
     id: string;
-    world_id: string;
     name: string;
-    type: 'player' | 'npc';
-    status: 'alive' | 'deceased';
     story_role: string;
-    description: string;
-    background: string;
-    personality_traits: string[];
-    motivations: string[];
-    location_id: string | null;
-    faction_id: string | null;
-    memories: Array<{
-      event_description: string;
-      timestamp: string;
-      emotional_impact: 'positive' | 'negative' | 'neutral';
-      importance: number;
-      beat_index?: number;
-    }>;
-    story_beats_witnessed: number[];
+    status: string;
+    description?: string;
+    background?: string;
+    motivations?: string[];
+    relationships?: string[];
+    current_location?: string;
     created_at: string;
-    updated_at: string;
   } | null;
   isOpen: boolean;
   onClose: () => void;
@@ -194,10 +167,6 @@ export function CharacterModal({ character, isOpen, onClose }: CharacterModalPro
         <h3 className="entity-modal__section-title">Basic Information</h3>
         <div className="entity-modal__info-grid">
           <div className="entity-modal__info-item">
-            <span className="entity-modal__info-label">Type:</span>
-            <span className="entity-modal__info-value">{character.type.toUpperCase()}</span>
-          </div>
-          <div className="entity-modal__info-item">
             <span className="entity-modal__info-label">Role:</span>
             <span className="entity-modal__info-value">{character.story_role}</span>
           </div>
@@ -207,10 +176,10 @@ export function CharacterModal({ character, isOpen, onClose }: CharacterModalPro
               {character.status}
             </span>
           </div>
-          {character.story_beats_witnessed && character.story_beats_witnessed.length > 0 && (
+          {character.current_location && (
             <div className="entity-modal__info-item">
-              <span className="entity-modal__info-label">Story Progress:</span>
-              <span className="entity-modal__info-value">Witnessed {character.story_beats_witnessed.length} beats</span>
+              <span className="entity-modal__info-label">Location:</span>
+              <span className="entity-modal__info-value">{character.current_location}</span>
             </div>
           )}
         </div>
@@ -230,17 +199,6 @@ export function CharacterModal({ character, isOpen, onClose }: CharacterModalPro
         </div>
       )}
 
-      {character.personality_traits && character.personality_traits.length > 0 && (
-        <div className="entity-modal__section">
-          <h3 className="entity-modal__section-title">Personality Traits</h3>
-          <ul className="entity-modal__list">
-            {character.personality_traits.map((trait, index) => (
-              <li key={index} className="entity-modal__list-item">{trait}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
       {character.motivations && character.motivations.length > 0 && (
         <div className="entity-modal__section">
           <h3 className="entity-modal__section-title">Motivations</h3>
@@ -252,16 +210,12 @@ export function CharacterModal({ character, isOpen, onClose }: CharacterModalPro
         </div>
       )}
 
-      {character.memories && character.memories.length > 0 && (
+      {character.relationships && character.relationships.length > 0 && (
         <div className="entity-modal__section">
-          <h3 className="entity-modal__section-title">Memories</h3>
+          <h3 className="entity-modal__section-title">Relationships</h3>
           <ul className="entity-modal__list">
-            {character.memories.map((memory, index) => (
-              <li key={index} className="entity-modal__list-item">
-                <strong>{new Date(memory.timestamp).toLocaleDateString()}</strong>: {memory.event_description}
-                <br />
-                <small>Impact: {memory.emotional_impact} • Importance: {(memory.importance * 100).toFixed(0)}%</small>
-              </li>
+            {character.relationships.map((relationship, index) => (
+              <li key={index} className="entity-modal__list-item">{relationship}</li>
             ))}
           </ul>
         </div>
@@ -276,26 +230,19 @@ export function CharacterModal({ character, isOpen, onClose }: CharacterModalPro
   );
 }
 
-// Faction Modal - Updated to show all fields
+// Faction Modal
 interface FactionModalProps {
   faction: {
     id: string;
-    world_id: string;
     name: string;
-    banner_color: string | null;
-    emblem_svg: string | null;
-    ideology: string;
-    status: 'rising' | 'stable' | 'declining' | 'collapsed';
-    members_estimate: number;
-    home_location_id: string | null;
-    controlled_locations: string[];
-    tags: string[];
-    historical_events: Array<{
-      timestamp: string;
-      event: string;
-    }>;
+    type?: string;
+    status: string;
+    description?: string;
+    goals?: string[];
+    resources?: string[];
+    key_members?: string[];
+    territory?: string;
     created_at: string;
-    updated_at: string;
   } | null;
   isOpen: boolean;
   onClose: () => void;
@@ -309,71 +256,62 @@ export function FactionModal({ faction, isOpen, onClose }: FactionModalProps) {
       <div className="entity-modal__section">
         <h3 className="entity-modal__section-title">Basic Information</h3>
         <div className="entity-modal__info-grid">
+          {faction.type && (
+            <div className="entity-modal__info-item">
+              <span className="entity-modal__info-label">Type:</span>
+              <span className="entity-modal__info-value">{faction.type}</span>
+            </div>
+          )}
           <div className="entity-modal__info-item">
             <span className="entity-modal__info-label">Status:</span>
             <span className={`entity-modal__status entity-modal__status--${faction.status}`}>
               {faction.status}
             </span>
           </div>
-          <div className="entity-modal__info-item">
-            <span className="entity-modal__info-label">Members:</span>
-            <span className="entity-modal__info-value">{faction.members_estimate.toLocaleString()}</span>
-          </div>
-          {faction.controlled_locations && faction.controlled_locations.length > 0 && (
+          {faction.territory && (
             <div className="entity-modal__info-item">
-              <span className="entity-modal__info-label">Controlled Locations:</span>
-              <span className="entity-modal__info-value">{faction.controlled_locations.length}</span>
-            </div>
-          )}
-          {faction.banner_color && (
-            <div className="entity-modal__info-item">
-              <span className="entity-modal__info-label">Banner Color:</span>
-              <span className="entity-modal__info-value">
-                <span 
-                  style={{ 
-                    display: 'inline-block', 
-                    width: '16px', 
-                    height: '16px', 
-                    backgroundColor: faction.banner_color,
-                    border: '1px solid rgba(255,255,255,0.3)',
-                    borderRadius: '2px',
-                    verticalAlign: 'middle',
-                    marginRight: '8px'
-                  }}
-                ></span>
-                {faction.banner_color}
-              </span>
+              <span className="entity-modal__info-label">Territory:</span>
+              <span className="entity-modal__info-value">{faction.territory}</span>
             </div>
           )}
         </div>
       </div>
 
-      {faction.ideology && (
+      {faction.description && (
         <div className="entity-modal__section">
-          <h3 className="entity-modal__section-title">Ideology</h3>
-          <p className="entity-modal__text">{faction.ideology}</p>
+          <h3 className="entity-modal__section-title">Description</h3>
+          <p className="entity-modal__text">{faction.description}</p>
         </div>
       )}
 
-      {faction.tags && faction.tags.length > 0 && (
+      {faction.goals && faction.goals.length > 0 && (
         <div className="entity-modal__section">
-          <h3 className="entity-modal__section-title">Tags</h3>
+          <h3 className="entity-modal__section-title">Goals</h3>
           <ul className="entity-modal__list">
-            {faction.tags.map((tag, index) => (
-              <li key={index} className="entity-modal__list-item">{tag}</li>
+            {faction.goals.map((goal, index) => (
+              <li key={index} className="entity-modal__list-item">{goal}</li>
             ))}
           </ul>
         </div>
       )}
 
-      {faction.historical_events && faction.historical_events.length > 0 && (
+      {faction.resources && faction.resources.length > 0 && (
         <div className="entity-modal__section">
-          <h3 className="entity-modal__section-title">Historical Events</h3>
+          <h3 className="entity-modal__section-title">Resources</h3>
           <ul className="entity-modal__list">
-            {faction.historical_events.map((event, index) => (
-              <li key={index} className="entity-modal__list-item">
-                <strong>{new Date(event.timestamp).toLocaleDateString()}</strong>: {event.event}
-              </li>
+            {faction.resources.map((resource, index) => (
+              <li key={index} className="entity-modal__list-item">{resource}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {faction.key_members && faction.key_members.length > 0 && (
+        <div className="entity-modal__section">
+          <h3 className="entity-modal__section-title">Key Members</h3>
+          <ul className="entity-modal__list">
+            {faction.key_members.map((member, index) => (
+              <li key={index} className="entity-modal__list-item">{member}</li>
             ))}
           </ul>
         </div>

@@ -219,60 +219,21 @@ export interface WildernessGenerationResult {
 }
 
 /**
- * Context for selecting which locations react to a beat
+ * Context for mutation decision
  */
-export interface LocationSelectionContext {
+export interface MutationDecisionContext {
   worldId: string;
   beatDirectives: string;
   emergentStorylines: string[];
-  currentLocations: Array<{
-    id: string;
-    name: string;
-    type: string;
-    status: LocationStatus;
-    description: string;
-  }>;
   userId?: string;
 }
 
 /**
- * Result of location selection
+ * Result of mutation decision
  */
-export interface LocationSelectionResult {
-  reactions: Array<{
-    locationId: string;
-    locationName: string;
-    reason: string;
-  }>;
-}
-
-/**
- * Context for mutating an individual location
- */
-export interface IndividualLocationMutationContext {
-  worldId: string;
-  location: {
-    id: string;
-    name: string;
-    type: string;
-    status: LocationStatus;
-    description: string;
-    tags: string[];
-    historical_events: HistoricalEvent[];
-  };
-  beatDirectives: string;
-  emergentStorylines: string[];
-  reactionReason: string;
-  userId?: string;
-}
-
-/**
- * Result of individual location mutation
- */
-export interface IndividualLocationMutationResult {
-  newStatus?: LocationStatus;
-  descriptionAppend?: string;
-  historicalEvent?: string;
+export interface MutationDecisionResult {
+  think: string;
+  shouldMutate: boolean;
 }
 
 
@@ -306,14 +267,14 @@ export interface LocationAI {
   generateWilderness(context: LocationGenerationContext): Promise<WildernessGenerationResult>;
   
   /**
-   * Select which locations should react to a story beat
+   * Decide if locations should be mutated based on story beat
    */
-  selectReactingLocations(context: LocationSelectionContext): Promise<LocationSelectionResult>;
+  decideMutation(context: MutationDecisionContext): Promise<MutationDecisionResult>;
   
   /**
-   * Mutate an individual location based on story beat
+   * Analyze beat and determine location mutations
    */
-  mutateIndividualLocation(context: IndividualLocationMutationContext): Promise<IndividualLocationMutationResult>;
+  mutateLocations(context: LocationMutationContext): Promise<LocationMutations>;
   
   /**
    * Enrich a location's description with more detail

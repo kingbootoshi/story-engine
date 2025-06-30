@@ -1,6 +1,7 @@
 import { injectable, inject } from 'tsyringe';
 import { eventBus } from '../../../core/infra/eventBus';
 import { createLogger } from '../../../core/infra/logger';
+import { resolveLocationIdentifier } from '../../../shared/utils/resolveLocationIdentifier';
 import type { DomainEvent } from '../../../core/types';
 import type { LocationRepository, LocationAI } from '../domain/ports';
 import type { 
@@ -389,50 +390,40 @@ export class LocationService {
         throw new Error('Event missing user_id for world creation');
       }
       
-      // Step 1: Get all locations for context
-      const locations = await this.repo.findByWorldId(event.payload.worldId);
-      
-      // Step 2: Select which locations should react
-      const selectionContext = {
+      // Step 1: Create decision context
+      const decisionContext = {
         worldId: event.payload.worldId,
         beatDirectives: event.payload.directives.join('\n'),
         emergentStorylines: event.payload.emergent,
-        currentLocations: locations.map(loc => ({
-          id: loc.id,
-          name: loc.name,
-          type: loc.type,
-          status: loc.status,
-          description: loc.description.substring(0, 200)
-        })),
         userId
       };
 
-      logger.info('Selecting locations that should react', {
+      // Step 2: Check if we should mutate locations
+      logger.info('Running location mutation decision', {
         worldId: event.payload.worldId,
         beatId: event.payload.beatId,
-        locationCount: locations.length,
         correlation: event.payload.worldId
       });
 
-      const selectionResult = await this.ai.selectReactingLocations(selectionContext);
+      const mutationDecision = await this.ai.decideMutation(decisionContext);
 
-      logger.info('Location selection complete', {
+      logger.info('Location decision made', {
         worldId: event.payload.worldId,
         beatId: event.payload.beatId,
-        reactingLocationCount: selectionResult.reactions.length,
-        reactingLocationIds: selectionResult.reactions.map(r => r.locationId),
+        shouldMutate: mutationDecision.shouldMutate,
+        mutationReason: mutationDecision.think,
         correlation: event.payload.worldId
       });
 
-      // Step 3: Process each reacting location individually
-      if (selectionResult.reactions.length > 0) {
-        await this.processIndividualMutations(event, selectionResult.reactions, locations, userId);
+      // Step 3: Execute mutations if decided
+      if (mutationDecision.shouldMutate) {
+        await this.executeMutations(event, userId);
       }
 
       logger.info('Completed beat reaction for locations', {
         worldId: event.payload.worldId,
         beatId: event.payload.beatId,
-        reactingLocationCount: selectionResult.reactions.length,
+        mutationsExecuted: mutationDecision.shouldMutate,
         duration_ms: Date.now() - startTime,
         correlation: event.payload.worldId
       });
@@ -447,140 +438,94 @@ export class LocationService {
   }
 
   /**
-   * Process individual location mutations in parallel
+   * Execute location mutations based on story beat
    */
-  private async processIndividualMutations(
-    event: DomainEvent<StoryBeatCreated>, 
-    reactions: Array<{ locationId: string; locationName: string; reason: string }>,
-    locations: Location[],
-    userId: string
-  ): Promise<void> {
+  private async executeMutations(event: DomainEvent<StoryBeatCreated>, userId: string): Promise<void> {
     const startTime = Date.now();
-    logger.info('Processing individual location mutations', {
+    logger.info('Executing location mutations', {
       worldId: event.payload.worldId,
       beatId: event.payload.beatId,
-      reactionCount: reactions.length,
       correlation: event.payload.worldId
     });
 
-    // Process each location mutation in parallel
-    const mutationTasks = reactions.map(async (reaction) => {
-      try {
-        // Find the full location data
-        const location = locations.find(loc => loc.id === reaction.locationId);
-        if (!location) {
-          logger.warn('Location not found for reaction', {
-            locationId: reaction.locationId,
-            locationName: reaction.locationName,
-            worldId: event.payload.worldId,
-            correlation: event.payload.worldId
-          });
-          return;
-        }
+    const locations = await this.repo.findByWorldId(event.payload.worldId);
+    
+    const context = {
+      worldId: event.payload.worldId,
+      beatDirectives: event.payload.directives.join('\n'),
+      emergentStorylines: event.payload.emergent,
+      currentLocations: locations.map(loc => ({
+        id: loc.id,
+        name: loc.name,
+        status: loc.status,
+        description: loc.description.substring(0, 200)
+      })),
+      userId
+    };
 
-        // Create context for individual mutation
-        const mutationContext = {
-          worldId: event.payload.worldId,
-          location: {
-            id: location.id,
-            name: location.name,
-            type: location.type,
-            status: location.status,
-            description: location.description,
-            tags: location.tags,
-            historical_events: location.historical_events
-          },
-          beatDirectives: event.payload.directives.join('\n'),
-          emergentStorylines: event.payload.emergent,
-          reactionReason: reaction.reason,
-          userId
-        };
+    const mutations = await this.ai.mutateLocations(context);
 
-        logger.info('Mutating individual location', {
-          worldId: event.payload.worldId,
-          locationId: location.id,
-          locationName: location.name,
-          reactionReason: reaction.reason,
-          correlation: event.payload.worldId
-        });
+    logger.info('AI suggested location mutations', {
+      worldId: event.payload.worldId,
+      beatId: event.payload.beatId,
+      updateCount: mutations.updates.length,
+      correlation: event.payload.worldId
+    });
 
-        const mutationResult = await this.ai.mutateIndividualLocation(mutationContext);
-
-        // Apply the mutations
-        let hasChanges = false;
-
-        if (mutationResult.newStatus && mutationResult.newStatus !== location.status) {
-          const historicalEvent: HistoricalEvent = {
-            timestamp: new Date().toISOString(),
-            event: mutationResult.historicalEvent || reaction.reason,
-            previous_status: location.status,
-            beat_index: event.payload.beatIndex
-          };
-
-          await this.repo.updateStatus(location.id, mutationResult.newStatus, historicalEvent);
-          hasChanges = true;
-
-          const statusEvent: LocationStatusChangedEvent = {
-            v: 1,
-            worldId: event.payload.worldId,
-            locationId: location.id,
-            locationName: location.name,
-            oldStatus: location.status,
-            newStatus: mutationResult.newStatus,
-            reason: mutationResult.historicalEvent || reaction.reason,
-            beatId: event.payload.beatId,
-            beatIndex: event.payload.beatIndex
-          };
-          eventBus.emit('location.status_changed', statusEvent, userId);
-        }
-
-        if (mutationResult.descriptionAppend) {
-          const newDescription = location.description + '\n\n' + mutationResult.descriptionAppend;
-          await this.repo.updateDescription(location.id, newDescription);
-          hasChanges = true;
-        }
-
-        if (mutationResult.historicalEvent && !mutationResult.newStatus) {
-          // Add historical event without status change
-          const historicalEvent: HistoricalEvent = {
-            timestamp: new Date().toISOString(),
-            event: mutationResult.historicalEvent,
-            previous_status: location.status,
-            beat_index: event.payload.beatIndex
-          };
-          await this.repo.addHistoricalEvent(location.id, historicalEvent);
-          hasChanges = true;
-        }
-
-        logger.info('Completed individual location mutation', {
-          worldId: event.payload.worldId,
-          locationId: location.id,
-          locationName: location.name,
-          hasChanges,
-          hasStatusChange: !!mutationResult.newStatus,
-          hasDescriptionAppend: !!mutationResult.descriptionAppend,
-          hasHistoricalEvent: !!mutationResult.historicalEvent,
-          correlation: event.payload.worldId
-        });
-
-      } catch (error) {
-        logger.error('Failed to mutate individual location', error, {
-          locationId: reaction.locationId,
-          locationName: reaction.locationName,
+    for (const update of mutations.updates) {
+      // Resolve location identifier (could be name or UUID)
+      const resolvedLocationId = resolveLocationIdentifier(update.locationId, locations);
+      
+      if (!resolvedLocationId) {
+        logger.warn('Could not resolve location identifier', {
+          identifier: update.locationId,
           worldId: event.payload.worldId,
           beatId: event.payload.beatId,
           correlation: event.payload.worldId
         });
+        continue;
       }
-    });
 
-    // Wait for all mutations to complete
-    await Promise.all(mutationTasks);
+      if (update.newStatus) {
+        const historicalEvent: HistoricalEvent = {
+          timestamp: new Date().toISOString(),
+          event: update.reason,
+          previous_status: locations.find(l => l.id === resolvedLocationId)?.status,
+          beat_index: event.payload.beatIndex
+        };
 
-    logger.info('Completed all location mutations', {
+        await this.repo.updateStatus(resolvedLocationId, update.newStatus, historicalEvent);
+
+        const location = locations.find(l => l.id === resolvedLocationId);
+        if (location) {
+          const statusEvent: LocationStatusChangedEvent = {
+            v: 1,
+            worldId: event.payload.worldId,
+            locationId: resolvedLocationId,
+            locationName: location.name,
+            oldStatus: location.status,
+            newStatus: update.newStatus,
+            reason: update.reason,
+            beatId: event.payload.beatId,
+            beatIndex: event.payload.beatIndex
+          };
+          eventBus.emit('location.status_changed', statusEvent);
+        }
+      }
+
+      if (update.descriptionAppend) {
+        const location = await this.repo.findById(resolvedLocationId);
+        if (location) {
+          const newDescription = location.description + '\n\n' + update.descriptionAppend;
+          await this.repo.updateDescription(resolvedLocationId, newDescription);
+        }
+      }
+    }
+
+    logger.info('Completed location mutations', {
       worldId: event.payload.worldId,
       beatId: event.payload.beatId,
-      reactionCount: reactions.length,
+      updatesApplied: mutations.updates.length,
       duration_ms: Date.now() - startTime,
       correlation: event.payload.worldId
     });
