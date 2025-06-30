@@ -3,6 +3,23 @@
  * Uses Tailwind's theme function for consistent design language
  */
 
+/* Ensure Material Icons display properly */
+.material-icons {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
 .world-detail {
   min-height: 100vh;
   color: white;
@@ -36,12 +53,12 @@
 }
 
 .world-detail__header {
-  padding: theme('spacing.8');
+  padding: theme('spacing.4') theme('spacing.8');
   position: relative;
 }
 
 .world-detail__header-content {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
@@ -105,11 +122,30 @@
   position: relative;
 }
 
+/* Center column specific styles */
+.world-detail__section--center {
+  display: flex;
+  flex-direction: column;
+}
+
+.world-detail__world-info {
+  text-align: center;
+  margin-bottom: theme('spacing.6');
+  padding-bottom: theme('spacing.6');
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.world-detail__events-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 .world-detail__sphere-container {
   display: flex;
   justify-content: center;
   position: relative;
-  margin-bottom: theme('spacing.8');
+  margin: theme('spacing.4') 0;
 }
 
 .world-detail__sphere {
@@ -139,14 +175,28 @@
   background: linear-gradient(135deg, #6b7280, #4b5563);
 }
 
-/* Gamemaster Panel Layout */
-.world-detail__gamemaster-panel {
+/* Unified Gamemaster Panel Layout */
+.world-detail__unified-panel {
   display: grid;
   grid-template-columns: 1fr 1.5fr 1fr;
   gap: theme('spacing.6');
   margin-bottom: theme('spacing.6');
 }
 
+.world-detail__section {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: theme('borderRadius.lg');
+  padding: theme('spacing.6');
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 400px;
+}
+
+/* Legacy panel styles for compatibility */
 .world-detail__panel {
   background: rgba(30, 41, 59, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -164,6 +214,16 @@
   margin-top: theme('spacing.6');
 }
 
+.world-detail__section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: theme('spacing.4');
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: theme('spacing.3');
+}
+
+/* Legacy panel header styles for compatibility */
 .world-detail__panel-header {
   display: flex;
   justify-content: space-between;
@@ -173,6 +233,17 @@
   padding-bottom: theme('spacing.3');
 }
 
+.world-detail__section-title {
+  font-family: 'Cinzel', serif;
+  font-size: theme('fontSize.xl');
+  font-weight: theme('fontWeight.semibold');
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: theme('spacing.2');
+}
+
+/* Legacy panel title styles for compatibility */
 .world-detail__panel-title {
   font-family: 'Cinzel', serif;
   font-size: theme('fontSize.xl');
@@ -229,14 +300,19 @@
   display: flex;
   align-items: center;
   gap: theme('spacing.2');
-  padding: theme('spacing.1') 0;
+  padding: theme('spacing.2') theme('spacing.3');
   font-size: theme('fontSize.sm');
   color: rgba(255, 255, 255, 0.8);
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border-radius: theme('borderRadius.md');
+  margin: theme('spacing.1') 0;
 }
 
 .world-detail__location-item:hover {
   color: white;
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateX(theme('spacing.1'));
 }
 
 .world-detail__location-status {
@@ -476,15 +552,20 @@
   display: flex;
   align-items: center;
   gap: theme('spacing.2');
-  padding: theme('spacing.1') 0;
+  padding: theme('spacing.2') theme('spacing.3');
   font-size: theme('fontSize.sm');
   color: rgba(255, 255, 255, 0.8);
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border-radius: theme('borderRadius.md');
+  margin: theme('spacing.1') 0;
 }
 
 .world-detail__character-item:hover,
 .world-detail__faction-item:hover {
   color: white;
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateX(theme('spacing.1'));
 }
 
 .world-detail__character-status,
@@ -835,11 +916,11 @@
 
 /* Responsive adjustments */
 @media (max-width: theme('screens.lg')) {
-  .world-detail__gamemaster-panel {
+  .world-detail__unified-panel {
     grid-template-columns: 1fr 1fr;
   }
   
-  .world-detail__panel--entities {
+  .world-detail__section--entities {
     grid-column: span 2;
   }
   
@@ -864,11 +945,11 @@
     height: 200px;
   }
   
-  .world-detail__gamemaster-panel {
+  .world-detail__unified-panel {
     grid-template-columns: 1fr;
   }
   
-  .world-detail__panel--entities {
+  .world-detail__section--entities {
     grid-column: span 1;
   }
 }

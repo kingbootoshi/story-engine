@@ -4,6 +4,7 @@ import { trpc } from '@/shared/lib/trpcClient';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@/shared/lib/trpcClient';
 import { WorldSphere } from './WorldSphere';
+import { LocationModal, CharacterModal, FactionModal } from './EntityModal';
 import './WorldDetail.styles.css';
 
 type RouterOutputs = inferRouterOutputs<AppRouter>;
@@ -54,6 +55,14 @@ export function WorldDetail() {
 
   /** When the user clicks a beat in the list we keep it here so we can render the details */
   const [selectedBeat, setSelectedBeat] = useState<WorldState['currentBeats'][number] | null>(null);
+
+  // Modal states
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+  const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
+  const [selectedFaction, setSelectedFaction] = useState<Faction | null>(null);
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [isCharacterModalOpen, setIsCharacterModalOpen] = useState(false);
+  const [isFactionModalOpen, setIsFactionModalOpen] = useState(false);
 
   useEffect(() => {
     if (worldId) {
@@ -240,6 +249,31 @@ export function WorldDetail() {
     }
   }, [selectedBeat]);
 
+  // Modal handlers
+  const handleLocationClick = (location: Location) => {
+    setSelectedLocation(location);
+    setIsLocationModalOpen(true);
+  };
+
+  const handleCharacterClick = (character: Character) => {
+    setSelectedCharacter(character);
+    setIsCharacterModalOpen(true);
+  };
+
+  const handleFactionClick = (faction: Faction) => {
+    setSelectedFaction(faction);
+    setIsFactionModalOpen(true);
+  };
+
+  const closeAllModals = () => {
+    setIsLocationModalOpen(false);
+    setIsCharacterModalOpen(false);
+    setIsFactionModalOpen(false);
+    setSelectedLocation(null);
+    setSelectedCharacter(null);
+    setSelectedFaction(null);
+  };
+
   if (isLoading) {
     return (
       <div className="world-detail__loading">
@@ -278,11 +312,6 @@ export function WorldDetail() {
             <span className="material-icons">arrow_back</span>
             Back to Worlds
           </Link>
-          <h1 className="world-detail__title">{world.name}</h1>
-          <p className="world-detail__description">{world.description}</p>
-          <div className="world-detail__meta">
-            Created {new Date(world.created_at).toLocaleDateString()}
-          </div>
         </div>
       </header>
 
@@ -294,38 +323,16 @@ export function WorldDetail() {
       )}
 
       <div className="world-detail__dashboard">
-        {/* World Sphere in Center */}
-        <div className="world-detail__sphere-container">
-          <WorldSphere seed={world.id} size={250} className="world-detail__sphere" />
-          
-          {/* Current Arc Status */}
-          <div className="world-detail__arc-status">
-            {currentArc ? (
-              <div className="world-detail__arc-badge">
-                <span className="material-icons">auto_stories</span>
-                Active Arc
-              </div>
-            ) : (
-              <div className="world-detail__arc-badge world-detail__arc-badge--inactive">
-                <span className="material-icons">auto_stories</span>
-                No Active Arc
-              </div>
-            )}
-          </div>
-        </div>
 
-        {/* Gamemaster Panel - 3 Column Layout */}
-        <div className="world-detail__gamemaster-panel">
-          {/* Left Column - Locations */}
-          <div className="world-detail__panel world-detail__panel--locations">
-            <div className="world-detail__panel-header">
-              <h2 className="world-detail__panel-title">
+        {/* Unified Gamemaster Panel */}
+        <div className="world-detail__unified-panel">
+          {/* Left Section - Locations */}
+          <div className="world-detail__section world-detail__section--locations">
+            <div className="world-detail__section-header">
+              <h2 className="world-detail__section-title">
                 <span className="material-icons">place</span>
                 Locations ({totalLocationCount})
               </h2>
-              <Link to={`/app/worlds/${worldId}/locations`} className="world-detail__panel-link">
-                <span className="material-icons">open_in_new</span>
-              </Link>
             </div>
             
             <div className="world-detail__locations-content">
@@ -339,7 +346,7 @@ export function WorldDetail() {
                       </h3>
                       <ul className="world-detail__location-list">
                         {groupedLocations['region'].map(location => (
-                          <li key={location.id} className="world-detail__location-item">
+                          <li key={location.id} className="world-detail__location-item" onClick={() => handleLocationClick(location)}>
                             <span className={`world-detail__location-status world-detail__location-status--${location.status}`}></span>
                             {location.name}
                           </li>
@@ -356,7 +363,7 @@ export function WorldDetail() {
                       </h3>
                       <ul className="world-detail__location-list">
                         {groupedLocations['city'].map(location => (
-                          <li key={location.id} className="world-detail__location-item">
+                          <li key={location.id} className="world-detail__location-item" onClick={() => handleLocationClick(location)}>
                             <span className={`world-detail__location-status world-detail__location-status--${location.status}`}></span>
                             {location.name}
                           </li>
@@ -373,7 +380,7 @@ export function WorldDetail() {
                       </h3>
                       <ul className="world-detail__location-list">
                         {groupedLocations['landmark'].map(location => (
-                          <li key={location.id} className="world-detail__location-item">
+                          <li key={location.id} className="world-detail__location-item" onClick={() => handleLocationClick(location)}>
                             <span className={`world-detail__location-status world-detail__location-status--${location.status}`}></span>
                             {location.name}
                           </li>
@@ -390,7 +397,7 @@ export function WorldDetail() {
                       </h3>
                       <ul className="world-detail__location-list">
                         {groupedLocations['wilderness'].map(location => (
-                          <li key={location.id} className="world-detail__location-item">
+                          <li key={location.id} className="world-detail__location-item" onClick={() => handleLocationClick(location)}>
                             <span className={`world-detail__location-status world-detail__location-status--${location.status}`}></span>
                             {location.name}
                           </li>
@@ -407,23 +414,54 @@ export function WorldDetail() {
             </div>
           </div>
 
-          {/* Center Column - World Events */}
-          <div className="world-detail__panel world-detail__panel--events">
-            <div className="world-detail__panel-header">
-              <h2 className="world-detail__panel-title">
-                <span className="material-icons">event_note</span>
-                World Events
-              </h2>
-              {currentArc && (
-                <button
-                  onClick={() => setShowAddEvent(!showAddEvent)}
-                  className="world-detail__add-button"
-                >
-                  <span className="material-icons">add</span>
-                  Add Event
-                </button>
-              )}
+          {/* Center Section - World Info & Events */}
+          <div className="world-detail__section world-detail__section--center">
+            {/* World Title, Description & Sphere */}
+            <div className="world-detail__world-info">
+              <h1 className="world-detail__title">{world.name}</h1>
+              <p className="world-detail__description">{world.description}</p>
+              <div className="world-detail__meta">
+                Created {new Date(world.created_at).toLocaleDateString()}
+              </div>
+              
+              {/* World Sphere */}
+              <div className="world-detail__sphere-container">
+                <WorldSphere seed={world.id} size={200} className="world-detail__sphere" />
+                
+                {/* Current Arc Status */}
+                <div className="world-detail__arc-status">
+                  {currentArc ? (
+                    <div className="world-detail__arc-badge">
+                      <span className="material-icons">auto_stories</span>
+                      Active Arc
+                    </div>
+                  ) : (
+                    <div className="world-detail__arc-badge world-detail__arc-badge--inactive">
+                      <span className="material-icons">auto_stories</span>
+                      No Active Arc
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
+
+            {/* World Events Section */}
+            <div className="world-detail__events-section">
+              <div className="world-detail__section-header">
+                <h2 className="world-detail__section-title">
+                  <span className="material-icons">event_note</span>
+                  World Events
+                </h2>
+                {currentArc && (
+                  <button
+                    onClick={() => setShowAddEvent(!showAddEvent)}
+                    className="world-detail__add-button"
+                  >
+                    <span className="material-icons">add</span>
+                    Add Event
+                  </button>
+                )}
+              </div>
 
             {showAddEvent && (
               <div className="world-detail__add-event">
@@ -513,20 +551,18 @@ export function WorldDetail() {
                 ))
               )}
             </div>
+            </div>
           </div>
 
-          {/* Right Column - Characters & Factions */}
-          <div className="world-detail__panel world-detail__panel--entities">
+          {/* Right Section - Characters & Factions */}
+          <div className="world-detail__section world-detail__section--entities">
             {/* Characters Section */}
             <div className="world-detail__entity-section">
-              <div className="world-detail__panel-header">
-                <h2 className="world-detail__panel-title">
+              <div className="world-detail__section-header">
+                <h2 className="world-detail__section-title">
                   <span className="material-icons">person</span>
                   Characters ({characterCount})
                 </h2>
-                <Link to={`/app/worlds/${worldId}/characters`} className="world-detail__panel-link">
-                  <span className="material-icons">open_in_new</span>
-                </Link>
               </div>
               
               <div className="world-detail__characters-content">
@@ -539,7 +575,7 @@ export function WorldDetail() {
                       </h3>
                       <ul className="world-detail__character-list">
                         {majorCharacters.map(character => (
-                          <li key={character.id} className="world-detail__character-item">
+                          <li key={character.id} className="world-detail__character-item" onClick={() => handleCharacterClick(character)}>
                             <span className={`world-detail__character-status world-detail__character-status--${character.status}`}></span>
                             {character.name}
                           </li>
@@ -554,7 +590,7 @@ export function WorldDetail() {
                       </h3>
                       <ul className="world-detail__character-list">
                         {minorCharacters.map(character => (
-                          <li key={character.id} className="world-detail__character-item">
+                          <li key={character.id} className="world-detail__character-item" onClick={() => handleCharacterClick(character)}>
                             <span className={`world-detail__character-status world-detail__character-status--${character.status}`}></span>
                             {character.name}
                           </li>
@@ -572,21 +608,18 @@ export function WorldDetail() {
             
             {/* Factions Section */}
             <div className="world-detail__entity-section">
-              <div className="world-detail__panel-header">
-                <h2 className="world-detail__panel-title">
+              <div className="world-detail__section-header">
+                <h2 className="world-detail__section-title">
                   <span className="material-icons">groups</span>
                   Factions ({factionCount})
                 </h2>
-                <Link to={`/app/worlds/${worldId}/factions`} className="world-detail__panel-link">
-                  <span className="material-icons">open_in_new</span>
-                </Link>
               </div>
               
               <div className="world-detail__factions-content">
                 {factions.length > 0 ? (
                   <ul className="world-detail__faction-list">
                     {factions.map(faction => (
-                      <li key={faction.id} className="world-detail__faction-item">
+                      <li key={faction.id} className="world-detail__faction-item" onClick={() => handleFactionClick(faction)}>
                         <span className={`world-detail__faction-status world-detail__faction-status--${faction.status}`}></span>
                         {faction.name}
                       </li>
@@ -778,6 +811,23 @@ export function WorldDetail() {
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <LocationModal
+        location={selectedLocation}
+        isOpen={isLocationModalOpen}
+        onClose={closeAllModals}
+      />
+      <CharacterModal
+        character={selectedCharacter}
+        isOpen={isCharacterModalOpen}
+        onClose={closeAllModals}
+      />
+      <FactionModal
+        faction={selectedFaction}
+        isOpen={isFactionModalOpen}
+        onClose={closeAllModals}
+      />
     </div>
   );
 }
