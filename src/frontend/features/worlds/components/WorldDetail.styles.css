@@ -522,7 +522,7 @@
   border: none;
   color: rgba(255, 255, 255, 0.6);
   font-family: 'Cinzel', serif;
-  font-size: theme('fontSize.md');
+  font-size: theme('fontSize.base');
   cursor: pointer;
   position: relative;
   transition: color 0.3s ease;
