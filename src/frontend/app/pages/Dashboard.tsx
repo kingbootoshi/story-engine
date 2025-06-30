@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/features/auth';
 import { useQuery } from '@tanstack/react-query';
 import { trpc } from '@/shared/lib/trpcClient';
-import { WorldSphere } from '@/features/worlds/components/WorldSphere';
+import { WorldSphere } from '@/features/worlds';
 import './Dashboard.styles.css';
 
 /**

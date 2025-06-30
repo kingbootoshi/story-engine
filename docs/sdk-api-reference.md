@@ -4,10 +4,10 @@ The Story Engine SDK provides a clean, simple API for creating and managing dyna
 
 ## Authentication
 
-All endpoints require authentication via API key passed in the Authorization header:
+All endpoints require authentication via API key passed in the x-api-key header:
 
 ```typescript
-Authorization: Bearer YOUR_API_KEY
+x-api-key: YOUR_API_KEY
 ```
 
 ## Base URL
@@ -530,12 +530,39 @@ Remove a faction from the world.
 
 ## Example Usage
 
+### Using curl
+
+```bash
+# List all worlds
+curl -X GET https://api.storyengine.dev/api/worlds \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+
+# Create a world
+curl -X POST https://api.storyengine.dev/api/worlds \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "My World", "description": "A fantasy realm"}'
+```
+
+### Using JavaScript/TypeScript
+
 ```typescript
+// Example client setup
+const headers = {
+  'x-api-key': 'YOUR_API_KEY',
+  'Content-Type': 'application/json'
+};
+
 // 1. Create a world (auto-populates with entities)
-const world = await client.world.create({
-  name: "The Shattered Realms",
-  description: "A dark fantasy world where magic is dying"
-});
+const world = await fetch('https://api.storyengine.dev/api/worlds', {
+  method: 'POST',
+  headers,
+  body: JSON.stringify({
+    name: "The Shattered Realms",
+    description: "A dark fantasy world where magic is dying"
+  })
+}).then(res => res.json());
 
 // 2. List generated entities
 const characters = await client.character.list({ worldId: world.id });

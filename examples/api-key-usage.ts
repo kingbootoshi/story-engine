@@ -30,7 +30,7 @@ async function createApiKey() {
 async function listWorldsWithApiKey(apiKey: string) {
   const response = await fetch('http://localhost:4000/api/worlds/list', {
     headers: {
-      'X-API-Key': apiKey,
+      'x-api-key': apiKey,
       'Content-Type': 'application/json'
     }
   });
@@ -45,7 +45,7 @@ async function createWorldWithApiKey(apiKey: string) {
   const response = await fetch('http://localhost:4000/api/worlds/create', {
     method: 'POST',
     headers: {
-      'X-API-Key': apiKey,
+      'x-api-key': apiKey,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
@@ -67,7 +67,7 @@ import axios from 'axios';
 const apiClient = axios.create({
   baseURL: 'http://localhost:4000/api',
   headers: {
-    'X-API-Key': process.env.STORY_ENGINE_API_KEY
+    'x-api-key': process.env.STORY_ENGINE_API_KEY
   }
 });
 
@@ -75,7 +75,7 @@ const apiClient = axios.create({
 async function makeAuthenticatedRequest(endpoint: string) {
   const response = await fetch(`http://localhost:4000/api${endpoint}`, {
     headers: {
-      'X-API-Key': process.env.STORY_ENGINE_API_KEY!
+      'x-api-key': process.env.STORY_ENGINE_API_KEY!
     }
   });
   
