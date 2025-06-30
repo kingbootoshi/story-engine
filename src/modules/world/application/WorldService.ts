@@ -10,9 +10,12 @@ import { formatLocationsForAI } from '../../../shared/utils/formatLocationContex
 import { formatFactionsForAI } from '../../../shared/utils/formatFactionContext';
 import { formatCharactersForAI } from '../../../shared/utils/formatCharacterContext';
 import type { LocationRepository } from '../../location/domain/ports';
+import { LocationService } from '../../location/application/LocationService';
 import { container } from 'tsyringe';
 import type { IFactionRepository } from '../../faction/domain/ports';
+import { FactionService } from '../../faction/application/FactionService';
 import type { ICharacterRepository } from '../../character/domain/ports';
+import { CharacterService } from '../../character/application/CharacterService';
 import type { Faction } from '../../faction/domain/schema';
 
 const logger = createLogger('world.service');
@@ -32,12 +35,8 @@ export class WorldService {
     logger.info('Creating world', { name, descLen: description.length, ownerId });
     const world = await this.repo.createWorld({ name, description, user_id: ownerId });
     
-    eventBus.emit<Events.WorldCreatedEvent>('world.created', { 
-      worldId: world.id,
-      userId: world.user_id,
-      name, 
-      description 
-    }, world.user_id);
+    // No longer automatically emitting world.created event for seeding
+    // World seeding is now explicit via seedWorld method
     
     return world;
   }
@@ -523,5 +522,60 @@ export class WorldService {
     endDate?: Date;
   }): Promise<WorldEvent[]> {
     return this.repo.getEvents(worldId, filters);
+  }
+
+  /**
+   * Explicitly seed a world with AI-generated locations, factions, and characters.
+   * This replaces the automatic seeding that previously happened on world.created event.
+   */
+  async seedWorld(worldId: string, userId: string): Promise<void> {
+    logger.info('Starting world seeding', { worldId, userId });
+    
+    const world = await this.repo.getWorld(worldId);
+    if (!world) {
+      throw new Error(`World not found: ${worldId}`);
+    }
+    
+    if (world.user_id !== userId) {
+      throw new Error('Unauthorized: User does not own this world');
+    }
+    
+    // Emit start event for UI feedback
+    eventBus.emit('world.seeding.started', {
+      v: 1,
+      worldId,
+      userId,
+      phases: ['locations', 'factions', 'characters']
+    }, userId);
+    
+    try {
+      // Step 1: Seed locations
+      logger.info('Seeding locations', { worldId });
+      const locationService = container.resolve(LocationService);
+      await locationService.seedLocationsForWorld(worldId, world.name, world.description, userId);
+      
+      // Step 2: Seed factions
+      logger.info('Seeding factions', { worldId });
+      const factionService = container.resolve(FactionService);
+      await factionService.seedFactionsForWorld(worldId, userId);
+      
+      // Step 3: Seed characters
+      logger.info('Seeding characters', { worldId });
+      const characterService = container.resolve(CharacterService);
+      await characterService.seedCharactersForWorld(worldId, userId);
+      
+      logger.info('World seeding completed successfully', { worldId });
+    } catch (error) {
+      logger.error('World seeding failed', error, { worldId });
+      
+      eventBus.emit('world.seeding.failed', {
+        v: 1,
+        worldId,
+        userId,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }, userId);
+      
+      throw error;
+    }
   }
 }

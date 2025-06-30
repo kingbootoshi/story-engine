@@ -1,0 +1,310 @@
+.world-seeding-panel {
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-6);
+  margin: var(--spacing-4) 0;
+  animation: fadeIn var(--animation-duration) var(--animation-easing);
+}
+
+.world-seeding-panel--progress {
+  text-align: center;
+}
+
+.world-seeding-panel__header {
+  margin-bottom: var(--spacing-6);
+  text-align: center;
+}
+
+.world-seeding-panel__title {
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-2);
+}
+
+.world-seeding-panel__subtitle {
+  font-size: var(--font-size-lg);
+  color: var(--color-text-secondary);
+}
+
+.world-seeding-panel__options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--spacing-4);
+  margin-top: var(--spacing-6);
+}
+
+.world-seeding-panel__option {
+  background-color: var(--color-bg-primary);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-6);
+  text-align: center;
+  transition: all var(--transition-fast);
+}
+
+.world-seeding-panel__option:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.world-seeding-panel__option-icon {
+  font-size: 48px;
+  color: var(--color-primary);
+  margin-bottom: var(--spacing-4);
+  display: block;
+}
+
+.world-seeding-panel__option--manual .world-seeding-panel__option-icon {
+  color: var(--color-secondary);
+}
+
+.world-seeding-panel__option-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-3);
+}
+
+.world-seeding-panel__option-description {
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin-bottom: var(--spacing-4);
+}
+
+.world-seeding-panel__button {
+  padding: var(--spacing-3) var(--spacing-6);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  border: none;
+}
+
+.world-seeding-panel__button--primary {
+  background-color: var(--color-primary);
+  color: var(--color-text-on-primary);
+}
+
+.world-seeding-panel__button--primary:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.world-seeding-panel__button--secondary {
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  border: 2px solid var(--color-border);
+}
+
+.world-seeding-panel__button--secondary:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.world-seeding-panel__button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Progress UI */
+.world-seeding-panel__progress {
+  padding: var(--spacing-6);
+}
+
+.world-seeding-panel__phases {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-8);
+  margin-bottom: var(--spacing-6);
+}
+
+.world-seeding-panel__phase {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  opacity: 0.4;
+  transition: all var(--transition-normal);
+}
+
+.world-seeding-panel__phase--active {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.world-seeding-panel__phase--complete {
+  opacity: 0.8;
+}
+
+.world-seeding-panel__phase--complete .world-seeding-panel__phase-icon {
+  color: var(--color-success);
+}
+
+.world-seeding-panel__phase-icon {
+  font-size: 36px;
+  margin-bottom: var(--spacing-2);
+  color: var(--color-text-secondary);
+  transition: all var(--transition-normal);
+}
+
+.world-seeding-panel__phase--active .world-seeding-panel__phase-icon {
+  color: var(--color-primary);
+  animation: pulse 2s infinite;
+}
+
+.world-seeding-panel__phase-name {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.world-seeding-panel__status {
+  margin-bottom: var(--spacing-6);
+}
+
+.world-seeding-panel__message {
+  font-size: var(--font-size-lg);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-2);
+}
+
+.world-seeding-panel__count {
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+}
+
+.world-seeding-panel__spinner {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.world-seeding-panel__spinner-ring {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Confirm Dialog */
+.world-seeding-panel__confirm {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn var(--animation-duration) var(--animation-easing);
+}
+
+.world-seeding-panel__confirm-content {
+  background-color: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-6);
+  max-width: 480px;
+  width: 90%;
+  animation: slideUp var(--animation-duration) var(--animation-easing);
+}
+
+.world-seeding-panel__confirm-title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-4);
+}
+
+.world-seeding-panel__confirm-text {
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-3);
+}
+
+.world-seeding-panel__confirm-list {
+  list-style-position: inside;
+  margin: var(--spacing-3) 0;
+  color: var(--color-text-secondary);
+}
+
+.world-seeding-panel__confirm-list li {
+  margin-bottom: var(--spacing-1);
+}
+
+.world-seeding-panel__confirm-actions {
+  display: flex;
+  gap: var(--spacing-3);
+  justify-content: flex-end;
+  margin-top: var(--spacing-6);
+}
+
+/* Animations */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+  .world-seeding-panel {
+    padding: var(--spacing-4);
+  }
+
+  .world-seeding-panel__title {
+    font-size: var(--font-size-2xl);
+  }
+
+  .world-seeding-panel__options {
+    grid-template-columns: 1fr;
+  }
+
+  .world-seeding-panel__phases {
+    gap: var(--spacing-4);
+  }
+
+  .world-seeding-panel__phase-icon {
+    font-size: 28px;
+  }
+
+  .world-seeding-panel__confirm-content {
+    padding: var(--spacing-4);
+  }
+}

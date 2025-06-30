@@ -20,6 +20,23 @@ export const worldRouter = router({
       return worldService.createWorld(input.name, input.description, ctx.user.id);
     }),
 
+  seedWorld: authedProcedure
+    .input(z.object({
+      worldId: z.string().uuid()
+    }))
+    .output(z.object({
+      success: z.boolean(),
+      message: z.string()
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const worldService = container.resolve(WorldService);
+      await worldService.seedWorld(input.worldId, ctx.user.id);
+      return { 
+        success: true, 
+        message: 'World seeding initiated. Locations, factions, and characters will be generated.' 
+      };
+    }),
+
   get: publicProcedure
     .input(z.string().uuid())
     .output(S.World.nullable())

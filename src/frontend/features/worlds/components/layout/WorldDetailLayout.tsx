@@ -1,11 +1,13 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { trpc } from '@/shared/lib/trpcClient';
 import { WorldHeader } from './WorldHeader';
 import { WorldInfoPanel } from './WorldInfoPanel';
 import { ArcControlPanel } from '../arc/ArcControlPanel';
 import { BeatTimeline } from '../arc/BeatTimeline';
 import { BeatDetails } from '../arc/BeatDetails';
 import { CreateArcPanel } from '../arc/CreateArcPanel';
+import { WorldSeedingPanel } from '../seeding/WorldSeedingPanel';
 import { EventModal } from '../events/EventModal';
 
 import { LocationSection } from '../entities/LocationSection';
@@ -23,8 +25,11 @@ import {
 } from '../../hooks';
 import '../../styles/index.css';
 
+type MobileTab = 'world' | 'arc' | 'locations' | 'characters';
+
 export function WorldDetailLayout() {
   const { worldId } = useParams<{ worldId: string }>();
+  const [activeMobileTab, setActiveMobileTab] = useState<MobileTab>('world');
   
   // Custom hooks
   const {
@@ -90,6 +95,15 @@ export function WorldDetailLayout() {
   } = useUIState();
   
   const viewDensity = 'standard'; // Always use standard density
+  
+  // Seeding state
+  const [isSeeding, setIsSeeding] = useState(false);
+  const [seedingProgress, setSeedingProgress] = useState<{
+    phase: 'locations' | 'factions' | 'characters';
+    status: 'started' | 'completed';
+    message: string;
+    count?: number;
+  } | undefined>();
 
   // Whenever the user clicks a beat update events list
   useEffect(() => {
@@ -157,6 +171,67 @@ export function WorldDetailLayout() {
     });
   };
 
+  const handleSeedWorld = async () => {
+    if (!worldId) return;
+    
+    setIsSeeding(true);
+    setSeedingProgress(undefined);
+    
+    try {
+      // Make the API call to seed the world
+      await trpc.world.seedWorld.mutate({ worldId });
+      
+      // Poll for updates - in a real implementation, you'd use WebSockets or SSE
+      const pollInterval = setInterval(async () => {
+        await fetchAllWorldData();
+        
+        // Check if seeding is complete
+        const [locs, chars, facts] = await Promise.all([
+          trpc.location.list.query({ worldId }),
+          trpc.character.list.query({ worldId }),
+          trpc.faction.list.query({ worldId })
+        ]);
+        
+        if (locs.length > 0 && chars.length > 0 && facts.length > 0) {
+          clearInterval(pollInterval);
+          setIsSeeding(false);
+          setSeedingProgress(undefined);
+        }
+      }, 2000); // Poll every 2 seconds
+      
+      // Simulate progress updates (in production, these would come from server events)
+      setTimeout(() => {
+        setSeedingProgress({
+          phase: 'locations',
+          status: 'started',
+          message: 'Generating world regions and locations...'
+        });
+      }, 1000);
+      
+      setTimeout(() => {
+        setSeedingProgress({
+          phase: 'factions',
+          status: 'started',
+          message: 'Creating factions and their ideologies...'
+        });
+      }, 15000);
+      
+      setTimeout(() => {
+        setSeedingProgress({
+          phase: 'characters',
+          status: 'started',
+          message: 'Populating the world with characters...'
+        });
+      }, 25000);
+      
+    } catch (error) {
+      console.error('Failed to seed world:', error);
+      setError('Failed to seed world. Please try again.');
+      setIsSeeding(false);
+      setSeedingProgress(undefined);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="world-detail__loading">
@@ -214,8 +289,18 @@ export function WorldDetailLayout() {
           </>
         )}
         
-        {/* Create Arc Panel if no active arc */}
-        {!currentArc && (
+        {/* Show seeding panel if world is unseeded */}
+        {!currentArc && locations.length === 0 && factions.length === 0 && characters.length === 0 && !isLoading && (
+          <WorldSeedingPanel
+            worldId={worldId!}
+            onSeedWorld={handleSeedWorld}
+            isSeeding={isSeeding}
+            seedingProgress={seedingProgress}
+          />
+        )}
+        
+        {/* Create Arc Panel if world is seeded but no active arc */}
+        {!currentArc && (locations.length > 0 || factions.length > 0 || characters.length > 0) && (
           <CreateArcPanel
             showCreateArc={showCreateArc}
             storyIdea={storyIdea}
@@ -225,7 +310,7 @@ export function WorldDetailLayout() {
           />
         )}
 
-        {/* Unified Gamemaster Panel */}
+        {/* Desktop View - Unified Gamemaster Panel */}
         <div className={`world-detail__unified-panel world-detail__unified-panel--${viewDensity}`}>
           {/* Left Section - Locations */}
           <LocationSection
@@ -248,6 +333,118 @@ export function WorldDetailLayout() {
 
           {/* Right Section - Characters & Factions */}
           <div className="world-detail__section world-detail__section--entities">
+            <CharacterSection
+              majorCharacters={majorCharacters}
+              minorCharacters={minorCharacters}
+              characterCount={characterCount}
+              onCharacterClick={handleCharacterClick}
+            />
+            
+            <FactionSection
+              factions={factions}
+              factionCount={factionCount}
+              onFactionClick={handleFactionClick}
+            />
+          </div>
+        </div>
+
+        {/* Mobile Tab Navigation - Now at the top */}
+        <nav className="world-detail__mobile-tabs">
+          <div className="world-detail__mobile-tabs-list">
+            <button
+              className={`world-detail__mobile-tab ${activeMobileTab === 'world' ? 'world-detail__mobile-tab--active' : ''}`}
+              onClick={() => setActiveMobileTab('world')}
+            >
+              <span className="material-icons world-detail__mobile-tab-icon">public</span>
+              <span className="world-detail__mobile-tab-label">World</span>
+            </button>
+            
+            <button
+              className={`world-detail__mobile-tab ${activeMobileTab === 'arc' ? 'world-detail__mobile-tab--active' : ''}`}
+              onClick={() => setActiveMobileTab('arc')}
+            >
+              <span className="material-icons world-detail__mobile-tab-icon">auto_stories</span>
+              <span className="world-detail__mobile-tab-label">Arc</span>
+            </button>
+            
+            <button
+              className={`world-detail__mobile-tab ${activeMobileTab === 'locations' ? 'world-detail__mobile-tab--active' : ''}`}
+              onClick={() => setActiveMobileTab('locations')}
+            >
+              <span className="material-icons world-detail__mobile-tab-icon">place</span>
+              <span className="world-detail__mobile-tab-label">Locations</span>
+            </button>
+            
+            <button
+              className={`world-detail__mobile-tab ${activeMobileTab === 'characters' ? 'world-detail__mobile-tab--active' : ''}`}
+              onClick={() => setActiveMobileTab('characters')}
+            >
+              <span className="material-icons world-detail__mobile-tab-icon">person</span>
+              <span className="world-detail__mobile-tab-label">Characters</span>
+            </button>
+          </div>
+        </nav>
+
+        {/* Mobile View - Tab-based sections */}
+        <div className="world-detail__mobile-content">
+          {/* World Tab */}
+          <div className={`world-detail__section ${activeMobileTab === 'world' ? 'world-detail__section--active' : ''}`}>
+            <WorldInfoPanel world={world} currentArc={currentArc} />
+            <EventsSection
+              currentArc={currentArc}
+              showEventsList={showEventsList}
+              beatEvents={beatEvents}
+              onToggleAddEvent={handleOpenEventModal}
+            />
+          </div>
+
+          {/* Arc Tab */}
+          <div className={`world-detail__section ${activeMobileTab === 'arc' ? 'world-detail__section--active' : ''}`}>
+            <div className="world-detail__arc-section-mobile">
+              {currentArc ? (
+                <>
+                  <ArcControlPanel
+                    currentArc={currentArc}
+                    isProgressing={isProgressing}
+                    onProgressArc={handleProgressArc}
+                    onAddEvent={handleOpenEventModal}
+                  />
+                  
+                  <BeatTimeline
+                    beats={beats}
+                    selectedBeat={selectedBeat}
+                    onBeatSelect={setSelectedBeat}
+                  />
+                  
+                  <BeatDetails
+                    selectedBeat={selectedBeat}
+                    expandedBeat={expandedBeat}
+                    onToggleExpanded={() => setExpandedBeat(!expandedBeat)}
+                  />
+                </>
+              ) : (
+                <CreateArcPanel
+                  showCreateArc={showCreateArc}
+                  storyIdea={storyIdea}
+                  onStoryIdeaChange={setStoryIdea}
+                  onToggleForm={() => setShowCreateArc(!showCreateArc)}
+                  onSubmit={handleCreateArc}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Locations Tab */}
+          <div className={`world-detail__section ${activeMobileTab === 'locations' ? 'world-detail__section--active' : ''}`}>
+            <LocationSection
+              groupedLocations={groupedLocations}
+              totalLocationCount={totalLocationCount}
+              onLocationClick={handleLocationClick}
+            />
+          </div>
+
+          {/* Characters Tab */}
+          <div className={`world-detail__section ${activeMobileTab === 'characters' ? 'world-detail__section--active' : ''}`}>
             <CharacterSection
               majorCharacters={majorCharacters}
               minorCharacters={minorCharacters}

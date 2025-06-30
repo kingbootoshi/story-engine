@@ -4,12 +4,11 @@ import './ApiDocs.styles.css';
 /**
  * API Documentation component with multi-section navigation
  * Provides comprehensive guide to using the Story Engine API
- * Features glassmorphic design with mobile-friendly navigation
+ * Features glassmorphic design with desktop-only navigation
  */
 export function ApiDocs() {
   const [activeSection, setActiveSection] = useState('overview');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   /**
    * Copy code to clipboard and show feedback
@@ -25,11 +24,10 @@ export function ApiDocs() {
   };
 
   /**
-   * Handle section change and close mobile menu
+   * Handle section change
    */
   const handleSectionChange = (sectionId: string) => {
     setActiveSection(sectionId);
-    setIsMobileMenuOpen(false);
   };
 
   // Navigation sections
@@ -87,87 +85,17 @@ export function ApiDocs() {
         case 'ArrowRight':
           navigateToNext();
           break;
-        case 'Escape':
-          setIsMobileMenuOpen(false);
-          break;
       }
     };
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [navigateToPrev, navigateToNext]); // Use callbacks as dependencies
-
-  /**
-   * Handle swipe gestures for mobile
-   */
-  useEffect(() => {
-    let touchStartX = 0;
-    let touchEndX = 0;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartX = e.changedTouches[0].screenX;
-    };
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      touchEndX = e.changedTouches[0].screenX;
-      handleSwipe();
-    };
-
-    const handleSwipe = () => {
-      const swipeThreshold = 50;
-      const diff = touchStartX - touchEndX;
-
-      if (Math.abs(diff) > swipeThreshold) {
-        if (diff > 0) {
-          // Swiped left - go to next
-          navigateToNext();
-        } else {
-          // Swiped right - go to prev
-          navigateToPrev();
-        }
-      }
-    };
-
-    const contentEl = document.querySelector('.api-docs__content');
-    if (contentEl) {
-      contentEl.addEventListener('touchstart', handleTouchStart as any);
-      contentEl.addEventListener('touchend', handleTouchEnd as any);
-
-      return () => {
-        contentEl.removeEventListener('touchstart', handleTouchStart as any);
-        contentEl.removeEventListener('touchend', handleTouchEnd as any);
-      };
-    }
-  }, [navigateToPrev, navigateToNext]); // Use callbacks as dependencies
+  }, [navigateToPrev, navigateToNext]);
 
   return (
     <div className="api-docs">
-      {/* Mobile Menu Toggle Button - Simple floating button */}
-      <button 
-        className="api-docs__mobile-menu-btn api-docs__mobile-menu-btn--floating"
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        aria-label="Toggle documentation menu"
-      >
-        <span className="material-icons">menu</span>
-      </button>
-
-      {/* Mobile Overlay */}
-      <div 
-        className={`api-docs__mobile-overlay ${isMobileMenuOpen ? 'api-docs__mobile-overlay--visible' : ''}`}
-        onClick={() => setIsMobileMenuOpen(false)}
-      />
-
-      {/* Sidebar Navigation */}
-      <nav className={`api-docs__sidebar ${isMobileMenuOpen ? 'api-docs__sidebar--mobile-open' : ''}`}>
-        {/* Mobile Close Button */}
-        <button 
-          className="api-docs__mobile-close"
-          onClick={() => setIsMobileMenuOpen(false)}
-          aria-label="Close menu"
-        >
-          <span className="material-icons">close</span>
-        </button>
-
+      {/* Sidebar Navigation - Desktop Only */}
+      <nav className="api-docs__sidebar">
         <h2 className="api-docs__sidebar-title">Documentation</h2>
         {sections.map(section => (
           <button
