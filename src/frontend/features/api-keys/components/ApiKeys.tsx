@@ -407,22 +407,27 @@ export function ApiKeys() {
           <p>See full endpoint reference, examples, and best practices</p>
         </div>
         
-        <p>Include your API key in the Authorization header of your requests:</p>
+        <p>Include your API key in the x-api-key header of your requests:</p>
         <div className="api-keys__code">
-          <code>Authorization: Bearer YOUR_API_KEY</code>
+          <code>x-api-key: YOUR_API_KEY</code>
         </div>
         
         <h4 className="api-keys__instructions-subtitle">Example with curl</h4>
         <div className="api-keys__code">
-          <pre><code>{`curl -H "Authorization: Bearer YOUR_API_KEY" \\
-  https://api.storyengine.dev/trpc/world.list`}</code></pre>
+          <pre><code>{`curl -H "x-api-key: YOUR_API_KEY" \\
+  https://api.storyengine.dev/api/worlds`}</code></pre>
         </div>
         
-        <h4 className="api-keys__instructions-subtitle">Example with JavaScript SDK</h4>
+        <h4 className="api-keys__instructions-subtitle">Example with JavaScript</h4>
         <div className="api-keys__code">
-          <pre><code>{`const client = new StoryEngineClient({
-  apiKey: 'YOUR_API_KEY'
-});`}</code></pre>
+          <pre><code>{`const response = await fetch('https://api.storyengine.dev/api/worlds', {
+  headers: {
+    'x-api-key': 'YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  }
+});
+
+const worlds = await response.json();`}</code></pre>
         </div>
         
         <div className="api-keys__security-tips">

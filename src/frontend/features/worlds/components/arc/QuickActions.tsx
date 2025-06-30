@@ -1,36 +1,16 @@
 import type { ViewDensity } from '../../types';
 
 interface QuickActionsProps {
-  showEventsList: boolean;
   viewDensity: ViewDensity;
-  onToggleAddEvent: () => void;
-  onToggleEventsList: () => void;
   onViewDensityChange: (density: ViewDensity) => void;
 }
 
 export function QuickActions({
-  showEventsList,
   viewDensity,
-  onToggleAddEvent,
-  onToggleEventsList,
   onViewDensityChange
 }: QuickActionsProps) {
   return (
     <div className="world-detail__quick-actions">
-      <button
-        onClick={onToggleAddEvent}
-        className="world-detail__quick-action"
-      >
-        <span className="material-icons">add_circle</span>
-        Add Event
-      </button>
-      <button
-        onClick={onToggleEventsList}
-        className="world-detail__quick-action"
-      >
-        <span className="material-icons">{showEventsList ? 'visibility_off' : 'visibility'}</span>
-        {showEventsList ? 'Hide' : 'Show'} Events
-      </button>
       <div className="world-detail__density-toggle">
         <button
           onClick={() => onViewDensityChange('compact')}

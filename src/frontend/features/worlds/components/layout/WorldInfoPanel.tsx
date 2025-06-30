@@ -18,21 +18,6 @@ export function WorldInfoPanel({ world, currentArc }: WorldInfoPanelProps) {
       {/* World Sphere */}
       <div className="world-detail__sphere-container">
         <WorldSphere seed={world.id} size={200} className="world-detail__sphere" />
-        
-        {/* Current Arc Status */}
-        <div className="world-detail__arc-status">
-          {currentArc ? (
-            <div className="world-detail__arc-badge">
-              <span className="material-icons">auto_stories</span>
-              Active Arc
-            </div>
-          ) : (
-            <div className="world-detail__arc-badge world-detail__arc-badge--inactive">
-              <span className="material-icons">auto_stories</span>
-              No Active Arc
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

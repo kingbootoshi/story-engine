@@ -6,7 +6,7 @@ import { ArcControlPanel } from '../arc/ArcControlPanel';
 import { BeatTimeline } from '../arc/BeatTimeline';
 import { BeatDetails } from '../arc/BeatDetails';
 import { CreateArcPanel } from '../arc/CreateArcPanel';
-import { QuickActions } from '../arc/QuickActions';
+
 import { LocationSection } from '../entities/LocationSection';
 import { CharacterSection } from '../entities/CharacterSection';
 import { FactionSection } from '../entities/FactionSection';
@@ -86,10 +86,10 @@ export function WorldDetailLayout() {
 
   const {
     expandedBeat,
-    viewDensity,
-    setExpandedBeat,
-    setViewDensity
+    setExpandedBeat
   } = useUIState();
+  
+  const viewDensity = 'standard'; // Always use standard density
 
   // Whenever the user clicks a beat update events list
   useEffect(() => {
@@ -193,13 +193,7 @@ export function WorldDetailLayout() {
               onToggleExpanded={() => setExpandedBeat(!expandedBeat)}
             />
             
-            <QuickActions
-              showEventsList={showEventsList}
-              viewDensity={viewDensity}
-              onToggleAddEvent={() => setShowAddEvent(!showAddEvent)}
-              onToggleEventsList={() => setShowEventsList(!showEventsList)}
-              onViewDensityChange={setViewDensity}
-            />
+
           </>
         )}
         
@@ -275,21 +269,6 @@ export function WorldDetailLayout() {
         onClose={closeAllModals}
       />
       
-      {/* Floating Action Button for Progress Story */}
-      {currentArc && beats.length > 0 && (
-        <button
-          onClick={handleProgressArc}
-          disabled={isProgressing}
-          className="world-detail__fab"
-          title="Progress Story"
-        >
-          {isProgressing ? (
-            <div className="world-detail__button-spinner"></div>
-          ) : (
-            <span className="material-icons">play_arrow</span>
-          )}
-        </button>
-      )}
     </div>
   );
 }
