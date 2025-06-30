@@ -34,7 +34,7 @@ export function LandingPage() {
       // User is already authenticated, transition directly to app
       setIsTransitioningToApp(true);
       setTimeout(() => {
-        navigate('/app/worlds');
+        navigate('/app');
       }, 600); // Match this with the exit animation duration
     } else {
       // User not authenticated, show auth form
