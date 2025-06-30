@@ -3,12 +3,15 @@ import { Link, useParams } from 'react-router-dom';
 import { trpc } from '@/shared/lib/trpcClient';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@/shared/lib/trpcClient';
+import { WorldSphere } from './WorldSphere';
+import './WorldDetail.styles.css';
 
 type RouterOutputs = inferRouterOutputs<AppRouter>;
 type WorldState = RouterOutputs['world']['getWorldState'];
 type World = WorldState['world'];
 type Arc = WorldState['currentArc'];
 type WorldEvent = WorldState['recentEvents'][number];
+type WorldBeat = WorldState['currentBeats'][number];
 
 export function WorldDetail() {
   const { worldId } = useParams<{ worldId: string }>();
@@ -22,6 +25,7 @@ export function WorldDetail() {
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [storyIdea, setStoryIdea] = useState('');
   const [isProgressing, setIsProgressing] = useState(false);
+  const [activeTab, setActiveTab] = useState<'locations' | 'characters' | 'factions' | 'events'>('locations');
   const [locationsSummary, setLocationsSummary] = useState<{total: number, byType: Record<string, number>} | null>(null);
 
   // Event form state
@@ -204,493 +208,429 @@ export function WorldDetail() {
 
   if (isLoading) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center' }}>
-        Loading world details...
+      <div className="world-detail__loading">
+        <div className="world-detail__loading-spinner"></div>
+        <p>Loading world details...</p>
       </div>
     );
   }
 
   if (!world) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center' }}>
-        World not found
+      <div className="world-detail__not-found">
+        <h2>World not found</h2>
+        <Link to="/app/worlds" className="world-detail__back-link">
+          Return to Worlds
+        </Link>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-      <header style={{ marginBottom: '2rem' }}>
-        <Link to="/app/worlds" style={{ marginBottom: '0.5rem', display: 'inline-block' }}>
-          ← Back to Worlds
-        </Link>
-        <h1>{world.name}</h1>
-        <p style={{ color: '#666', fontSize: '1.1rem' }}>{world.description}</p>
-        <div style={{ marginTop: '0.5rem', color: '#999' }}>
-          Created {new Date(world.created_at).toLocaleDateString()}
-        </div>
-        <div style={{ marginTop: '1rem' }}>
-          <Link 
-            to={`/app/worlds/${worldId}/locations`}
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: '#9C27B0',
-              color: 'white',
-              borderRadius: '4px',
-              textDecoration: 'none',
-              display: 'inline-block',
-              marginRight: '0.5rem'
-            }}
-          >
-            View Locations
+    <div className="world-detail">
+      <header className="world-detail__header">
+        <div className="world-detail__header-content">
+          <Link to="/app/worlds" className="world-detail__back-link">
+            <span className="material-icons">arrow_back</span>
+            Back to Worlds
           </Link>
-          <Link 
-            to={`/app/worlds/${worldId}/factions`}
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: '#3F51B5',
-              color: 'white',
-              borderRadius: '4px',
-              textDecoration: 'none',
-              display: 'inline-block',
-              marginRight: '0.5rem'
-            }}
-          >
-            View Factions
-          </Link>
-          <Link 
-            to={`/app/worlds/${worldId}/characters`}
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: '#607D8B',
-              color: 'white',
-              borderRadius: '4px',
-              textDecoration: 'none',
-              display: 'inline-block'
-            }}
-          >
-            View Characters
-          </Link>
+          <h1 className="world-detail__title">{world.name}</h1>
+          <p className="world-detail__description">{world.description}</p>
+          <div className="world-detail__meta">
+            Created {new Date(world.created_at).toLocaleDateString()}
+          </div>
         </div>
       </header>
 
       {error && (
-        <div style={{
-          backgroundColor: '#ffebee',
-          padding: '1rem',
-          marginBottom: '1rem',
-          border: '1px solid #ef5350',
-          borderRadius: '4px',
-          color: '#c62828'
-        }}>
+        <div className="world-detail__error">
+          <span className="material-icons">error</span>
           {error}
         </div>
       )}
 
-      {/* Locations Summary */}
-      {locationsSummary && locationsSummary.total > 0 && (
-        <div style={{
-          backgroundColor: '#f3e5f5',
-          padding: '1rem',
-          borderRadius: '8px',
-          marginBottom: '2rem',
-          border: '1px solid #ce93d8'
-        }}>
-          <h3 style={{ marginTop: 0, marginBottom: '0.5rem' }}>Locations Overview</h3>
-          <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-            <div>
-              <strong style={{ fontSize: '1.5rem' }}>{locationsSummary.total}</strong> Total Locations
-            </div>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              {Object.entries(locationsSummary.byType).map(([type, count]) => (
-                <div key={type} style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{count}</div>
-                  <div style={{ fontSize: '0.875rem', textTransform: 'capitalize' }}>
-                    {type}{count !== 1 ? 's' : ''}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-        <div>
-          <h2>Current Arc</h2>
-          {currentArc ? (
-            <div style={{
-              backgroundColor: '#f5f5f5',
-              padding: '1.5rem',
-              borderRadius: '8px',
-              border: '1px solid #ddd'
-            }}>
-              <h3 style={{ marginTop: 0 }}>{currentArc.story_name}</h3>
-              <p>{currentArc.story_idea}</p>
-              {currentArc.detailed_description && (
-                <div style={{ 
-                  marginTop: '1rem', 
-                  padding: '1rem',
-                  backgroundColor: '#e8f5e9',
-                  borderRadius: '4px',
-                  fontSize: '0.95rem',
-                  lineHeight: '1.6'
-                }}>
-                  <strong>Arc Overview:</strong>
-                  <p style={{ marginTop: '0.5rem', marginBottom: 0 }}>
-                    {currentArc.detailed_description}
-                  </p>
-                </div>
-              )}
-              <div style={{ marginTop: '1rem' }}>
-                <div style={{ marginBottom: '0.5rem' }}>
-                  Arc #{currentArc.arc_number} — Status: {currentArc.status}
-                </div>
-                <div style={{
-                  backgroundColor: '#ddd',
-                  height: '20px',
-                  borderRadius: '10px',
-                  overflow: 'hidden'
-                }}>
-                  <div
-                    style={{
-                      backgroundColor: '#4CAF50',
-                      height: '100%',
-                      /**
-                       * The arc always tops out at 15 beats (0-14). We derive completion % directly
-                       * from the amount of beats that exist so far. This value animates via the
-                       * CSS transition declared below for a pleasant visual cue whenever a new beat
-                       * is created.
-                       */
-                      width: `${(beats.length / 15) * 100}%`,
-                      transition: 'width 0.3s'
-                    }}
-                  />
-                </div>
-              </div>
-              <button
-                onClick={progressArc}
-                disabled={isProgressing}
-                style={{
-                  marginTop: '1rem',
-                  padding: '0.75rem 1.5rem',
-                  backgroundColor: '#2196F3',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: isProgressing ? 'not-allowed' : 'pointer',
-                  opacity: isProgressing ? 0.6 : 1
-                }}
-              >
-                {isProgressing ? 'Progressing Story...' : 'Progress Story'}
-              </button>
-            </div>
-          ) : (
-            <div style={{
-              backgroundColor: '#f5f5f5',
-              padding: '2rem',
-              borderRadius: '8px',
-              border: '1px solid #ddd',
-              textAlign: 'center'
-            }}>
-              <p style={{ marginBottom: '1rem' }}>No active arc. Create one to start the story!</p>
-              <button
-                onClick={() => setShowCreateArc(true)}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  backgroundColor: '#4CAF50',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
-                Create New Arc
-              </button>
-            </div>
-          )}
-
-          {showCreateArc && (
-            <div style={{
-              marginTop: '1rem',
-              backgroundColor: 'white',
-              padding: '1.5rem',
-              borderRadius: '8px',
-              border: '1px solid #ddd'
-            }}>
-              <h3>Create New Story Arc</h3>
-              <form onSubmit={createNewArc}>
-                <label htmlFor="storyIdea" style={{ display: 'block', marginBottom: '0.5rem' }}>
-                  Story Idea (optional)
-                </label>
-                <textarea
-                  id="storyIdea"
-                  value={storyIdea}
-                  onChange={(e) => setStoryIdea(e.target.value)}
-                  placeholder="Describe your story idea, or leave blank for a random arc..."
-                  rows={3}
-                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                />
-                <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
-                  <button
-                    type="submit"
-                    style={{
-                      padding: '0.5rem 1rem',
-                      backgroundColor: '#4CAF50',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Create Arc
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateArc(false)}
-                    style={{
-                      padding: '0.5rem 1rem',
-                      backgroundColor: '#f5f5f5',
-                      border: '1px solid #ddd',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-        </div>
-
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h2>World Events</h2>
-            {currentArc && (
-              <button
-                onClick={() => setShowAddEvent(!showAddEvent)}
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#4CAF50',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem'
-                }}
-              >
-                Add Event
-              </button>
-            )}
-          </div>
-
-          {showAddEvent && (
-            <div style={{
-              marginBottom: '1rem',
-              backgroundColor: 'white',
-              padding: '1.5rem',
-              borderRadius: '8px',
-              border: '1px solid #ddd'
-            }}>
-              <h3>Add World Event</h3>
-              <form onSubmit={recordEvent}>
-                <div style={{ marginBottom: '1rem' }}>
-                  <label htmlFor="eventType" style={{ display: 'block', marginBottom: '0.5rem' }}>
-                    Event Type
-                  </label>
-                  <select
-                    id="eventType"
-                    value={newEvent.eventType}
-                    onChange={(e) => setNewEvent({ ...newEvent, eventType: e.target.value as 'player_action' | 'system_event' | 'world_event' })}
-                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                  >
-                    <option value="player_action">Player Action</option>
-                    <option value="world_event">World Event</option>
-                    <option value="system_event">System Event</option>
-                  </select>
-                </div>
-
-                <div style={{ marginBottom: '1rem' }}>
-                  <label htmlFor="impactLevel" style={{ display: 'block', marginBottom: '0.5rem' }}>
-                    Impact Level
-                  </label>
-                  <select
-                    id="impactLevel"
-                    value={newEvent.impactLevel}
-                    onChange={(e) => setNewEvent({ ...newEvent, impactLevel: e.target.value as 'minor' | 'moderate' | 'major' })}
-                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                  >
-                    <option value="minor">Minor</option>
-                    <option value="moderate">Moderate</option>
-                    <option value="major">Major</option>
-                  </select>
-                </div>
-
-                <div style={{ marginBottom: '1rem' }}>
-                  <label htmlFor="description" style={{ display: 'block', marginBottom: '0.5rem' }}>
-                    Description
-                  </label>
-                  <textarea
-                    id="description"
-                    value={newEvent.description}
-                    onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                    required
-                    placeholder="Describe what happened..."
-                    rows={2}
-                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button
-                    type="submit"
-                    style={{
-                      padding: '0.5rem 1rem',
-                      backgroundColor: '#4CAF50',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Add Event
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowAddEvent(false)}
-                    style={{
-                      padding: '0.5rem 1rem',
-                      backgroundColor: '#f5f5f5',
-                      border: '1px solid #ddd',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
-            {beatEvents.length === 0 ? (
-              <div style={{
-                backgroundColor: '#f5f5f5',
-                padding: '2rem',
-                borderRadius: '8px',
-                border: '1px solid #ddd',
-                textAlign: 'center',
-                color: '#666'
-              }}>
-                No events recorded yet
+      <div className="world-detail__dashboard">
+        {/* World Sphere in Center */}
+        <div className="world-detail__sphere-container">
+          <WorldSphere seed={world.id} size={250} className="world-detail__sphere" />
+          
+          {/* Current Arc Status */}
+          <div className="world-detail__arc-status">
+            {currentArc ? (
+              <div className="world-detail__arc-badge">
+                <span className="material-icons">auto_stories</span>
+                Active Arc
               </div>
             ) : (
-              beatEvents.map((event) => (
-                <div
-                  key={event.id}
-                  style={{
-                    backgroundColor: 'white',
-                    padding: '1rem',
-                    marginBottom: '0.5rem',
-                    borderRadius: '4px',
-                    border: '1px solid #ddd'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                    <strong>{event.event_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</strong>
-                    <span style={{ fontSize: '0.875rem', color: '#999' }}>
-                      {new Date(event.created_at).toLocaleString()}
-                    </span>
-                  </div>
-                  <p style={{ margin: 0, color: '#666' }}>{event.description}</p>
-                </div>
-              ))
+              <div className="world-detail__arc-badge world-detail__arc-badge--inactive">
+                <span className="material-icons">auto_stories</span>
+                No Active Arc
+              </div>
             )}
           </div>
         </div>
-      </div>
 
-      {/*
-        ─────────────────────────────────────────────────────────────────────
-        Beats list – clicking a beat reveals its full details underneath.
-        We purposely keep the styling simple (plain <ul>/<li>) because the
-        current frontend is meant purely for manual QA.
-       */}
-
-      {currentArc && (
-        <div style={{ marginTop: '2rem' }}>
-          <h3 style={{ marginTop: 0 }}>Beats</h3>
-          {beats.length === 0 ? (
-            <p style={{ color: '#666' }}>No beats generated yet.</p>
-          ) : (
-            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-              {beats
-                .sort((a, b) => a.beat_index - b.beat_index)
-                .map((beat) => (
-                  <li
-                    key={beat.id}
-                    onClick={() => setSelectedBeat(beat)}
-                    style={{
-                      cursor: 'pointer',
-                      marginBottom: '0.25rem',
-                      padding: '0.5rem',
-                      backgroundColor: selectedBeat?.id === beat.id ? '#e0f7fa' : '#fff',
-                      border: '1px solid #ddd',
-                      borderLeft: `6px solid ${beat.beat_type === 'anchor' ? '#FF9800' : '#2196F3'}`
-                    }}
-                  >
-                    <strong style={{ marginRight: '0.25rem' }}>Beat {beat.beat_index}</strong>
-                    — {beat.beat_name} {beat.beat_type === 'anchor' && ' (Anchor)'}
-                  </li>
-                ))}
-            </ul>
-          )}
-
-          {/* Detailed view for the selected beat */}
-          {selectedBeat && (
-            <div style={{
-              marginTop: '1.5rem',
-              backgroundColor: '#fff',
-              padding: '1rem',
-              border: '1px solid #ddd',
-              borderRadius: '6px'
-            }}>
-              <h4 style={{ marginTop: 0 }}>{selectedBeat.beat_name}{' '}
-                {selectedBeat.beat_type === 'anchor' && <span style={{ color: '#FF9800' }}>(Anchor)</span>}
-              </h4>
-              <p style={{ whiteSpace: 'pre-line', color: '#555' }}>{selectedBeat.description}</p>
-
-              <div style={{ marginTop: '1rem' }}>
-                <strong>World Directives</strong>
-                {selectedBeat.world_directives.length === 0 ? (
-                  <p style={{ color: '#777' }}>—</p>
-                ) : (
-                  <ul style={{ marginTop: '0.25rem' }}>
-                    {selectedBeat.world_directives.map((d) => (
-                      <li key={d}>{d}</li>
-                    ))}
-                  </ul>
+        {/* Main Dashboard Grid */}
+        <div className="world-detail__grid">
+          {/* Left Column - Current Arc */}
+          <div className="world-detail__panel world-detail__panel--arc">
+            <div className="world-detail__panel-header">
+              <h2 className="world-detail__panel-title">
+                <span className="material-icons">auto_stories</span>
+                Current Arc
+              </h2>
+            </div>
+            
+            {currentArc ? (
+              <div className="world-detail__arc-content">
+                <h3 className="world-detail__arc-name">{currentArc.story_name}</h3>
+                <p className="world-detail__arc-idea">{currentArc.story_idea}</p>
+                
+                {currentArc.detailed_description && (
+                  <div className="world-detail__arc-description">
+                    <strong>Arc Overview:</strong>
+                    <p>{currentArc.detailed_description}</p>
+                  </div>
                 )}
+                
+                <div className="world-detail__arc-meta">
+                  <div>Arc #{currentArc.arc_number} — Status: {currentArc.status}</div>
+                  <div className="world-detail__progress-bar">
+                    <div 
+                      className="world-detail__progress-fill"
+                      style={{ width: `${(beats.length / 15) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+                
+                <button
+                  onClick={progressArc}
+                  disabled={isProgressing}
+                  className="world-detail__progress-button"
+                >
+                  {isProgressing ? (
+                    <>
+                      <div className="world-detail__button-spinner"></div>
+                      Progressing Story...
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-icons">play_arrow</span>
+                      Progress Story
+                    </>
+                  )}
+                </button>
               </div>
+            ) : (
+              <div className="world-detail__arc-empty">
+                <p>No active arc. Create one to start the story!</p>
+                <button
+                  onClick={() => setShowCreateArc(true)}
+                  className="world-detail__create-arc-button"
+                >
+                  <span className="material-icons">add</span>
+                  Create New Arc
+                </button>
+              </div>
+            )}
 
-              <div style={{ marginTop: '1rem' }}>
-                <strong>Emergent Storylines</strong>
-                {selectedBeat.emergent_storylines.length === 0 ? (
-                  <p style={{ color: '#777' }}>—</p>
-                ) : (
-                  <ul style={{ marginTop: '0.25rem' }}>
-                    {selectedBeat.emergent_storylines.map((s) => (
-                      <li key={s}>{s}</li>
-                    ))}
-                  </ul>
+            {showCreateArc && (
+              <div className="world-detail__create-arc">
+                <h3>Create New Story Arc</h3>
+                <form onSubmit={createNewArc}>
+                  <label htmlFor="storyIdea">
+                    Story Idea (optional)
+                  </label>
+                  <textarea
+                    id="storyIdea"
+                    value={storyIdea}
+                    onChange={(e) => setStoryIdea(e.target.value)}
+                    placeholder="Describe your story idea, or leave blank for a random arc..."
+                    rows={3}
+                  />
+                  <div className="world-detail__form-actions">
+                    <button type="submit" className="world-detail__submit-button">
+                      Create Arc
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => setShowCreateArc(false)}
+                      className="world-detail__cancel-button"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+          </div>
+
+          {/* Right Column - World Events */}
+          <div className="world-detail__panel world-detail__panel--events">
+            <div className="world-detail__panel-header">
+              <h2 className="world-detail__panel-title">
+                <span className="material-icons">event_note</span>
+                World Events
+              </h2>
+              {currentArc && (
+                <button
+                  onClick={() => setShowAddEvent(!showAddEvent)}
+                  className="world-detail__add-button"
+                >
+                  <span className="material-icons">add</span>
+                  Add Event
+                </button>
+              )}
+            </div>
+
+            {showAddEvent && (
+              <div className="world-detail__add-event">
+                <h3>Add World Event</h3>
+                <form onSubmit={recordEvent}>
+                  <div className="world-detail__form-group">
+                    <label htmlFor="eventType">
+                      Event Type
+                    </label>
+                    <select
+                      id="eventType"
+                      value={newEvent.eventType}
+                      onChange={(e) => setNewEvent({ ...newEvent, eventType: e.target.value as any })}
+                    >
+                      <option value="player_action">Player Action</option>
+                      <option value="world_event">World Event</option>
+                      <option value="system_event">System Event</option>
+                    </select>
+                  </div>
+
+                  <div className="world-detail__form-group">
+                    <label htmlFor="impactLevel">
+                      Impact Level
+                    </label>
+                    <select
+                      id="impactLevel"
+                      value={newEvent.impactLevel}
+                      onChange={(e) => setNewEvent({ ...newEvent, impactLevel: e.target.value as any })}
+                    >
+                      <option value="minor">Minor</option>
+                      <option value="moderate">Moderate</option>
+                      <option value="major">Major</option>
+                    </select>
+                  </div>
+
+                  <div className="world-detail__form-group">
+                    <label htmlFor="description">
+                      Description
+                    </label>
+                    <textarea
+                      id="description"
+                      value={newEvent.description}
+                      onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                      required
+                      placeholder="Describe what happened..."
+                      rows={2}
+                    />
+                  </div>
+
+                  <div className="world-detail__form-actions">
+                    <button type="submit" className="world-detail__submit-button">
+                      Add Event
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => setShowAddEvent(false)}
+                      className="world-detail__cancel-button"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            <div className="world-detail__events-list">
+              {beatEvents.length === 0 ? (
+                <div className="world-detail__events-empty">
+                  No events recorded yet
+                </div>
+              ) : (
+                beatEvents.map((event) => (
+                  <div
+                    key={event.id}
+                    className="world-detail__event-item"
+                  >
+                    <div className="world-detail__event-header">
+                      <span className={`world-detail__event-impact world-detail__event-impact--${event.impact_level}`}>
+                        {event.impact_level.toUpperCase()}
+                      </span>
+                      <span className="world-detail__event-time">
+                        {new Date(event.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="world-detail__event-description">{event.description}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Bottom Row - Tabs for Locations, Characters, Factions */}
+          <div className="world-detail__panel world-detail__panel--tabs">
+            <div className="world-detail__tabs">
+              <button 
+                className={`world-detail__tab ${activeTab === 'locations' ? 'world-detail__tab--active' : ''}`}
+                onClick={() => setActiveTab('locations')}
+              >
+                <span className="material-icons">place</span>
+                Locations
+              </button>
+              <button 
+                className={`world-detail__tab ${activeTab === 'characters' ? 'world-detail__tab--active' : ''}`}
+                onClick={() => setActiveTab('characters')}
+              >
+                <span className="material-icons">person</span>
+                Characters
+              </button>
+              <button 
+                className={`world-detail__tab ${activeTab === 'factions' ? 'world-detail__tab--active' : ''}`}
+                onClick={() => setActiveTab('factions')}
+              >
+                <span className="material-icons">groups</span>
+                Factions
+              </button>
+              <button 
+                className={`world-detail__tab ${activeTab === 'events' ? 'world-detail__tab--active' : ''}`}
+                onClick={() => setActiveTab('events')}
+              >
+                <span className="material-icons">history</span>
+                Beat History
+              </button>
+            </div>
+
+            <div className="world-detail__tab-content">
+              {activeTab === 'locations' && (
+                <div className="world-detail__locations">
+                  {locationsSummary ? (
+                    <div className="world-detail__locations-summary">
+                      <div className="world-detail__locations-total">
+                        <span className="world-detail__stat-number">{locationsSummary.total}</span>
+                        <span className="world-detail__stat-label">Total Locations</span>
+                      </div>
+                      <div className="world-detail__locations-types">
+                        {Object.entries(locationsSummary.byType).map(([type, count]) => (
+                          <div key={type} className="world-detail__location-type">
+                            <span className="world-detail__stat-number">{count}</span>
+                            <span className="world-detail__stat-label">{type}s</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="world-detail__loading">Loading locations...</div>
+                  )}
+                  <Link to={`/app/worlds/${worldId}/locations`} className="world-detail__view-all">
+                    <span className="material-icons">visibility</span>
+                    View All Locations
+                  </Link>
+                </div>
+              )}
+
+              {activeTab === 'characters' && (
+                <div className="world-detail__characters">
+                  <div className="world-detail__characters-placeholder">
+                    <span className="material-icons">people</span>
+                    <p>Characters bring your world to life</p>
+                  </div>
+                  <Link to={`/app/worlds/${worldId}/characters`} className="world-detail__view-all">
+                    <span className="material-icons">visibility</span>
+                    View All Characters
+                  </Link>
+                </div>
+              )}
+
+              {activeTab === 'factions' && (
+                <div className="world-detail__factions">
+                  <div className="world-detail__factions-placeholder">
+                    <span className="material-icons">account_balance</span>
+                    <p>Factions shape the political landscape</p>
+                  </div>
+                  <Link to={`/app/worlds/${worldId}/factions`} className="world-detail__view-all">
+                    <span className="material-icons">visibility</span>
+                    View All Factions
+                  </Link>
+                </div>
+              )}
+
+              {activeTab === 'events' && (
+                <div className="world-detail__beats">
+                  <h3 className="world-detail__beats-title">Story Beats</h3>
+                  {beats.length === 0 ? (
+                    <p className="world-detail__beats-empty">No beats generated yet.</p>
+                  ) : (
+                    <ul className="world-detail__beats-list">
+                      {beats
+                        .sort((a, b) => a.beat_index - b.beat_index)
+                        .map((beat) => (
+                          <li
+                            key={beat.id}
+                            onClick={() => setSelectedBeat(beat)}
+                            className={`world-detail__beat-item ${selectedBeat?.id === beat.id ? 'world-detail__beat-item--selected' : ''} ${beat.beat_type === 'anchor' ? 'world-detail__beat-item--anchor' : ''}`}
+                          >
+                            <span className="world-detail__beat-index">Beat {beat.beat_index}</span>
+                            <span className="world-detail__beat-name">{beat.beat_name}</span>
+                            {beat.beat_type === 'anchor' && (
+                              <span className="world-detail__beat-anchor-badge">Anchor</span>
+                            )}
+                          </li>
+                        ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Bottom Panel - Selected Beat Details */}
+          {selectedBeat && (
+            <div className="world-detail__panel world-detail__panel--beat-details">
+              <h3 className="world-detail__beat-detail-title">
+                {selectedBeat.beat_name}
+                {selectedBeat.beat_type === 'anchor' && (
+                  <span className="world-detail__beat-type-badge">Anchor</span>
                 )}
+              </h3>
+              <p className="world-detail__beat-description">{selectedBeat.description}</p>
+
+              <div className="world-detail__beat-sections">
+                <div className="world-detail__beat-section">
+                  <h4 className="world-detail__beat-section-title">World Directives</h4>
+                  {selectedBeat.world_directives.length === 0 ? (
+                    <p className="world-detail__beat-empty">—</p>
+                  ) : (
+                    <ul className="world-detail__beat-list">
+                      {selectedBeat.world_directives.map((d, i) => (
+                        <li key={i} className="world-detail__beat-list-item">{d}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div className="world-detail__beat-section">
+                  <h4 className="world-detail__beat-section-title">Emergent Storylines</h4>
+                  {selectedBeat.emergent_storylines.length === 0 ? (
+                    <p className="world-detail__beat-empty">—</p>
+                  ) : (
+                    <ul className="world-detail__beat-list">
+                      {selectedBeat.emergent_storylines.map((s, i) => (
+                        <li key={i} className="world-detail__beat-list-item">{s}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </div>
             </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
