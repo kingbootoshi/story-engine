@@ -66,3 +66,64 @@
   }
 }
 
+/* Beat Tooltip - Small and positioned above cursor */
+.world-detail__beat-tooltip {
+  position: fixed;
+  z-index: 1000;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: theme('borderRadius.md');
+  padding: theme('spacing.2') theme('spacing.3');
+  pointer-events: none;
+  transform: translateX(-50%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  animation: tooltipFadeIn 0.2s ease;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.world-detail__beat-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid rgba(15, 23, 42, 0.95);
+}
+
+.world-detail__beat-tooltip-index {
+  display: block;
+  font-size: theme('fontSize.xs');
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: theme('fontWeight.medium');
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: theme('spacing.1');
+}
+
+.world-detail__beat-tooltip-name {
+  display: block;
+  font-size: theme('fontSize.sm');
+  color: white;
+  font-weight: theme('fontWeight.medium');
+  font-family: 'Cinzel', serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
