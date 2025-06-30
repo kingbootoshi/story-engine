@@ -50,20 +50,6 @@ export function AuthForm({ onBack }: AuthFormProps) {
   }, [user, navigate]);
 
   /**
-   * Reset form state to defaults
-   */
-  const resetForm = () => {
-    setEmail('');
-    setPassword('');
-    setConfirmPassword('');
-    setError(null);
-    setIsSubmitting(false);
-    setIsLogin(true);
-    setLoginSlideOut(false);
-    setSignupSlideIn(false);
-  };
-
-  /**
    * Switch between login and signup modes with animation
    */
   const toggleAuthMode = () => {

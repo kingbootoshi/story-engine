@@ -1,5 +1,5 @@
 import { EventList } from './EventList';
-import type { Arc, NewEventForm, WorldEvent } from '../../types';
+import type { Arc, WorldEvent } from '../../types';
 
 interface EventsSectionProps {
   currentArc: Arc | null;

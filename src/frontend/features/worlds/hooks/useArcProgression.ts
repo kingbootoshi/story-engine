@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { trpc } from '@/shared/lib/trpcClient';
-import type { World, Arc, CreateArcRequest, ProgressArcRequest } from '../types';
+import type { World, Arc } from '../types';
 
 export function useArcProgression() {
   const [isProgressing, setIsProgressing] = useState(false);

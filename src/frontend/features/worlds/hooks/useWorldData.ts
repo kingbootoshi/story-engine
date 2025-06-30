@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { trpc } from '@/shared/lib/trpcClient';
-import type { World, Arc, Beat, WorldEvent } from '../types';
+import type { World, Arc, Beat } from '../types';
 
 export function useWorldData(worldId: string | undefined) {
   const [world, setWorld] = useState<World | null>(null);

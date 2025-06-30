@@ -6,7 +6,7 @@ interface WorldInfoPanelProps {
   currentArc: Arc | null;
 }
 
-export function WorldInfoPanel({ world, currentArc }: WorldInfoPanelProps) {
+export function WorldInfoPanel({ world, currentArc: _currentArc }: WorldInfoPanelProps) {
   return (
     <div className="world-detail__world-info">
       <h1 className="world-detail__title">{world.name}</h1>

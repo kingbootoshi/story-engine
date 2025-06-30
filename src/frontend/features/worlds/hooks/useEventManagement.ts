@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { trpc } from '@/shared/lib/trpcClient';
 import type { WorldEvent, Beat, NewEventForm } from '../types';
 

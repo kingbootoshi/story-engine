@@ -50,7 +50,6 @@ export function ApiDocs() {
    * Get current section index
    */
   const currentSectionIndex = sections.findIndex(s => s.id === activeSection);
-  const currentSection = sections[currentSectionIndex];
   const prevSection = currentSectionIndex > 0 ? sections[currentSectionIndex - 1] : null;
   const nextSection = currentSectionIndex < sections.length - 1 ? sections[currentSectionIndex + 1] : null;
 
