@@ -4,9 +4,6 @@ import { LandingPage } from '@/features/landing';
 import { AppLayout } from '@/app/layout/AppLayout';
 import { Dashboard } from '@/app/pages/Dashboard';
 import { WorldsList, WorldDetail } from '@/features/worlds';
-import { Locations } from '@/features/locations/components/Locations';
-import { Factions } from '@/features/factions/components/Factions';
-import { Characters } from '@/features/characters/components/Characters';
 import { ApiKeys } from '@/features/api-keys/components/ApiKeys';
 import { ApiDocs } from '@/features/api-docs';
 
@@ -59,18 +56,6 @@ export const router = createBrowserRouter([
       {
         path: 'worlds/:worldId',
         element: <WorldDetail />,
-      },
-      {
-        path: 'worlds/:worldId/locations',
-        element: <Locations />,
-      },
-      {
-        path: 'worlds/:worldId/factions',
-        element: <Factions />,
-      },
-      {
-        path: 'worlds/:worldId/characters',
-        element: <Characters />,
       },
       {
         path: 'api-keys',

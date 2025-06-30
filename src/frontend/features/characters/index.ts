@@ -1,1 +1,0 @@
-export { Characters } from './components/Characters';
