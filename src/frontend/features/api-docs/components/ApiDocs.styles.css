@@ -10,6 +10,8 @@
   min-height: 100vh;
   color: #e0e0e0;
   position: relative;
+  margin: -64px -32px 0 -32px; /* Negative margins to break out of container padding */
+  padding-top: 64px; /* Add padding to compensate for header */
 }
 
 /* Sidebar Navigation */
@@ -19,6 +21,7 @@
   backdrop-filter: blur(10px);
   border-right: 1px solid rgba(255, 255, 255, 0.1);
   padding: 2rem;
+  padding-top: calc(2rem + 64px); /* Account for header */
   position: sticky;
   top: 0;
   height: 100vh;
@@ -36,7 +39,7 @@
     display: flex;
     position: fixed;
     bottom: 2rem;
-    right: 2rem;
+    right: 1rem; /* Adjusted for better mobile positioning */
     width: 56px;
     height: 56px;
     background: linear-gradient(135deg, #4f46e5, #7c3aed);
@@ -304,7 +307,8 @@
 .api-docs__content {
   flex: 1;
   padding: 3rem 4rem;
-  max-width: 1000px;
+  padding-top: calc(3rem + 64px); /* Account for header */
+  max-width: calc(1000px + 8rem); /* Account for padding */
   margin: 0 auto;
   overflow-y: auto;
 }
@@ -965,6 +969,7 @@
   .api-docs {
     flex-direction: column;
     position: relative;
+    margin: -64px -16px 0 -16px; /* Smaller negative margins for mobile */
   }
   
   /* Mobile Toggle Button */
@@ -987,6 +992,9 @@
     transition: transform 0.3s ease;
     z-index: 50;
     border-right: 1px solid rgba(255, 255, 255, 0.1);
+    margin-left: 0; /* Reset margin for mobile */
+    margin-top: 0; /* Reset margin for mobile */
+    padding-top: 2rem; /* Reset padding for mobile */
   }
   
   /* Show sidebar when active */
@@ -1050,6 +1058,13 @@
   .api-docs__content {
     padding: 1.5rem;
     margin-top: 0;
+  }
+  
+  /* Very small screens */
+  @media (max-width: 480px) {
+    .api-docs {
+      margin: -64px -8px 0 -8px; /* Even smaller margins for very small screens */
+    }
   }
   
   .api-docs__title {
