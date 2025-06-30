@@ -84,19 +84,22 @@ export function AuthForm({ onBack }: AuthFormProps) {
       if (isLogin) {
         // Login flow
         await signIn(email, password);
-        // Redirect will happen via the useEffect
+        console.debug('[AuthForm] Sign in successful, redirecting to dashboard');
+        // Immediate redirect after successful login
+        navigate('/app/worlds');
       } else {
         // Signup flow
         if (password !== confirmPassword) {
           throw new Error('Passwords do not match');
         }
         await signUp(email, password);
-        // After signup, show a success message or redirect
+        console.debug('[AuthForm] Sign up successful, redirecting to dashboard');
+        // Immediate redirect after successful signup
+        navigate('/app/worlds');
       }
     } catch (err) {
       console.error('[AuthForm] Auth error:', err);
       setError(err instanceof Error ? err.message : 'Authentication failed');
-    } finally {
       setIsSubmitting(false);
     }
   };

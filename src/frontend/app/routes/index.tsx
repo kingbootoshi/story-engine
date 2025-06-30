@@ -15,10 +15,25 @@ function PrivateRoute() {
   const { user, isInitialized } = useAuth();
   
   // Until the auth context has finished resolving persisted session data we
-  // render *nothing*. This prevents a flash-of-redirect to the login page when
+  // render a loading indicator. This prevents a flash-of-redirect to the login page when
   // the user actually still has a valid session stored in `localStorage`.
   if (!isInitialized) {
-    return null; // Optionally, replace with a loading spinner component.
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        backgroundColor: '#0f172a',
+        color: 'white',
+        fontFamily: 'Cinzel, serif'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '24px', marginBottom: '20px' }}>Story Engine</div>
+          <div style={{ fontSize: '16px', opacity: 0.8 }}>Loading...</div>
+        </div>
+      </div>
+    );
   }
 
   if (!user) {

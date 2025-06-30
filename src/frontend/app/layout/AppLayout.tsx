@@ -15,6 +15,7 @@ export function AppLayout() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   /**
    * Handle scroll to add backdrop blur to header
@@ -38,6 +39,13 @@ export function AppLayout() {
     }, 50);
 
     return () => clearTimeout(timer);
+  }, [location.pathname]);
+
+  /**
+   * Close mobile menu when route changes
+   */
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
   }, [location.pathname]);
 
   /**
@@ -124,8 +132,14 @@ export function AppLayout() {
       
       {/* Content overlay */}
       <div className="app-layout__overlay">
+        {/* Mobile menu overlay */}
+        <div 
+          className={`app-layout__mobile-overlay ${isMobileMenuOpen ? 'app-layout__mobile-overlay--visible' : ''}`}
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+
         {/* Top navigation bar */}
-        <header className={`app-layout__header ${isScrolled ? 'app-layout__header--scrolled' : ''}`}>
+        <header className={`app-layout__header ${isScrolled ? 'app-layout__header--scrolled' : ''} ${isMobileMenuOpen ? 'app-layout__header--hidden' : ''}`}>
           <div className="app-layout__header-container">
             {/* Logo */}
             <div className="app-layout__logo-section">
@@ -137,9 +151,9 @@ export function AppLayout() {
               </Link>
             </div>
             
-            {/* Navigation - Now visible on all screen sizes */}
-            <nav className="app-layout__nav">
-              <div className="app-layout__nav-scroll">
+            {/* Desktop Navigation */}
+            <nav className="app-layout__nav app-layout__nav--desktop">
+              <div className="app-layout__nav-items">
                 {navItems.map(item => {
                   const active = item.exact 
                     ? location.pathname === item.path 
@@ -159,7 +173,16 @@ export function AppLayout() {
               </div>
             </nav>
             
-            {/* User Menu - Now a dropdown on mobile */}
+            {/* Mobile Hamburger Button */}
+            <button
+              className="app-layout__mobile-menu-btn"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle navigation menu"
+            >
+              <span className="material-icons">menu</span>
+            </button>
+            
+            {/* User Menu */}
             <div className="app-layout__user-menu-container">
               <button
                 className="app-layout__user-button"
@@ -196,6 +219,56 @@ export function AppLayout() {
             </div>
           </div>
         </header>
+
+        {/* Mobile Navigation Sidebar */}
+        <nav className={`app-layout__mobile-nav ${isMobileMenuOpen ? 'app-layout__mobile-nav--open' : ''}`}>
+          <div className="app-layout__mobile-nav-header">
+            <Link to="/app" className="app-layout__mobile-nav-logo">
+              <span className="material-icons">auto_stories</span>
+              <span>Story Engine</span>
+            </Link>
+            <button
+              className="app-layout__mobile-nav-close"
+              onClick={() => setIsMobileMenuOpen(false)}
+              aria-label="Close menu"
+            >
+              <span className="material-icons">close</span>
+            </button>
+          </div>
+          
+          <div className="app-layout__mobile-nav-items">
+            {navItems.map(item => {
+              const active = item.exact 
+                ? location.pathname === item.path 
+                : isActive(item.path);
+              
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`app-layout__mobile-nav-link ${active ? 'app-layout__mobile-nav-link--active' : ''}`}
+                >
+                  <span className="material-icons">{item.icon}</span>
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+          
+          <div className="app-layout__mobile-nav-footer">
+            <div className="app-layout__mobile-nav-user">
+              <span className="material-icons">account_circle</span>
+              <span>{user?.email}</span>
+            </div>
+            <button
+              onClick={handleSignOut}
+              className="app-layout__mobile-nav-signout"
+            >
+              <span className="material-icons">logout</span>
+              <span>Sign Out</span>
+            </button>
+          </div>
+        </nav>
         
         {/* Main content area */}
         <main className={`app-layout__main ${isTransitioning ? 'app-layout__main--transitioning' : ''}`}>

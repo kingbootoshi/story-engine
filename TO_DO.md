@@ -19,8 +19,6 @@ let the user:
 a. gen with AI (then trigger existing pipeline, ensure page knows its happening)
 b. add entities manually (with the option of ai assistance for fast gens)
 
-3. add full details of locations/factions/characters to the world view
-
 4. allow people to fully add/delete/edit entities from the front end
 
 # modules to do:

@@ -144,19 +144,24 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       if (isLogin) {
         // Login flow
         await signIn(email, password);
+        console.debug('[AuthModal] Sign in successful, redirecting to dashboard');
+        // Close modal and redirect
         onClose();
+        window.location.href = '/app/worlds';
       } else {
         // Signup flow
         if (password !== confirmPassword) {
           throw new Error('Passwords do not match');
         }
         await signUp(email, password);
+        console.debug('[AuthModal] Sign up successful, redirecting to dashboard');
+        // Close modal and redirect
         onClose();
+        window.location.href = '/app/worlds';
       }
     } catch (err) {
       console.error('[AuthModal] Auth error:', err);
       setError(err instanceof Error ? err.message : 'Authentication failed');
-    } finally {
       setIsSubmitting(false);
     }
   };

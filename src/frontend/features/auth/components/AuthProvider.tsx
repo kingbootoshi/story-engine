@@ -93,24 +93,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
    * Sign in with email and password
    */
   const signIn = async (email: string, password: string) => {
-    console.debug('[AuthProvider] Attempting sign in');
+    console.debug('[AuthProvider] Attempting sign in for:', email);
     
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     
     if (error) {
-      console.error('[AuthProvider] Sign in error:', error);
+      console.error('[AuthProvider] Sign in error:', error.message);
       throw error;
     }
     
     console.debug('[AuthProvider] Sign in successful:', data.session?.user.email);
-    // The onAuthStateChange listener will handle updating the state
+    // Immediately update state instead of waiting for listener
+    setSession(data.session);
+    setUser(data.session?.user ?? null);
   };
 
   /**
    * Sign up with email and password
    */
   const signUp = async (email: string, password: string) => {
-    console.debug('[AuthProvider] Attempting sign up');
+    console.debug('[AuthProvider] Attempting sign up for:', email);
     
     const { data, error } = await supabase.auth.signUp({ 
       email, 
@@ -121,12 +123,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
     });
     
     if (error) {
-      console.error('[AuthProvider] Sign up error:', error);
+      console.error('[AuthProvider] Sign up error:', error.message);
       throw error;
     }
     
     console.debug('[AuthProvider] Sign up successful:', data.user?.email);
-    // The onAuthStateChange listener will handle updating the state
+    
+    // Check if email confirmation is required
+    if (data.session) {
+      // If we get a session, user can log in immediately
+      console.debug('[AuthProvider] Session created immediately after sign up');
+      setSession(data.session);
+      setUser(data.session?.user ?? null);
+    } else {
+      // Email confirmation required
+      console.debug('[AuthProvider] Email confirmation required');
+      throw new Error('Please check your email to confirm your account before logging in.');
+    }
   };
 
   /**
