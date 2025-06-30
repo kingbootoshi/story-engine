@@ -4,31 +4,35 @@ The Story Engine SDK provides a clean, simple API for creating and managing dyna
 
 ## Authentication
 
-All endpoints require authentication via API key passed in the x-api-key header:
+All API requests require authentication. You must provide your API key in the `x-api-key` HTTP header. This key is generated and managed through your Story Engine dashboard.
 
-```typescript
+```http
 x-api-key: YOUR_API_KEY
 ```
 
-## Base URL
+**Security Notice:** Never expose your API keys in client-side code (e.g., in a web browser). Always use them server-side and store them securely as environment variables.
+
+## Base API Path
+
+All REST API endpoints are prefixed with:
 
 ```
-https://api.storyengine.dev/trpc
+https://api.storyengine.dev/api
 ```
 
 ## Core Concepts
 
-1. **Worlds** - The top-level container for your story
-2. **Characters** - Entities that can take actions and have personalities
-3. **Locations** - Places where events occur
-4. **Factions** - Groups with ideologies and relationships
-5. **Events** - The primary way to progress your story
+1.  **Worlds** - The top-level container for your story.
+2.  **Characters** - Entities that can take actions and have personalities.
+3.  **Locations** - Places where events occur.
+4.  **Factions** - Groups with ideologies and relationships.
+5.  **Events** - The primary way to progress your story.
 
 ## API Endpoints
 
-### World Module
+### World Module (`/api/worlds`)
 
-#### `world.create`
+#### Create a new world (`POST /api/worlds`)
 Create a new world with automatic population of characters, locations, and factions.
 
 **Input:**
@@ -43,16 +47,7 @@ Create a new world with automatic population of characters, locations, and facti
 
 ---
 
-#### `world.get`
-Get details about a specific world.
-
-**Input:** `worldId: string`
-
-**Output:** `World` object or null
-
----
-
-#### `world.list`
+#### List all worlds (`GET /api/worlds`)
 List all worlds for the authenticated user.
 
 **Input:** None
@@ -61,10 +56,11 @@ List all worlds for the authenticated user.
 
 ---
 
-#### `world.getWorldState`
-Get comprehensive world state including current arc, beats, and recent events.
+#### Get comprehensive world state (`GET /api/worlds/:worldId`)
+Get comprehensive world state including current arc, beats, and recent events. This is the primary endpoint for retrieving world details.
 
-**Input:** `worldId: string`
+**Path Parameters:**
+*   `worldId`: `string` (UUID) - The ID of the world to retrieve.
 
 **Output:**
 ```typescript
@@ -75,19 +71,22 @@ Get comprehensive world state including current arc, beats, and recent events.
   recentEvents: WorldEvent[]
 }
 ```
+**Note:** The `world.get` endpoint for retrieving just the `World` object is not exposed via REST to avoid conflicts with `getWorldState`. Use this endpoint for comprehensive data.
 
 ---
 
-#### `world.recordWorldEvent` ⭐ **PRIMARY INTERACTION**
-Add an event to the world. This is the main way to progress your story.
+#### Record a world event (`POST /api/worlds/:worldId/events`) ⭐ **PRIMARY INTERACTION**
+Add an event to the world. This is the main way to progress your story. The event will be associated with the world's currently active story beat.
 
-**Input:**
+**Path Parameters:**
+*   `worldId`: `string` (UUID) - The ID of the world the event occurred in.
+
+**Request Body:**
 ```typescript
 {
-  world_id: string
   event_type: 'player_action' | 'system_event' | 'environmental' | 'social'
   impact_level: 'minor' | 'moderate' | 'major' | 'catastrophic'
-  description: string
+  description: string // Detailed description of what happened
 }
 ```
 
@@ -95,53 +94,71 @@ Add an event to the world. This is the main way to progress your story.
 
 ---
 
-#### `world.progressArc` ⭐ **STORY PROGRESSION**
-Progress the current story arc to the next beat. This generates new narrative content based on recent events.
+#### Create a new story arc (`POST /api/worlds/:worldId/arcs`)
+Initiate a new story arc for the specified world. This generates the anchor points for the arc.
 
-**Input:**
+**Path Parameters:**
+*   `worldId`: `string` (UUID) - The ID of the world to create the arc for.
+
+**Request Body:**
 ```typescript
 {
-  worldId: string
-  arcId: string
-  recentEvents?: string  // Optional context about recent player actions
+  worldName: string       // The current name of the world
+  worldDescription: string // The current description/theme of the world
+  storyIdea?: string      // Optional seed idea provided by the user for the arc
 }
 ```
 
-**Output:** `WorldBeat` object or null if arc is complete
-
----
-
-#### `world.getEvents`
-Get world events with flexible filtering.
-
-**Input:**
+**Output:**
 ```typescript
 {
-  worldId: string
-  filters?: {
-    eventType?: 'player_action' | 'system_event' | 'environmental' | 'social'
-    impactLevel?: 'minor' | 'moderate' | 'major' | 'catastrophic'
-    limit?: number      // Max 100
-    offset?: number     // For pagination
-    startDate?: Date
-    endDate?: Date
-  }
+  arc: WorldArc,
+  anchors: WorldBeat[]
 }
 ```
 
-**Output:** Array of `WorldEvent` objects
+---
+
+#### Progress the current arc to the next beat (`POST /api/worlds/arcs/:arcId/progress`) ⭐ **STORY PROGRESSION**
+Progress the current story arc to the next beat. This generates new narrative content based on recent events and the arc's progression.
+
+**Path Parameters:**
+*   `arcId`: `string` (UUID) - The ID of the arc to progress.
+
+**Request Body:**
+```typescript
+{
+  worldId: string   // The ID of the world associated with the arc
+  recentEvents?: string // Optional, pre-formatted context about recent player actions or world changes. If omitted, the system will fetch recent events.
+}
+```
+
+**Output:** `WorldBeat` object or `null` if the arc is now complete.
 
 ---
 
-### Character Module
+#### Complete an active arc (`POST /api/worlds/:worldId/arcs/:arcId/complete`)
+Marks a story arc as completed and generates a summary.
 
-#### `character.create`
+**Path Parameters:**
+*   `worldId`: `string` (UUID) - The ID of the world.
+*   `arcId`: `string` (UUID) - The ID of the arc to complete.
+
+**Input:** None (all context is derived from path parameters)
+
+**Output:** `{ message: 'Arc completed successfully' }`
+
+---
+
+### Character Module (`/api/characters`)
+
+#### Create a new character (`POST /api/characters`)
 Create a new character in a world.
 
 **Input:**
 ```typescript
 {
-  world_id: string
+  world_id: string // UUID
   name: string
   type: 'player' | 'npc'
   story_role: 'major' | 'minor' | 'wildcard' | 'background'
@@ -149,8 +166,8 @@ Create a new character in a world.
   background?: string
   personality_traits?: string[]
   motivations?: string[]
-  location_id?: string    // Initial location
-  faction_id?: string     // Initial faction
+  location_id?: string // UUID of initial location, nullable
+  faction_id?: string  // UUID of initial faction, nullable
 }
 ```
 
@@ -158,46 +175,43 @@ Create a new character in a world.
 
 ---
 
-#### `character.get`
+#### Get character details (`GET /api/characters/:characterId`)
 Get full character details including current location, faction, and memories.
 
-**Input:** `characterId: string`
+**Path Parameters:**
+*   `characterId`: `string` (UUID) - The ID of the character to retrieve.
 
 **Output:** `Character` object with all relationships populated
 
 ---
 
-#### `character.list`
+#### List all characters in a world (`GET /api/characters`)
 List all characters in a world.
 
-**Input:**
-```typescript
-{
-  worldId: string
-}
-```
+**Query Parameters:**
+*   `worldId`: `string` (UUID) - **Required.** The ID of the world to list characters for.
 
 **Output:** Array of `Character` objects
 
 ---
 
-#### `character.update`
+#### Update character details (`PUT /api/characters/:characterId`)
 Update character details.
 
-**Input:**
+**Path Parameters:**
+*   `characterId`: `string` (UUID) - The ID of the character to update.
+
+**Request Body:**
 ```typescript
 {
-  id: string
-  updates: {
-    name?: string
-    description?: string
-    background?: string
-    personality_traits?: string[]
-    motivations?: string[]
-    location_id?: string
-    faction_id?: string
-    status?: 'alive' | 'deceased'
-  }
+  name?: string
+  description?: string
+  background?: string
+  personality_traits?: string[]
+  motivations?: string[]
+  location_id?: string // UUID, nullable
+  faction_id?: string  // UUID, nullable
+  status?: 'alive' | 'deceased'
 }
 ```
 
@@ -205,32 +219,33 @@ Update character details.
 
 ---
 
-#### `character.delete`
+#### Remove a character (`DELETE /api/characters/:characterId`)
 Remove a character from the world.
 
-**Input:** `characterId: string`
+**Path Parameters:**
+*   `characterId`: `string` (UUID) - The ID of the character to delete.
 
 **Output:** `{ success: true }`
 
 ---
 
-### Location Module
+### Location Module (`/api/locations`)
 
-#### `location.create`
+#### Create a new location (`POST /api/locations`)
 Create a new location in a world.
 
 **Input:**
 ```typescript
 {
-  world_id: string
-  parent_location_id?: string  // For nested locations
+  world_id: string // UUID
+  parent_location_id?: string  // UUID for nested locations, nullable
   name: string
   type: 'region' | 'city' | 'landmark' | 'wilderness'
   status: 'thriving' | 'stable' | 'declining' | 'ruined' | 'abandoned' | 'lost'
   description: string
   tags?: string[]
-  relative_x?: number  // 0-100 for map positioning
-  relative_y?: number  // 0-100 for map positioning
+  relative_x?: number  // 0-100 for map positioning, nullable
+  relative_y?: number  // 0-100 for map positioning, nullable
 }
 ```
 
@@ -238,59 +253,52 @@ Create a new location in a world.
 
 ---
 
-#### `location.get`
+#### Get location details (`GET /api/locations/:locationId`)
 Get full location details.
 
-**Input:** `locationId: string`
+**Path Parameters:**
+*   `locationId`: `string` (UUID) - The ID of the location to retrieve.
 
 **Output:** `Location` object
 
 ---
 
-#### `location.list`
+#### List all locations in a world (`GET /api/locations`)
 List all locations in a world.
 
-**Input:**
-```typescript
-{
-  worldId: string
-}
-```
+**Query Parameters:**
+*   `worldId`: `string` (UUID) - **Required.** The ID of the world to list locations for.
 
 **Output:** Array of `Location` objects
 
 ---
 
-#### `location.search`
+#### Search locations (`GET /api/locations/search`)
 Search locations by name or tags.
 
-**Input:**
-```typescript
-{
-  worldId: string
-  query: string       // Search term
-  tags?: string[]     // Filter by tags
-}
-```
+**Query Parameters:**
+*   `worldId`: `string` (UUID) - **Required.** The ID of the world to search within.
+*   `query`: `string` - **Required.** Text to search in name and description.
+*   `tags[]`: `string[]` - Optional. Filter by tags (pass as multiple `tags=tag1&tags=tag2`).
 
 **Output:** Array of matching `Location` objects
 
 ---
 
-#### `location.update`
+#### Update location details (`PUT /api/locations/:locationId`)
 Update location details.
 
-**Input:**
+**Path Parameters:**
+*   `locationId`: `string` (UUID) - The ID of the location to update.
+
+**Request Body:**
 ```typescript
 {
-  id: string
-  updates: {
-    name?: string
-    description?: string
-    status?: LocationStatus
-    tags?: string[]
-    controlling_faction_id?: string
-  }
+  name?: string
+  description?: string
+  status?: LocationStatus
+  tags?: string[]
+  controlling_faction_id?: string // UUID, nullable
 }
 ```
 
@@ -298,32 +306,33 @@ Update location details.
 
 ---
 
-#### `location.delete`
+#### Remove a location (`DELETE /api/locations/:locationId`)
 Remove a location from the world.
 
-**Input:** `locationId: string`
+**Path Parameters:**
+*   `locationId`: `string` (UUID) - The ID of the location to delete.
 
 **Output:** `{ success: true }`
 
 ---
 
-### Faction Module
+### Faction Module (`/api/factions`)
 
-#### `faction.create`
+#### Create a new faction (`POST /api/factions`)
 Create a new faction in a world.
 
 **Input:**
 ```typescript
 {
-  world_id: string
+  world_id: string // UUID
   name: string
   ideology: string
-  status?: 'rising' | 'stable' | 'declining' | 'collapsed'
-  members_estimate?: number
-  home_location_id?: string
-  banner_color?: string  // Hex color
-  emblem_svg?: string    // SVG data
-  tags?: string[]
+  status?: 'rising' | 'stable' | 'declining' | 'collapsed' // Defaults to 'stable'
+  members_estimate?: number // Defaults to 0
+  home_location_id?: string // UUID, nullable
+  banner_color?: string  // Hex color, nullable
+  emblem_svg?: string    // SVG data, nullable
+  tags?: string[] // Defaults to empty array
 }
 ```
 
@@ -331,45 +340,42 @@ Create a new faction in a world.
 
 ---
 
-#### `faction.get`
+#### Get faction details (`GET /api/factions/:factionId`)
 Get full faction details including controlled locations and member count.
 
-**Input:** `factionId: string`
+**Path Parameters:**
+*   `factionId`: `string` (UUID) - The ID of the faction to retrieve.
 
 **Output:** `Faction` object
 
 ---
 
-#### `faction.list`
+#### List all factions in a world (`GET /api/factions`)
 List all factions in a world.
 
-**Input:**
-```typescript
-{
-  worldId: string
-}
-```
+**Query Parameters:**
+*   `worldId`: `string` (UUID) - **Required.** The ID of the world to list factions for.
 
 **Output:** Array of `Faction` objects
 
 ---
 
-#### `faction.update`
+#### Update faction details (`PUT /api/factions/:factionId`)
 Update faction details.
 
-**Input:**
+**Path Parameters:**
+*   `factionId`: `string` (UUID) - The ID of the faction to update.
+
+**Request Body:**
 ```typescript
 {
-  id: string
-  updates: {
-    name?: string
-    ideology?: string
-    status?: FactionStatus
-    members_estimate?: number
-    banner_color?: string
-    emblem_svg?: string
-    tags?: string[]
-  }
+  name?: string
+  ideology?: string
+  status?: FactionStatus
+  members_estimate?: number
+  banner_color?: string
+  emblem_svg?: string
+  tags?: string[]
 }
 ```
 
@@ -377,42 +383,11 @@ Update faction details.
 
 ---
 
-#### `faction.setStance`
-Set diplomatic stance between two factions.
-
-**Input:**
-```typescript
-{
-  sourceId: string
-  targetId: string
-  stance: 'ally' | 'neutral' | 'hostile'
-  reason: string
-}
-```
-
-**Output:** `{ success: true }`
-
----
-
-#### `faction.getStances`
-Get all diplomatic stances for a faction.
-
-**Input:** `factionId: string`
-
-**Output:**
-```typescript
-Array<{
-  targetId: string
-  stance: 'ally' | 'neutral' | 'hostile'
-}>
-```
-
----
-
-#### `faction.delete`
+#### Remove a faction (`DELETE /api/factions/:factionId`)
 Remove a faction from the world.
 
-**Input:** `factionId: string`
+**Path Parameters:**
+*   `factionId`: `string` (UUID) - The ID of the faction to delete.
 
 **Output:** `{ success: true }`
 
@@ -423,22 +398,67 @@ Remove a faction from the world.
 ### World
 ```typescript
 {
-  id: string
-  user_id: string
+  id: string // UUID
+  user_id: string // UUID
   name: string
   description: string
-  current_arc_id: string | null
-  metadata: Record<string, any>
-  created_at: string
-  updated_at: string
+  current_arc_id: string | null // UUID of the active arc, nullable
+  created_at: string // ISO 8601 Date String
+  updated_at: string | null // ISO 8601 Date String, nullable
+}
+```
+
+### WorldArc
+```typescript
+{
+  id: string // UUID
+  world_id: string // UUID
+  arc_number: number // Integer, positive
+  story_name: string
+  story_idea: string
+  status: 'active' | 'completed'
+  summary: string | null // Nullable
+  detailed_description: string // Defaults to empty string
+  current_beat_id: string | null // UUID of the current beat, nullable
+  created_at: string // ISO 8601 Date String
+  completed_at: string | null // ISO 8601 Date String, nullable
+}
+```
+
+### WorldBeat
+```typescript
+{
+  id: string // UUID
+  arc_id: string // UUID
+  beat_index: number // Integer, 0-14
+  beat_type: 'anchor' | 'dynamic'
+  beat_name: string
+  description: string
+  world_directives: string[]
+  emergent_storylines: string[]
+  created_at: string // ISO 8601 Date String
+}
+```
+
+### WorldEvent
+```typescript
+{
+  id: string // UUID
+  world_id: string // UUID
+  arc_id: string // UUID of the arc this event is associated with (resolved by backend)
+  beat_id: string // UUID of the beat this event is associated with (resolved by backend)
+  event_type: 'player_action' | 'system_event' | 'environmental' | 'social'
+  description: string
+  impact_level: 'minor' | 'moderate' | 'major' | 'catastrophic'
+  created_at: string // ISO 8601 Date String
 }
 ```
 
 ### Character
 ```typescript
 {
-  id: string
-  world_id: string
+  id: string // UUID
+  world_id: string // UUID
   name: string
   type: 'player' | 'npc'
   status: 'alive' | 'deceased'
@@ -447,180 +467,138 @@ Remove a faction from the world.
   background: string
   personality_traits: string[]
   motivations: string[]
-  location_id: string | null
-  faction_id: string | null
+  location_id: string | null // UUID, nullable
+  faction_id: string | null // UUID, nullable
   memories: Array<{
     event_description: string
-    timestamp: string
+    timestamp: string // ISO 8601 Date String
     emotional_impact: 'positive' | 'negative' | 'neutral'
-    importance: number  // 0-1
-    beat_index?: number
+    importance: number  // Float between 0.0 - 1.0
+    beat_index?: number // Optional
   }>
-  story_beats_witnessed: number[]
-  created_at: string
-  updated_at: string
+  story_beats_witnessed: number[] // Array of beat indices
+  created_at: string // ISO 8601 Date String
+  updated_at: string // ISO 8601 Date String
 }
 ```
 
 ### Location
 ```typescript
 {
-  id: string
-  world_id: string
-  parent_location_id: string | null
+  id: string // UUID
+  world_id: string // UUID
+  parent_location_id: string | null // UUID, nullable
   name: string
   type: 'region' | 'city' | 'landmark' | 'wilderness'
   status: 'thriving' | 'stable' | 'declining' | 'ruined' | 'abandoned' | 'lost'
   description: string
   tags: string[]
-  relative_x: number | null
-  relative_y: number | null
-  controlling_faction_id: string | null
+  relative_x: number | null // Float between 0-100, nullable
+  relative_y: number | null // Float between 0-100, nullable
+  controlling_faction_id: string | null // UUID, nullable
   historical_events: Array<{
-    timestamp: string
+    timestamp: string // ISO 8601 Date String
     event: string
-    previous_status?: string
-    beat_index?: number
+    previous_status?: string // Optional
+    beat_index?: number // Optional
   }>
-  last_significant_change: string | null
-  created_at: string
-  updated_at: string
+  last_significant_change: string | null // ISO 8601 Date String, nullable
+  created_at: string // ISO 8601 Date String
+  updated_at: string // ISO 8601 Date String
 }
 ```
 
 ### Faction
 ```typescript
 {
-  id: string
-  world_id: string
+  id: string // UUID
+  world_id: string // UUID
   name: string
-  banner_color: string | null
-  emblem_svg: string | null
+  banner_color: string | null // Hex color, nullable
+  emblem_svg: string | null // SVG data, nullable
   ideology: string
   status: 'rising' | 'stable' | 'declining' | 'collapsed'
-  members_estimate: number
-  home_location_id: string | null
-  controlled_locations: string[]
+  members_estimate: number // Integer
+  home_location_id: string | null // UUID, nullable
+  controlled_locations: string[] // Array of UUIDs
   tags: string[]
   historical_events: Array<{
-    timestamp: string
+    timestamp: string // ISO 8601 Date String
     event: string
-    impact?: string
   }>
-  created_at: string
-  updated_at: string
-}
-```
-
-### WorldEvent
-```typescript
-{
-  id: string
-  world_id: string
-  arc_id: string | null
-  beat_id: string | null
-  event_type: 'player_action' | 'system_event' | 'environmental' | 'social'
-  description: string
-  impact_level: 'minor' | 'moderate' | 'major' | 'catastrophic'
-  affected_regions: string[]
-  created_at: string
-  metadata: Record<string, any>
+  created_at: string // ISO 8601 Date String
+  updated_at: string // ISO 8601 Date String
 }
 ```
 
 ## Example Usage
 
+All examples use the `x-api-key` header for authentication and demonstrate direct HTTP calls.
+
 ### Using curl
 
 ```bash
 # List all worlds
-curl -X GET https://api.storyengine.dev/api/worlds \
+curl -X GET "https://api.storyengine.dev/api/worlds" \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json"
 
 # Create a world
-curl -X POST https://api.storyengine.dev/api/worlds \
+curl -X POST "https://api.storyengine.dev/api/worlds" \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"name": "My World", "description": "A fantasy realm"}'
-```
 
-### Using JavaScript/TypeScript
+# Record a world event (replace with actual world ID)
+curl -X POST "https://api.storyengine.dev/api/worlds/YOUR_WORLD_ID/events" \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event_type": "player_action",
+    "impact_level": "major",
+    "description": "The hero discovers an ancient artifact in the ruins"
+  }'
 
-```typescript
-// Example client setup
-const headers = {
-  'x-api-key': 'YOUR_API_KEY',
-  'Content-Type': 'application/json'
-};
-
-// 1. Create a world (auto-populates with entities)
-const world = await fetch('https://api.storyengine.dev/api/worlds', {
-  method: 'POST',
-  headers,
-  body: JSON.stringify({
-    name: "The Shattered Realms",
-    description: "A dark fantasy world where magic is dying"
-  })
-}).then(res => res.json());
-
-// 2. List generated entities
-const characters = await client.character.list({ worldId: world.id });
-const locations = await client.location.list({ worldId: world.id });
-const factions = await client.faction.list({ worldId: world.id });
-
-// 3. Add a world event (primary interaction)
-const event = await client.world.recordWorldEvent({
-  world_id: world.id,
-  event_type: 'player_action',
-  impact_level: 'major',
-  description: "The hero discovers an ancient artifact in the ruins"
-});
-
-// 4. Check world state after event
-const state = await client.world.getWorldState(world.id);
-console.log(state.currentArc);
-console.log(state.recentEvents);
-
-// 5. Progress the story to the next beat
-const nextBeat = await client.world.progressArc({
-  worldId: world.id,
-  arcId: state.currentArc.id,
-  recentEvents: "The hero found a powerful artifact"
-});
-console.log(nextBeat.description);
-console.log(nextBeat.worldDirectives);
+# Progress the current arc (replace with actual arc ID and optional world ID)
+curl -X POST "https://api.storyengine.dev/api/worlds/arcs/YOUR_ARC_ID/progress" \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "worldId": "YOUR_WORLD_ID",
+    "recentEvents": "The hero found a powerful artifact, causing a magical surge."
+  }'
 ```
 
 ## Best Practices
 
-1. **Use Events to Drive Story** - The `recordWorldEvent` endpoint is your primary tool for story progression
-2. **Progress Beats Regularly** - Use `progressArc` to advance the narrative and generate new story content
-3. **Let the System React** - After adding events, the system automatically updates characters, locations, and factions
-4. **Query Full Details** - Use the `get` endpoints to see all relationships and current states
-5. **Batch Related Operations** - When creating multiple entities, consider the dependencies (e.g., create locations before assigning characters to them)
+1.  **Use Events to Drive Story** - The `POST /api/worlds/:worldId/events` endpoint is your primary tool for story progression. Every significant player action should be recorded as an event.
+2.  **Progress Beats Regularly** - Use `POST /api/worlds/arcs/:arcId/progress` to advance the narrative and generate new story content.
+3.  **Let the System React** - After adding events, the system automatically updates characters, locations, and factions based on the story beat's directives and emergent storylines.
+4.  **Query Full Details** - Use the `GET /api/worlds/:worldId` endpoint to see all relationships and current states.
+5.  **Consider Dependencies** - When creating multiple entities manually, create parent entities (e.g., worlds, regions) before their children (e.g., characters, cities within regions).
 
 ## Rate Limits
 
-- 100 requests per minute per API key
-- Maximum 100 items per list query
-- Events are processed asynchronously; allow a few seconds for full propagation
+*   100 requests per minute per API key.
+*   Maximum 100 items per list query.
+*   Events and AI-driven processes (like beat generation) are processed asynchronously; allow a few seconds for full propagation and world state updates.
 
 ## Error Handling
 
-All endpoints return standard HTTP status codes:
-- `200` - Success
-- `400` - Bad Request (invalid parameters)
-- `401` - Unauthorized (invalid API key)
-- `404` - Not Found
-- `429` - Rate Limited
-- `500` - Internal Server Error
+All endpoints return standard HTTP status codes. Error responses typically include a message and a machine-readable code.
 
-Error responses include a message field:
+*   `200 OK` - Success: The request was processed successfully.
+*   `201 Created` - Resource Created: A new resource (e.g., World, Character) was successfully created.
+*   `400 Bad Request` - Invalid Input: The request body or parameters were malformed or failed validation (e.g., missing required fields, invalid UUID format).
+*   `401 Unauthorized` - Authentication Failed: Your API key is missing or invalid.
+*   `404 Not Found` - Resource Not Found: The requested resource (e.g., worldId, characterId) does not exist.
+*   `429 Too Many Requests` - Rate Limited: You have exceeded the request rate limits.
+*   `500 Internal Server Error` - Backend Error: An unexpected error occurred on the server. Please contact support if this persists.
+
+Error responses generally follow this format:
 ```json
 {
-  "error": {
-    "message": "Description of what went wrong"
-  }
+  "error": "Description of what went wrong",
+  "code": "ERROR_CODE", // e.g., BAD_REQUEST, UNAUTHORIZED, NOT_FOUND
+  "issues": [ /* optional: detailed validation errors from Zod */ ]
 }
-```

@@ -13,9 +13,6 @@ small models
 - [character] handle all chosen characters reactions to beat (in parallel)
 - [location] handle all locations reactions to beat (in parallel)
 
-- CLEAN UP, ensure all modules/adapters have
-schemas, tool calls, and types defined and seperate properly
-
 # modules to do:
 
 ## worlds
@@ -24,10 +21,9 @@ schemas, tool calls, and types defined and seperate properly
 - implement manager then react agent logic
 
 ## factions
-- remove the 'listen to location' change event bus 
 
 ## characters
 - implement manager then react agent logic
 
-## misc
+## misc (NOT important rn)
 - i want to have a world map that gets created especially since we provide the x/y coordinates of locations 

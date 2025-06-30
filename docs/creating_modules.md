@@ -28,7 +28,12 @@ modules/
    │  └─ WorldService.ts  # orchestration logic
    ├─ infra/
    │  ├─ persistence/     # Supabase repo
-   │  ├─ ai/              # AI adapter + prompts
+   │  ├─ ai/              # AI adapter + organized schemas
+   │  │  ├─ schemas.ts    # Zod validation schemas
+   │  │  ├─ toolSchemas.ts # OpenAI function-calling schemas
+   │  │  ├─ types.ts      # TypeScript types from schemas
+   │  │  ├─ MyModuleAIAdapter.ts # Main AI adapter
+   │  │  └─ prompts/      # System/user prompt builders
    │  └─ index.ts         # DI registrations
    ├─ delivery/
    │  └─ trpc/router.ts   # procedures only
@@ -116,7 +121,12 @@ Duplicate this structure for *character*, *location*, *faction*, etc.
 5. **Wire infra adapters**
 
    * `SupabaseCharacterRepo.ts` – mirror `SupabaseWorldRepo` style.
-   * `CharacterAIAdapter.ts` – wrap `chat()` with function-calling JSON.
+   * **AI Adapter Structure** – organize AI code cleanly:
+     ```bash
+     mkdir -p infra/ai/prompts
+     touch infra/ai/{schemas.ts,toolSchemas.ts,types.ts,CharacterAIAdapter.ts}
+     ```
+     Follow the AI Adapter Pattern in Section 6 for proper organization.
 
 6. **Register the bindings** (`infra/index.ts`)
 
@@ -271,32 +281,196 @@ The current backend is an in-process `EventEmitter`; swapping to Redis/NATS late
 
 ## 6 AI Adapter Pattern
 
+### Structure Your AI Code
+
+All AI-related code should be organized within the `infra/ai/` directory using this structure:
+
+```
+infra/ai/
+├─ schemas.ts        # Zod validation schemas for AI responses
+├─ toolSchemas.ts    # OpenAI function-calling JSON schemas  
+├─ types.ts          # TypeScript types derived from Zod schemas
+├─ MyModuleAIAdapter.ts # Main adapter implementation
+└─ prompts/          # System and user prompt builders
+   ├─ myFunction.prompts.ts
+   └─ anotherFunction.prompts.ts
+```
+
+### 1. Define Zod Schemas (`schemas.ts`)
+
+**Separate validation schemas from adapter logic for reusability and clarity:**
+
 ```ts
+import { z } from 'zod';
+
+export const CharacterDialogueSchema = z.object({
+  utterance: z.string(),
+  emotion: z.enum(['happy', 'sad', 'angry', 'neutral']),
+  confidence: z.number().min(0).max(1)
+});
+
+export const CharacterActionSchema = z.object({
+  action: z.string(),
+  target: z.string().nullable(),
+  reasoning: z.string()
+});
+```
+
+### 2. Define Tool Schemas (`toolSchemas.ts`)
+
+**OpenAI function-calling requires separate JSON schemas (not Zod objects):**
+
+```ts
+export const GENERATE_DIALOGUE_SCHEMA = {
+  type: 'function',
+  function: {
+    name: 'generate_dialogue',
+    description: 'Generate character dialogue with emotional context',
+    parameters: {
+      type: 'object',
+      properties: {
+        utterance: { type: 'string' },
+        emotion: { type: 'string', enum: ['happy', 'sad', 'angry', 'neutral'] },
+        confidence: { type: 'number', minimum: 0, maximum: 1 }
+      },
+      required: ['utterance', 'emotion', 'confidence'],
+      additionalProperties: false
+    },
+    strict: true
+  }
+} as const;
+```
+
+### 3. Create Types (`types.ts`)
+
+**Derive TypeScript types from your Zod schemas:**
+
+```ts
+import type { z } from 'zod';
+import type { CharacterDialogueSchema, CharacterActionSchema } from './schemas';
+
+export type CharacterDialogueData = z.infer<typeof CharacterDialogueSchema>;
+export type CharacterActionData = z.infer<typeof CharacterActionSchema>;
+```
+
+### 4. Build the Adapter (`CharacterAIAdapter.ts`)
+
+**Import your organized schemas and focus on business logic:**
+
+```ts
+import { injectable } from 'tsyringe';
+import { 
+  chat, 
+  buildMetadata, 
+  safeParseJSON, 
+  extractToolCall, 
+  retryWithBackoff,
+  AIValidationError 
+} from '../../../../core/ai';
+import { createLogger } from '../../../../core/infra/logger';
+import type { CharacterAI, DialogueContext } from '../../domain/ports';
+import { CharacterDialogueSchema } from './schemas';
+import { GENERATE_DIALOGUE_SCHEMA } from './toolSchemas';
+import { DIALOGUE_SYSTEM_PROMPT, buildDialogueUserPrompt } from './prompts/dialogue.prompts';
+
+const logger = createLogger('character.ai');
+
 @injectable()
 export class CharacterAIAdapter implements CharacterAI {
-  private readonly MODEL = 'openai/gpt-4.1-nano';
   private readonly MODULE = 'character';
 
-  async generateDialogue(ctx: DialogueCtx) {
-    const completion = await chat({
-      model: this.MODEL,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user',   content: buildUserPrompt(ctx) }
-      ],
-      tools: [DIALOGUE_SCHEMA],
-      tool_choice: { type:'function', function:{ name:'generate_dialogue' } },
-      temperature: 0.8,
-      metadata: buildMetadata(this.MODULE, 'generate_dialogue', { character_id: ctx.id })
-    });
-    return JSON.parse(
-      completion.choices[0].message.tool_calls![0].function.arguments
-    ).utterance;
+  async generateDialogue(ctx: DialogueContext): Promise<string> {
+    const promptId = 'generate_dialogue@v1';
+    const contextData = { characterId: ctx.character.id };
+
+    logger.info('Generating character dialogue', contextData);
+
+    try {
+      const completion = await retryWithBackoff(
+        () => chat({
+          messages: [
+            { role: 'system', content: DIALOGUE_SYSTEM_PROMPT },
+            { role: 'user', content: buildDialogueUserPrompt(ctx) }
+          ],
+          tools: [GENERATE_DIALOGUE_SCHEMA],
+          tool_choice: { type: 'function', function: { name: 'generate_dialogue' } },
+          temperature: 0.8,
+          metadata: buildMetadata(this.MODULE, promptId, ctx.userId || 'anonymous', {
+            character_id: ctx.character.id
+          })
+        }),
+        { maxAttempts: 3 },
+        contextData
+      );
+
+      const toolCall = extractToolCall(completion, 'generate_dialogue', contextData);
+      const parsedData = safeParseJSON(toolCall.function.arguments, contextData);
+
+      // Validate with your Zod schema
+      const validationResult = CharacterDialogueSchema.safeParse(parsedData);
+      if (!validationResult.success) {
+        throw new AIValidationError(validationResult.error, parsedData, contextData);
+      }
+
+      logger.info('Dialogue generated successfully', contextData);
+      return validationResult.data.utterance;
+
+    } catch (error) {
+      logger.error('Failed to generate dialogue', {
+        error: error instanceof Error ? error.message : String(error),
+        ...contextData
+      });
+      throw new Error('AI returned an invalid response');
+    }
   }
 }
 ```
 
-Always return strict JSON; parse inside the adapter, never downstream.
+### 5. Organize Prompts (`prompts/dialogue.prompts.ts`)
+
+**Keep prompts separate and focused:**
+
+```ts
+import type { DialogueContext } from '../../../domain/ports';
+
+export const DIALOGUE_SYSTEM_PROMPT = `You are a creative dialogue generator for interactive characters in a story world.
+
+Generate natural, contextually appropriate dialogue that:
+1. Matches the character's personality and background
+2. Responds appropriately to the current situation
+3. Advances the narrative or reveals character depth
+4. Maintains consistency with established relationships`;
+
+export function buildDialogueUserPrompt(ctx: DialogueContext): string {
+  return `Character: ${ctx.character.name} (${ctx.character.role})
+Personality: ${ctx.character.personality.join(', ')}
+Current Situation: ${ctx.situation}
+Speaking To: ${ctx.target || 'themselves'}
+Context: ${ctx.context}
+
+Generate appropriate dialogue for this character in this situation.`;
+}
+```
+
+### Key Benefits of This Structure
+
+✅ **Separation of Concerns** - Schemas, types, and business logic are cleanly separated  
+✅ **Reusability** - Schemas and types can be imported by tests, other services, etc.  
+✅ **Maintainability** - Easy to update validation rules without touching adapter logic  
+✅ **Type Safety** - Proper TypeScript types derived from your validation schemas  
+✅ **Testability** - Individual components can be unit tested in isolation  
+✅ **Consistency** - All modules follow the same clean architecture pattern
+
+### AI Adapter Best Practices
+
+- **Always validate AI responses** with Zod schemas before returning data
+- **Use retryWithBackoff** for resilience against transient AI failures  
+- **Include contextData** in all logging and error handling
+- **Set appropriate temperature** based on creativity needs (0.7-0.9 for creative, 0.3-0.5 for factual)
+- **Use buildMetadata** for observability and AI cost tracking
+- **Handle errors gracefully** with meaningful error messages for debugging
+
+Always return validated, typed data from adapters—never raw AI responses.
 
 ---
 
@@ -371,6 +545,9 @@ Always import validation helpers from `src/shared/utils/validation.ts`:
 * No direct Supabase calls outside `*Repo`.
 * No Express logic outside the router bridge.
 * All cross-module coordination via `eventBus`; no service imports.
+* **AI code properly structured**: schemas.ts, toolSchemas.ts, types.ts separated from adapter logic.
+* **AI responses validated** with Zod schemas before returning data.
+* All AI calls use `buildMetadata` for observability and include proper error handling.
 * `manifest.ts` registers DI, mounts router, declares subscriptions—nothing more.
 
 Follow this guide and every new module will integrate flawlessly with the Story-Engine core.

@@ -1,5 +1,4 @@
 import { injectable } from 'tsyringe';
-import { z } from 'zod';
 import { 
   chat, 
   buildMetadata, 
@@ -53,6 +52,14 @@ import {
   buildMutationDecisionPrompt, 
   MUTATION_DECISION_SCHEMA 
 } from './prompts/mutationDecision.prompts';
+import { 
+  RegionGenerationResultSchema, 
+  CityGenerationResultSchema, 
+  LandmarkGenerationResultSchema, 
+  WildernessGenerationResultSchema,
+  MutationDecisionResultSchema
+} from './schemas';
+import { validateMapGenerationResult, validateLocationMutations } from './validation';
 
 const logger = createLogger('location.ai');
 
@@ -712,90 +719,3 @@ Provide an enriched description that:
   }
 }
 
-/**
- * Validation schemas
- */
-const MapGenerationResultSchema = z.object({
-  locations: z.array(z.object({
-    name: z.string(),
-    type: z.string(),
-    description: z.string(),
-    parent_region_name: z.string().optional(),
-    tags: z.array(z.string()),
-    relative_position: z.object({
-      x: z.number(),
-      y: z.number()
-    })
-  })),
-  mapSvg: z.string().optional()
-});
-
-const LocationMutationsSchema = z.object({
-  updates: z.array(z.object({
-    locationId: z.string(),
-    newStatus: z.string().optional(),
-    descriptionAppend: z.string().optional(),
-    reason: z.string()
-  }))
-});
-
-const RegionGenerationResultSchema = z.object({
-  regions: z.array(z.object({
-    name: z.string(),
-    description: z.string(),
-    tags: z.array(z.string()),
-    relative_position: z.object({
-      x: z.number(),
-      y: z.number()
-    })
-  }))
-});
-
-const CityGenerationResultSchema = z.object({
-  cities: z.array(z.object({
-    name: z.string(),
-    description: z.string(),
-    tags: z.array(z.string()),
-    relative_position: z.object({
-      x: z.number(),
-      y: z.number()
-    })
-  }))
-});
-
-const LandmarkGenerationResultSchema = z.object({
-  landmarks: z.array(z.object({
-    name: z.string(),
-    description: z.string(),
-    tags: z.array(z.string()),
-    relative_position: z.object({
-      x: z.number(),
-      y: z.number()
-    })
-  }))
-});
-
-const WildernessGenerationResultSchema = z.object({
-  wilderness: z.array(z.object({
-    name: z.string(),
-    description: z.string(),
-    tags: z.array(z.string()),
-    relative_position: z.object({
-      x: z.number(),
-      y: z.number()
-    })
-  }))
-});
-
-const MutationDecisionResultSchema = z.object({
-  think: z.string(),
-  shouldMutate: z.boolean()
-});
-
-function validateMapGenerationResult(result: any) {
-  return MapGenerationResultSchema.safeParse(result);
-}
-
-function validateLocationMutations(result: any) {
-  return LocationMutationsSchema.safeParse(result);
-}

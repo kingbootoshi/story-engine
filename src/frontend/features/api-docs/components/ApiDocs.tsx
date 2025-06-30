@@ -388,14 +388,14 @@ export function ApiDocs() {
 
             <div className="api-docs__subsection">
               <h2>API Key Format</h2>
-              <p>Include your API key in the Authorization header using Bearer token format:</p>
+              <p>Include your API key in the x-api-key header:</p>
               
               <div className="api-docs__code-block">
                 <div className="api-docs__code-header">
                   <span className="api-docs__code-lang">http</span>
                   <button 
                     className="api-docs__code-copy"
-                    onClick={() => copyToClipboard('Authorization: Bearer se_1234567890abcdef1234567890abcdef', 'auth-header')}
+                    onClick={() => copyToClipboard('x-api-key: se_1234567890abcdef1234567890abcdef', 'auth-header')}
                   >
                     <span className="material-icons">
                       {copiedCode === 'auth-header' ? 'check' : 'content_copy'}
@@ -404,7 +404,7 @@ export function ApiDocs() {
                   </button>
                 </div>
                 <pre>
-                  <code>Authorization: Bearer se_1234567890abcdef1234567890abcdef</code>
+                  <code>x-api-key: se_1234567890abcdef1234567890abcdef</code>
                 </pre>
               </div>
             </div>
@@ -421,9 +421,9 @@ export function ApiDocs() {
                   <span className="api-docs__code-lang">javascript</span>
                   <button 
                     className="api-docs__code-copy"
-                    onClick={() => copyToClipboard(`const response = await fetch('https://api.storyengine.dev/trpc/world.list', {
+                    onClick={() => copyToClipboard(`const response = await fetch('https://api.storyengine.dev/api/worlds', {
   headers: {
-    'Authorization': 'Bearer YOUR_API_KEY',
+    'x-api-key': 'YOUR_API_KEY',
     'Content-Type': 'application/json'
   }
 });
@@ -437,9 +437,9 @@ const worlds = await response.json();`, 'auth-example')}
                   </button>
                 </div>
                 <pre>
-                  <code>{`const response = await fetch('https://api.storyengine.dev/trpc/world.list', {
+                  <code>{`const response = await fetch('https://api.storyengine.dev/api/worlds', {
   headers: {
-    'Authorization': 'Bearer YOUR_API_KEY',
+    'x-api-key': 'YOUR_API_KEY',
     'Content-Type': 'application/json'
   }
 });
@@ -481,17 +481,19 @@ const worlds = await response.json();`}</code>
                       <span className="api-docs__code-lang">javascript</span>
                       <button 
                         className="api-docs__code-copy"
-                        onClick={() => copyToClipboard(`const world = await fetch('https://api.storyengine.dev/trpc/world.create', {
+                        onClick={() => copyToClipboard(`const response = await fetch('https://api.storyengine.dev/api/worlds', {
   method: 'POST',
   headers: {
-    'Authorization': 'Bearer YOUR_API_KEY',
+    'x-api-key': 'YOUR_API_KEY',
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
     name: "The Shattered Realms",
     description: "A dark fantasy world where magic is dying"
   })
-});`, 'quickstart-create')}
+});
+
+const world = await response.json();`, 'quickstart-create')}
                       >
                         <span className="material-icons">
                           {copiedCode === 'quickstart-create' ? 'check' : 'content_copy'}
@@ -500,17 +502,19 @@ const worlds = await response.json();`}</code>
                       </button>
                     </div>
                     <pre>
-                      <code>{`const world = await fetch('https://api.storyengine.dev/trpc/world.create', {
+                      <code>{`const response = await fetch('https://api.storyengine.dev/api/worlds', {
   method: 'POST',
   headers: {
-    'Authorization': 'Bearer YOUR_API_KEY',
+    'x-api-key': 'YOUR_API_KEY',
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
     name: "The Shattered Realms",
     description: "A dark fantasy world where magic is dying"
   })
-});`}</code>
+});
+
+const world = await response.json();`}</code>
                     </pre>
                   </div>
                 </div>
@@ -527,14 +531,13 @@ const worlds = await response.json();`}</code>
                       <span className="api-docs__code-lang">javascript</span>
                       <button 
                         className="api-docs__code-copy"
-                        onClick={() => copyToClipboard(`const event = await fetch('https://api.storyengine.dev/trpc/world.recordWorldEvent', {
+                        onClick={() => copyToClipboard(`const event = await fetch(\`https://api.storyengine.dev/api/worlds/\${world.id}/events\`, {
   method: 'POST',
   headers: {
-    'Authorization': 'Bearer YOUR_API_KEY',
+    'x-api-key': 'YOUR_API_KEY',
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
-    world_id: world.id,
     event_type: 'player_action',
     impact_level: 'major',
     description: "The hero discovers an ancient artifact in the ruins"
@@ -548,14 +551,13 @@ const worlds = await response.json();`}</code>
                       </button>
                     </div>
                     <pre>
-                      <code>{`const event = await fetch('https://api.storyengine.dev/trpc/world.recordWorldEvent', {
+                      <code>{`const event = await fetch(\`https://api.storyengine.dev/api/worlds/\${world.id}/events\`, {
   method: 'POST',
   headers: {
-    'Authorization': 'Bearer YOUR_API_KEY',
+    'x-api-key': 'YOUR_API_KEY',
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
-    world_id: world.id,
     event_type: 'player_action',
     impact_level: 'major',
     description: "The hero discovers an ancient artifact in the ruins"
@@ -577,15 +579,14 @@ const worlds = await response.json();`}</code>
                       <span className="api-docs__code-lang">javascript</span>
                       <button 
                         className="api-docs__code-copy"
-                        onClick={() => copyToClipboard(`const nextBeat = await fetch('https://api.storyengine.dev/trpc/world.progressArc', {
+                        onClick={() => copyToClipboard(`const nextBeat = await fetch(\`https://api.storyengine.dev/api/worlds/arcs/\${arcId}/progress\`, {
   method: 'POST',
   headers: {
-    'Authorization': 'Bearer YOUR_API_KEY',
+    'x-api-key': 'YOUR_API_KEY',
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
-    worldId: "world_abc123",
-    arcId: "arc_def456",
+    worldId: world.id,
     recentEvents: "The hero found a powerful artifact"
   })
 });`, 'quickstart-progress')}
@@ -597,15 +598,14 @@ const worlds = await response.json();`}</code>
                       </button>
                     </div>
                     <pre>
-                      <code>{`const nextBeat = await fetch('https://api.storyengine.dev/trpc/world.progressArc', {
+                      <code>{`const nextBeat = await fetch(\`https://api.storyengine.dev/api/worlds/arcs/\${arcId}/progress\`, {
   method: 'POST',
   headers: {
-    'Authorization': 'Bearer YOUR_API_KEY',
+    'x-api-key': 'YOUR_API_KEY',
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
-    worldId: "world_abc123",
-    arcId: "arc_def456",
+    worldId: world.id,
     recentEvents: "The hero found a powerful artifact"
   })
 });`}</code>
@@ -638,7 +638,7 @@ const worlds = await response.json();`}</code>
             <div className="api-docs__endpoint">
               <div className="api-docs__endpoint-header">
                 <span className="api-docs__method api-docs__method--post">POST</span>
-                <code className="api-docs__endpoint-path">/world.create</code>
+                <code className="api-docs__endpoint-path">/api/worlds</code>
               </div>
               <div className="api-docs__endpoint-description">
                 Create a new world with automatic population
@@ -678,17 +678,27 @@ const worlds = await response.json();`}</code>
             <div className="api-docs__endpoint">
               <div className="api-docs__endpoint-header">
                 <span className="api-docs__method api-docs__method--get">GET</span>
-                <code className="api-docs__endpoint-path">/world.get?worldId={'{'}{'{'}worldId{'}'}</code>
+                <code className="api-docs__endpoint-path">/api/worlds/:worldId</code>
               </div>
               <div className="api-docs__endpoint-description">
-                Retrieve details about a specific world
+                Retrieve full world state including all entities
+              </div>
+              
+              <h4>Path Parameters</h4>
+              <div className="api-docs__params">
+                <div className="api-docs__param">
+                  <code>worldId</code>
+                  <span className="api-docs__param-type">string</span>
+                  <span className="api-docs__param-required">required</span>
+                  <p>The ID of the world to retrieve</p>
+                </div>
               </div>
             </div>
 
             <div className="api-docs__endpoint">
               <div className="api-docs__endpoint-header">
                 <span className="api-docs__method api-docs__method--get">GET</span>
-                <code className="api-docs__endpoint-path">/world.list</code>
+                <code className="api-docs__endpoint-path">/api/worlds</code>
               </div>
               <div className="api-docs__endpoint-description">
                 List all worlds for the authenticated user
@@ -698,21 +708,25 @@ const worlds = await response.json();`}</code>
             <div className="api-docs__endpoint">
               <div className="api-docs__endpoint-header">
                 <span className="api-docs__method api-docs__method--post">POST</span>
-                <code className="api-docs__endpoint-path">/world.recordWorldEvent</code>
+                <code className="api-docs__endpoint-path">/api/worlds/:worldId/events</code>
               </div>
               <div className="api-docs__endpoint-description">
                 <span className="material-icons">star</span>
                 Primary interaction method - Add events to drive the narrative
               </div>
               
-              <h4>Request Body</h4>
+              <h4>Path Parameters</h4>
               <div className="api-docs__params">
                 <div className="api-docs__param">
-                  <code>world_id</code>
+                  <code>worldId</code>
                   <span className="api-docs__param-type">string</span>
                   <span className="api-docs__param-required">required</span>
                   <p>The world to add the event to</p>
                 </div>
+              </div>
+              
+              <h4>Request Body</h4>
+              <div className="api-docs__params">
                 <div className="api-docs__param">
                   <code>event_type</code>
                   <span className="api-docs__param-type">enum</span>
@@ -733,6 +747,42 @@ const worlds = await response.json();`}</code>
                 </div>
               </div>
             </div>
+
+            <div className="api-docs__endpoint">
+              <div className="api-docs__endpoint-header">
+                <span className="api-docs__method api-docs__method--post">POST</span>
+                <code className="api-docs__endpoint-path">/api/worlds/arcs/:arcId/progress</code>
+              </div>
+              <div className="api-docs__endpoint-description">
+                Progress the story to generate a new narrative beat
+              </div>
+              
+              <h4>Path Parameters</h4>
+              <div className="api-docs__params">
+                <div className="api-docs__param">
+                  <code>arcId</code>
+                  <span className="api-docs__param-type">string</span>
+                  <span className="api-docs__param-required">required</span>
+                  <p>The arc to progress</p>
+                </div>
+              </div>
+              
+              <h4>Request Body</h4>
+              <div className="api-docs__params">
+                <div className="api-docs__param">
+                  <code>worldId</code>
+                  <span className="api-docs__param-type">string</span>
+                  <span className="api-docs__param-required">required</span>
+                  <p>The world containing this arc</p>
+                </div>
+                <div className="api-docs__param">
+                  <code>recentEvents</code>
+                  <span className="api-docs__param-type">string</span>
+                  <span className="api-docs__param-required">optional</span>
+                  <p>Summary of recent events to influence the generated beat</p>
+                </div>
+              </div>
+            </div>
           </section>
         )}
 
@@ -749,7 +799,7 @@ const worlds = await response.json();`}</code>
             <div className="api-docs__endpoint">
               <div className="api-docs__endpoint-header">
                 <span className="api-docs__method api-docs__method--post">POST</span>
-                <code className="api-docs__endpoint-path">/character.create</code>
+                <code className="api-docs__endpoint-path">/api/characters</code>
               </div>
               <div className="api-docs__endpoint-description">
                 Create a new character in a world
@@ -761,11 +811,13 @@ const worlds = await response.json();`}</code>
                   <code>world_id</code>
                   <span className="api-docs__param-type">string</span>
                   <span className="api-docs__param-required">required</span>
+                  <p>The world to create the character in</p>
                 </div>
                 <div className="api-docs__param">
                   <code>name</code>
                   <span className="api-docs__param-type">string</span>
                   <span className="api-docs__param-required">required</span>
+                  <p>Character name</p>
                 </div>
                 <div className="api-docs__param">
                   <code>type</code>
@@ -778,6 +830,106 @@ const worlds = await response.json();`}</code>
                   <span className="api-docs__param-type">enum</span>
                   <span className="api-docs__param-required">required</span>
                   <p>major | minor | wildcard | background</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="api-docs__endpoint">
+              <div className="api-docs__endpoint-header">
+                <span className="api-docs__method api-docs__method--get">GET</span>
+                <code className="api-docs__endpoint-path">/api/characters/:id</code>
+              </div>
+              <div className="api-docs__endpoint-description">
+                Retrieve a specific character
+              </div>
+              
+              <h4>Path Parameters</h4>
+              <div className="api-docs__params">
+                <div className="api-docs__param">
+                  <code>id</code>
+                  <span className="api-docs__param-type">string</span>
+                  <span className="api-docs__param-required">required</span>
+                  <p>The ID of the character to retrieve</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="api-docs__endpoint">
+              <div className="api-docs__endpoint-header">
+                <span className="api-docs__method api-docs__method--get">GET</span>
+                <code className="api-docs__endpoint-path">/api/characters</code>
+              </div>
+              <div className="api-docs__endpoint-description">
+                List characters in a world
+              </div>
+              
+              <h4>Query Parameters</h4>
+              <div className="api-docs__params">
+                <div className="api-docs__param">
+                  <code>worldId</code>
+                  <span className="api-docs__param-type">string</span>
+                  <span className="api-docs__param-required">required</span>
+                  <p>The world to list characters from</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="api-docs__endpoint">
+              <div className="api-docs__endpoint-header">
+                <span className="api-docs__method api-docs__method--put">PUT</span>
+                <code className="api-docs__endpoint-path">/api/characters/:id</code>
+              </div>
+              <div className="api-docs__endpoint-description">
+                Update a character
+              </div>
+              
+              <h4>Path Parameters</h4>
+              <div className="api-docs__params">
+                <div className="api-docs__param">
+                  <code>id</code>
+                  <span className="api-docs__param-type">string</span>
+                  <span className="api-docs__param-required">required</span>
+                  <p>The ID of the character to update</p>
+                </div>
+              </div>
+              
+              <h4>Request Body</h4>
+              <div className="api-docs__params">
+                <div className="api-docs__param">
+                  <code>name</code>
+                  <span className="api-docs__param-type">string</span>
+                  <span className="api-docs__param-required">optional</span>
+                </div>
+                <div className="api-docs__param">
+                  <code>status</code>
+                  <span className="api-docs__param-type">enum</span>
+                  <span className="api-docs__param-required">optional</span>
+                  <p>active | deceased | missing | retired</p>
+                </div>
+                <div className="api-docs__param">
+                  <code>location_id</code>
+                  <span className="api-docs__param-type">string</span>
+                  <span className="api-docs__param-required">optional</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="api-docs__endpoint">
+              <div className="api-docs__endpoint-header">
+                <span className="api-docs__method api-docs__method--delete">DELETE</span>
+                <code className="api-docs__endpoint-path">/api/characters/:id</code>
+              </div>
+              <div className="api-docs__endpoint-description">
+                Delete a character
+              </div>
+              
+              <h4>Path Parameters</h4>
+              <div className="api-docs__params">
+                <div className="api-docs__param">
+                  <code>id</code>
+                  <span className="api-docs__param-type">string</span>
+                  <span className="api-docs__param-required">required</span>
+                  <p>The ID of the character to delete</p>
                 </div>
               </div>
             </div>
@@ -840,7 +992,7 @@ const worlds = await response.json();`}</code>
             <div className="api-docs__endpoint">
               <div className="api-docs__endpoint-header">
                 <span className="api-docs__method api-docs__method--post">POST</span>
-                <code className="api-docs__endpoint-path">/location.create</code>
+                <code className="api-docs__endpoint-path">/api/locations</code>
               </div>
               <div className="api-docs__endpoint-description">
                 Create a new location in a world
@@ -852,11 +1004,13 @@ const worlds = await response.json();`}</code>
                   <code>world_id</code>
                   <span className="api-docs__param-type">string</span>
                   <span className="api-docs__param-required">required</span>
+                  <p>The world to create the location in</p>
                 </div>
                 <div className="api-docs__param">
                   <code>name</code>
                   <span className="api-docs__param-type">string</span>
                   <span className="api-docs__param-required">required</span>
+                  <p>Location name</p>
                 </div>
                 <div className="api-docs__param">
                   <code>type</code>
@@ -869,6 +1023,138 @@ const worlds = await response.json();`}</code>
                   <span className="api-docs__param-type">enum</span>
                   <span className="api-docs__param-required">required</span>
                   <p>thriving | stable | declining | ruined | abandoned | lost</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="api-docs__endpoint">
+              <div className="api-docs__endpoint-header">
+                <span className="api-docs__method api-docs__method--get">GET</span>
+                <code className="api-docs__endpoint-path">/api/locations/:id</code>
+              </div>
+              <div className="api-docs__endpoint-description">
+                Retrieve a specific location
+              </div>
+              
+              <h4>Path Parameters</h4>
+              <div className="api-docs__params">
+                <div className="api-docs__param">
+                  <code>id</code>
+                  <span className="api-docs__param-type">string</span>
+                  <span className="api-docs__param-required">required</span>
+                  <p>The ID of the location to retrieve</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="api-docs__endpoint">
+              <div className="api-docs__endpoint-header">
+                <span className="api-docs__method api-docs__method--get">GET</span>
+                <code className="api-docs__endpoint-path">/api/locations</code>
+              </div>
+              <div className="api-docs__endpoint-description">
+                List locations in a world
+              </div>
+              
+              <h4>Query Parameters</h4>
+              <div className="api-docs__params">
+                <div className="api-docs__param">
+                  <code>worldId</code>
+                  <span className="api-docs__param-type">string</span>
+                  <span className="api-docs__param-required">required</span>
+                  <p>The world to list locations from</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="api-docs__endpoint">
+              <div className="api-docs__endpoint-header">
+                <span className="api-docs__method api-docs__method--post">POST</span>
+                <code className="api-docs__endpoint-path">/api/locations/search</code>
+              </div>
+              <div className="api-docs__endpoint-description">
+                Search locations by name or tags
+              </div>
+              
+              <h4>Request Body</h4>
+              <div className="api-docs__params">
+                <div className="api-docs__param">
+                  <code>worldId</code>
+                  <span className="api-docs__param-type">string</span>
+                  <span className="api-docs__param-required">required</span>
+                  <p>The world to search in</p>
+                </div>
+                <div className="api-docs__param">
+                  <code>query</code>
+                  <span className="api-docs__param-type">string</span>
+                  <span className="api-docs__param-required">optional</span>
+                  <p>Search term to match against location names</p>
+                </div>
+                <div className="api-docs__param">
+                  <code>tags</code>
+                  <span className="api-docs__param-type">string[]</span>
+                  <span className="api-docs__param-required">optional</span>
+                  <p>Array of tags to filter by</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="api-docs__endpoint">
+              <div className="api-docs__endpoint-header">
+                <span className="api-docs__method api-docs__method--put">PUT</span>
+                <code className="api-docs__endpoint-path">/api/locations/:id</code>
+              </div>
+              <div className="api-docs__endpoint-description">
+                Update a location
+              </div>
+              
+              <h4>Path Parameters</h4>
+              <div className="api-docs__params">
+                <div className="api-docs__param">
+                  <code>id</code>
+                  <span className="api-docs__param-type">string</span>
+                  <span className="api-docs__param-required">required</span>
+                  <p>The ID of the location to update</p>
+                </div>
+              </div>
+              
+              <h4>Request Body</h4>
+              <div className="api-docs__params">
+                <div className="api-docs__param">
+                  <code>name</code>
+                  <span className="api-docs__param-type">string</span>
+                  <span className="api-docs__param-required">optional</span>
+                </div>
+                <div className="api-docs__param">
+                  <code>status</code>
+                  <span className="api-docs__param-type">enum</span>
+                  <span className="api-docs__param-required">optional</span>
+                  <p>thriving | stable | declining | ruined | abandoned | lost</p>
+                </div>
+                <div className="api-docs__param">
+                  <code>description</code>
+                  <span className="api-docs__param-type">string</span>
+                  <span className="api-docs__param-required">optional</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="api-docs__endpoint">
+              <div className="api-docs__endpoint-header">
+                <span className="api-docs__method api-docs__method--delete">DELETE</span>
+                <code className="api-docs__endpoint-path">/api/locations/:id</code>
+              </div>
+              <div className="api-docs__endpoint-description">
+                Delete a location
+              </div>
+              
+              <h4>Path Parameters</h4>
+              <div className="api-docs__params">
+                <div className="api-docs__param">
+                  <code>id</code>
+                  <span className="api-docs__param-type">string</span>
+                  <span className="api-docs__param-required">required</span>
+                  <p>The ID of the location to delete</p>
                 </div>
               </div>
             </div>
@@ -888,37 +1174,131 @@ const worlds = await response.json();`}</code>
             <div className="api-docs__endpoint">
               <div className="api-docs__endpoint-header">
                 <span className="api-docs__method api-docs__method--post">POST</span>
-                <code className="api-docs__endpoint-path">/faction.setStance</code>
+                <code className="api-docs__endpoint-path">/api/factions</code>
               </div>
               <div className="api-docs__endpoint-description">
-                Set diplomatic stance between two factions
+                Create a new faction
               </div>
               
               <h4>Request Body</h4>
               <div className="api-docs__params">
                 <div className="api-docs__param">
-                  <code>sourceId</code>
+                  <code>world_id</code>
                   <span className="api-docs__param-type">string</span>
                   <span className="api-docs__param-required">required</span>
-                  <p>The faction setting the stance</p>
+                  <p>The world to create the faction in</p>
                 </div>
                 <div className="api-docs__param">
-                  <code>targetId</code>
+                  <code>name</code>
                   <span className="api-docs__param-type">string</span>
                   <span className="api-docs__param-required">required</span>
-                  <p>The faction being targeted</p>
+                  <p>Faction name</p>
                 </div>
                 <div className="api-docs__param">
-                  <code>stance</code>
+                  <code>type</code>
                   <span className="api-docs__param-type">enum</span>
                   <span className="api-docs__param-required">required</span>
-                  <p>ally | neutral | hostile</p>
+                  <p>kingdom | guild | order | cult | tribe | company</p>
                 </div>
+              </div>
+            </div>
+
+            <div className="api-docs__endpoint">
+              <div className="api-docs__endpoint-header">
+                <span className="api-docs__method api-docs__method--get">GET</span>
+                <code className="api-docs__endpoint-path">/api/factions/:id</code>
+              </div>
+              <div className="api-docs__endpoint-description">
+                Retrieve a specific faction
+              </div>
+              
+              <h4>Path Parameters</h4>
+              <div className="api-docs__params">
                 <div className="api-docs__param">
-                  <code>reason</code>
+                  <code>id</code>
                   <span className="api-docs__param-type">string</span>
                   <span className="api-docs__param-required">required</span>
-                  <p>Narrative reason for the stance</p>
+                  <p>The ID of the faction to retrieve</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="api-docs__endpoint">
+              <div className="api-docs__endpoint-header">
+                <span className="api-docs__method api-docs__method--get">GET</span>
+                <code className="api-docs__endpoint-path">/api/factions</code>
+              </div>
+              <div className="api-docs__endpoint-description">
+                List factions in a world
+              </div>
+              
+              <h4>Query Parameters</h4>
+              <div className="api-docs__params">
+                <div className="api-docs__param">
+                  <code>worldId</code>
+                  <span className="api-docs__param-type">string</span>
+                  <span className="api-docs__param-required">required</span>
+                  <p>The world to list factions from</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="api-docs__endpoint">
+              <div className="api-docs__endpoint-header">
+                <span className="api-docs__method api-docs__method--put">PUT</span>
+                <code className="api-docs__endpoint-path">/api/factions/:id</code>
+              </div>
+              <div className="api-docs__endpoint-description">
+                Update a faction
+              </div>
+              
+              <h4>Path Parameters</h4>
+              <div className="api-docs__params">
+                <div className="api-docs__param">
+                  <code>id</code>
+                  <span className="api-docs__param-type">string</span>
+                  <span className="api-docs__param-required">required</span>
+                  <p>The ID of the faction to update</p>
+                </div>
+              </div>
+              
+              <h4>Request Body</h4>
+              <div className="api-docs__params">
+                <div className="api-docs__param">
+                  <code>name</code>
+                  <span className="api-docs__param-type">string</span>
+                  <span className="api-docs__param-required">optional</span>
+                </div>
+                <div className="api-docs__param">
+                  <code>status</code>
+                  <span className="api-docs__param-type">enum</span>
+                  <span className="api-docs__param-required">optional</span>
+                  <p>rising | stable | declining | collapsed</p>
+                </div>
+                <div className="api-docs__param">
+                  <code>leader_id</code>
+                  <span className="api-docs__param-type">string</span>
+                  <span className="api-docs__param-required">optional</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="api-docs__endpoint">
+              <div className="api-docs__endpoint-header">
+                <span className="api-docs__method api-docs__method--delete">DELETE</span>
+                <code className="api-docs__endpoint-path">/api/factions/:id</code>
+              </div>
+              <div className="api-docs__endpoint-description">
+                Delete a faction
+              </div>
+              
+              <h4>Path Parameters</h4>
+              <div className="api-docs__params">
+                <div className="api-docs__param">
+                  <code>id</code>
+                  <span className="api-docs__param-type">string</span>
+                  <span className="api-docs__param-required">required</span>
+                  <p>The ID of the faction to delete</p>
                 </div>
               </div>
             </div>
@@ -931,6 +1311,14 @@ const worlds = await response.json();`}</code>
                 <li><strong>declining:</strong> Losing influence</li>
                 <li><strong>collapsed:</strong> Fallen from power</li>
               </ul>
+            </div>
+            
+            <div className="api-docs__alert api-docs__alert--info">
+              <span className="material-icons">info</span>
+              <p>
+                <strong>Note:</strong> Advanced faction operations like diplomatic stances and relations 
+                evaluation are currently only available through the tRPC interface.
+              </p>
             </div>
           </section>
         )}
@@ -970,13 +1358,10 @@ const worlds = await response.json();`}</code>
             <div className="api-docs__subsection">
               <h2>Story Beat Generation</h2>
               <p>
-                The AI generates story beats when:
+                The AI generates story beats when manual progression is triggered through the API.
+                Use the <code>POST /api/worlds/arcs/:arcId/progress</code> endpoint to advance the narrative
+                based on accumulated world events.
               </p>
-              <ul>
-                <li>3+ major or catastrophic events accumulate</li>
-                <li>24 hours pass since the last beat</li>
-                <li>Manual progression is triggered</li>
-              </ul>
               
               <div className="api-docs__alert api-docs__alert--info">
                 <span className="material-icons">info</span>
@@ -1000,7 +1385,7 @@ const worlds = await response.json();`}</code>
                 Use Events to Drive Story
               </h3>
               <p>
-                The <code>recordWorldEvent</code> endpoint is your primary tool for story progression. 
+                The <code>POST /api/worlds/:worldId/events</code> endpoint is your primary tool for story progression. 
                 Every significant player action should be recorded as an event.
               </p>
             </div>
@@ -1011,7 +1396,7 @@ const worlds = await response.json();`}</code>
                 Progress Beats Regularly
               </h3>
               <p>
-                Use <code>progressArc</code> to advance the narrative and generate new story content. 
+                Use <code>POST /api/worlds/arcs/:arcId/progress</code> to advance the narrative and generate new story content. 
                 This keeps the world feeling alive and responsive.
               </p>
             </div>
@@ -1033,7 +1418,8 @@ const worlds = await response.json();`}</code>
                 Query Full Details
               </h3>
               <p>
-                Use the <code>get</code> endpoints to see all relationships and current states. 
+                Use the <code>GET</code> endpoints to see all relationships and current states. 
+                For example: <code>GET /api/worlds/:worldId</code>, <code>GET /api/characters/:id</code>.
                 The full context helps you make informed decisions.
               </p>
             </div>
@@ -1060,6 +1446,24 @@ const worlds = await response.json();`}</code>
 
             <div className="api-docs__subsection">
               <h2>Error Handling</h2>
+              
+              <p>All errors follow a consistent JSON structure:</p>
+              
+              <div className="api-docs__code-block">
+                <pre>
+                  <code>{`{
+  "error": "Description of what went wrong",
+  "code": "TRPC_ERROR_CODE",  // e.g., BAD_REQUEST, UNAUTHORIZED, NOT_FOUND
+  "issues": [  // Optional: validation errors for bad requests
+    {
+      "code": "invalid_type",
+      "path": ["fieldName"],
+      "message": "Expected string, received number"
+    }
+  ]
+}`}</code>
+                </pre>
+              </div>
               
               <div className="api-docs__table">
                 <table>
