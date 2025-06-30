@@ -4,9 +4,10 @@ interface ArcControlPanelProps {
   currentArc: NonNullable<Arc>;
   isProgressing: boolean;
   onProgressArc: () => void;
+  onAddEvent: () => void;
 }
 
-export function ArcControlPanel({ currentArc, isProgressing, onProgressArc }: ArcControlPanelProps) {
+export function ArcControlPanel({ currentArc, isProgressing, onProgressArc, onAddEvent }: ArcControlPanelProps) {
   return (
     <div className="world-detail__arc-control-panel">
       <div className="world-detail__arc-header">
@@ -15,40 +16,39 @@ export function ArcControlPanel({ currentArc, isProgressing, onProgressArc }: Ar
             <span className="material-icons">auto_stories</span>
             {currentArc.story_name}
           </h2>
-          <span className="world-detail__arc-status-badge">
-            Arc #{currentArc.arc_number} • {currentArc.status}
-          </span>
         </div>
         
-        <button
-          onClick={onProgressArc}
-          disabled={isProgressing}
-          className="world-detail__progress-button-primary"
-        >
-          {isProgressing ? (
-            <>
-              <div className="world-detail__button-spinner"></div>
-              <span>Progressing Story...</span>
-            </>
-          ) : (
-            <>
-              <span className="material-icons">play_arrow</span>
-              <span>PROGRESS STORY</span>
-            </>
-          )}
-        </button>
+        <div className="world-detail__arc-actions">
+          <button
+            onClick={onAddEvent}
+            className="world-detail__add-event-button-primary"
+          >
+            <span className="material-icons">event_note</span>
+            <span>ADD EVENT</span>
+          </button>
+          
+          <button
+            onClick={onProgressArc}
+            disabled={isProgressing}
+            className="world-detail__progress-button-primary"
+          >
+            {isProgressing ? (
+              <>
+                <div className="world-detail__button-spinner"></div>
+                <span>Progressing Story...</span>
+              </>
+            ) : (
+              <>
+                <span className="material-icons">play_arrow</span>
+                <span>PROGRESS STORY</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Arc Details Section */}
       <div className="world-detail__arc-details">
-        {/* Story Idea */}
-        {currentArc.story_idea && (
-          <div className="world-detail__arc-detail-section">
-            <h4 className="world-detail__arc-detail-title">Story Concept</h4>
-            <p className="world-detail__arc-detail-text">{currentArc.story_idea}</p>
-          </div>
-        )}
-
         {/* Detailed Description */}
         {currentArc.detailed_description && (
           <div className="world-detail__arc-detail-section">
@@ -66,7 +66,7 @@ export function ArcControlPanel({ currentArc, isProgressing, onProgressArc }: Ar
         )}
 
         {/* If no detailed info is available, show a placeholder */}
-        {!currentArc.story_idea && !currentArc.detailed_description && !currentArc.summary && (
+        {!currentArc.detailed_description && !currentArc.summary && (
           <div className="world-detail__arc-detail-section">
             <p className="world-detail__arc-detail-placeholder">
               Arc details will be generated as the story progresses...

@@ -6,6 +6,7 @@ import { ArcControlPanel } from '../arc/ArcControlPanel';
 import { BeatTimeline } from '../arc/BeatTimeline';
 import { BeatDetails } from '../arc/BeatDetails';
 import { CreateArcPanel } from '../arc/CreateArcPanel';
+import { EventModal } from '../events/EventModal';
 
 import { LocationSection } from '../entities/LocationSection';
 import { CharacterSection } from '../entities/CharacterSection';
@@ -55,7 +56,6 @@ export function WorldDetailLayout() {
     showEventsList,
     newEvent,
     setShowAddEvent,
-    setShowEventsList,
     setNewEvent,
     fetchBeatEvents,
     recordEvent
@@ -136,9 +136,25 @@ export function WorldDetailLayout() {
       world.id,
       selectedBeat,
       beats,
-      () => {},
+      () => {
+        setShowAddEvent(false); // Close modal on success
+      },
       setError
     );
+  };
+
+  const handleOpenEventModal = () => {
+    setShowAddEvent(true);
+  };
+
+  const handleCloseEventModal = () => {
+    setShowAddEvent(false);
+    // Reset form on close
+    setNewEvent({
+      eventType: 'player_action',
+      impactLevel: 'minor',
+      description: ''
+    });
   };
 
   if (isLoading) {
@@ -179,6 +195,7 @@ export function WorldDetailLayout() {
               currentArc={currentArc}
               isProgressing={isProgressing}
               onProgressArc={handleProgressArc}
+              onAddEvent={handleOpenEventModal}
             />
             
             <BeatTimeline
@@ -223,13 +240,9 @@ export function WorldDetailLayout() {
             
             <EventsSection
               currentArc={currentArc}
-              showAddEvent={showAddEvent}
               showEventsList={showEventsList}
-              newEvent={newEvent}
               beatEvents={beatEvents}
-              onToggleAddEvent={() => setShowAddEvent(!showAddEvent)}
-              onEventChange={setNewEvent}
-              onSubmitEvent={handleRecordEvent}
+              onToggleAddEvent={handleOpenEventModal}
             />
           </div>
 
@@ -252,7 +265,16 @@ export function WorldDetailLayout() {
 
       </div>
 
-      {/* Modals */}
+      {/* Event Modal */}
+      <EventModal
+        isOpen={showAddEvent}
+        onClose={handleCloseEventModal}
+        newEvent={newEvent}
+        onEventChange={setNewEvent}
+        onSubmit={handleRecordEvent}
+      />
+
+      {/* Entity Modals */}
       <LocationModal
         location={selectedLocation}
         isOpen={isLocationModalOpen}

@@ -65,6 +65,54 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+/* Arc Actions Container */
+.world-detail__arc-actions {
+  display: flex;
+  gap: theme('spacing.3');
+  align-items: center;
+}
+
+/* Primary Add Event Button */
+.world-detail__add-event-button-primary {
+  display: flex;
+  align-items: center;
+  gap: theme('spacing.2');
+  padding: theme('spacing.4') theme('spacing.6');
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  border-radius: theme('borderRadius.full');
+  font-family: 'Cinzel', serif;
+  font-weight: theme('fontWeight.bold');
+  font-size: theme('fontSize.lg');
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.world-detail__add-event-button-primary::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+  transform: scale(0);
+  transition: transform 0.5s ease;
+}
+
+.world-detail__add-event-button-primary:hover::before {
+  transform: scale(1);
+}
+
+.world-detail__add-event-button-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+}
+
 /* Primary Progress Button - Prominent */
 .world-detail__progress-button-primary {
   display: flex;
@@ -310,6 +358,12 @@
     gap: theme('spacing.3');
   }
   
+  .world-detail__arc-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+  
+  .world-detail__add-event-button-primary,
   .world-detail__progress-button-primary {
     width: 100%;
   }

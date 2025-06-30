@@ -11,9 +11,6 @@ export function WorldInfoPanel({ world, currentArc }: WorldInfoPanelProps) {
     <div className="world-detail__world-info">
       <h1 className="world-detail__title">{world.name}</h1>
       <p className="world-detail__description">{world.description}</p>
-      <div className="world-detail__meta">
-        Created {new Date(world.created_at).toLocaleDateString()}
-      </div>
       
       {/* World Sphere */}
       <div className="world-detail__sphere-container">

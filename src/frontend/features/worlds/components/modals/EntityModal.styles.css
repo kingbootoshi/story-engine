@@ -22,16 +22,16 @@
 
 .entity-modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background-color: rgba(0, 0, 0, 0.8);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 9999;
   animation: modalFadeIn 0.3s ease-out;
+  padding: theme('spacing.4');
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 @keyframes modalFadeIn {
@@ -51,11 +51,13 @@
   padding: 0;
   width: 90%;
   max-width: 700px;
-  max-height: 80vh;
+  max-height: 90vh;
   overflow: hidden;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
   animation: modalSlideIn 0.3s ease-out;
   color: white;
+  position: relative;
+  margin: auto;
 }
 
 @keyframes modalSlideIn {
@@ -113,7 +115,7 @@
 .entity-modal__content {
   padding: theme('spacing.6');
   overflow-y: auto;
-  max-height: calc(80vh - 120px);
+  max-height: calc(90vh - 120px);
 }
 
 .entity-modal__section {

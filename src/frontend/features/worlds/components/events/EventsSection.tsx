@@ -1,27 +1,18 @@
-import { EventForm } from './EventForm';
 import { EventList } from './EventList';
 import type { Arc, NewEventForm, WorldEvent } from '../../types';
 
 interface EventsSectionProps {
   currentArc: Arc | null;
-  showAddEvent: boolean;
   showEventsList: boolean;
-  newEvent: NewEventForm;
   beatEvents: WorldEvent[];
   onToggleAddEvent: () => void;
-  onEventChange: (event: NewEventForm) => void;
-  onSubmitEvent: (e: React.FormEvent) => void;
 }
 
 export function EventsSection({
   currentArc,
-  showAddEvent,
   showEventsList,
-  newEvent,
   beatEvents,
-  onToggleAddEvent,
-  onEventChange,
-  onSubmitEvent
+  onToggleAddEvent
 }: EventsSectionProps) {
   return (
     <div className="world-detail__events-section">
@@ -40,15 +31,6 @@ export function EventsSection({
           </button>
         )}
       </div>
-
-      {showAddEvent && (
-        <EventForm
-          newEvent={newEvent}
-          onEventChange={onEventChange}
-          onSubmit={onSubmitEvent}
-          onCancel={onToggleAddEvent}
-        />
-      )}
 
       <EventList events={beatEvents} isVisible={showEventsList} />
     </div>

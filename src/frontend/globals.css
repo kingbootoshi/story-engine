@@ -25,3 +25,14 @@
   /* Support for IE. */
   font-feature-settings: 'liga';
 }
+
+/**
+ * Modal-specific global styles
+ * Prevent body scrolling when modals are open
+ */
+body.modal-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}

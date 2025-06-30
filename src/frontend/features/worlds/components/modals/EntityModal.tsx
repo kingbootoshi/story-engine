@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import './EntityModal.styles.css';
 
 interface EntityModalProps {
@@ -9,6 +10,23 @@ interface EntityModalProps {
 }
 
 export function EntityModal({ isOpen, onClose, title, children }: EntityModalProps) {
+  useEffect(() => {
+    if (isOpen) {
+      // Save current scroll position
+      const scrollY = window.scrollY;
+      document.body.style.top = `-${scrollY}px`;
+      document.body.classList.add('modal-open');
+      
+      return () => {
+        // Restore scroll position
+        document.body.classList.remove('modal-open');
+        const savedScrollY = document.body.style.top;
+        document.body.style.top = '';
+        window.scrollTo(0, parseInt(savedScrollY || '0') * -1);
+      };
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleOverlayClick = (e: React.MouseEvent) => {
@@ -17,7 +35,7 @@ export function EntityModal({ isOpen, onClose, title, children }: EntityModalPro
     }
   };
 
-  return (
+  return createPortal(
     <div className="entity-modal-overlay" onClick={handleOverlayClick}>
       <div className="entity-modal">
         <div className="entity-modal__header">
@@ -34,7 +52,8 @@ export function EntityModal({ isOpen, onClose, title, children }: EntityModalPro
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

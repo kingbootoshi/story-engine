@@ -1,0 +1,115 @@
+/**
+ * Event Modal styles
+ * Styles specific to the event creation modal
+ */
+
+/* Form inside the modal */
+.entity-modal__content form {
+  display: flex;
+  flex-direction: column;
+  gap: theme('spacing.5');
+}
+
+/* Form groups inside event modal */
+.entity-modal__content .world-detail__form-group {
+  margin-bottom: 0;
+}
+
+.entity-modal__content .world-detail__form-group label {
+  display: block;
+  margin-bottom: theme('spacing.2');
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: theme('fontWeight.medium');
+  font-size: theme('fontSize.sm');
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.entity-modal__content .world-detail__form-group select,
+.entity-modal__content .world-detail__form-group textarea {
+  width: 100%;
+  padding: theme('spacing.3');
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: theme('borderRadius.md');
+  color: white;
+  font-size: theme('fontSize.base');
+  transition: all 0.3s ease;
+}
+
+.entity-modal__content .world-detail__form-group select:focus,
+.entity-modal__content .world-detail__form-group textarea:focus {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.5);
+  background-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.entity-modal__content .world-detail__form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+}
+
+/* Form actions inside modal */
+.entity-modal__content .world-detail__form-actions {
+  display: flex;
+  gap: theme('spacing.3');
+  margin-top: theme('spacing.2');
+  padding-top: theme('spacing.4');
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.entity-modal__content .world-detail__submit-button {
+  flex: 1;
+  padding: theme('spacing.3') theme('spacing.4');
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  border-radius: theme('borderRadius.md');
+  font-family: 'Cinzel', serif;
+  font-weight: theme('fontWeight.medium');
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: theme('fontSize.base');
+}
+
+.entity-modal__content .world-detail__submit-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.5);
+}
+
+.entity-modal__content .world-detail__cancel-button {
+  flex: 1;
+  padding: theme('spacing.3') theme('spacing.4');
+  background-color: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: theme('borderRadius.md');
+  font-family: 'Cinzel', serif;
+  font-weight: theme('fontWeight.medium');
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: theme('fontSize.base');
+}
+
+.entity-modal__content .world-detail__cancel-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Select dropdown styling */
+.entity-modal__content select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
+  background-position: right theme('spacing.3') center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: theme('spacing.10');
+}
+
+.entity-modal__content select option {
+  background-color: rgb(30, 41, 59);
+  color: white;
+} 
