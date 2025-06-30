@@ -8,7 +8,7 @@ interface LocationSectionProps {
 
 export function LocationSection({ groupedLocations, totalLocationCount, onLocationClick }: LocationSectionProps) {
   return (
-    <div className="world-detail__section world-detail__section--locations">
+    <div className="world-detail__entity-section">
       <div className="world-detail__section-header">
         <h2 className="world-detail__section-title">
           <span className="material-icons">place</span>

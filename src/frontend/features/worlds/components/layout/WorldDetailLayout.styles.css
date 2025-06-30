@@ -261,7 +261,9 @@
   /* Hide desktop arc sections on mobile */
   .world-detail__dashboard > .world-detail__arc-control-panel,
   .world-detail__dashboard > .world-detail__arc-progress,
-  .world-detail__dashboard > .world-detail__current-beat-summary {
+  .world-detail__dashboard > .world-detail__current-beat-summary,
+  .world-detail__dashboard > .world-detail__no-arc-panel,
+  .world-detail__dashboard > .world-seeding-panel {
     display: none;
   }
   

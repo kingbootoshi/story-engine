@@ -331,19 +331,19 @@ export function WorldDetailLayout() {
             />
           </div>
 
-          {/* Right Section - Characters & Factions */}
+          {/* Right Section - Factions & Characters */}
           <div className="world-detail__section world-detail__section--entities">
+            <FactionSection
+              factions={factions}
+              factionCount={factionCount}
+              onFactionClick={handleFactionClick}
+            />
+            
             <CharacterSection
               majorCharacters={majorCharacters}
               minorCharacters={minorCharacters}
               characterCount={characterCount}
               onCharacterClick={handleCharacterClick}
-            />
-            
-            <FactionSection
-              factions={factions}
-              factionCount={factionCount}
-              onFactionClick={handleFactionClick}
             />
           </div>
         </div>
@@ -423,13 +423,23 @@ export function WorldDetailLayout() {
                   />
                 </>
               ) : (
-                <CreateArcPanel
-                  showCreateArc={showCreateArc}
-                  storyIdea={storyIdea}
-                  onStoryIdeaChange={setStoryIdea}
-                  onToggleForm={() => setShowCreateArc(!showCreateArc)}
-                  onSubmit={handleCreateArc}
-                />
+                // Check if world is unseeded
+                locations.length === 0 && factions.length === 0 && characters.length === 0 && !isLoading ? (
+                  <WorldSeedingPanel
+                    worldId={worldId!}
+                    onSeedWorld={handleSeedWorld}
+                    isSeeding={isSeeding}
+                    seedingProgress={seedingProgress}
+                  />
+                ) : (
+                  <CreateArcPanel
+                    showCreateArc={showCreateArc}
+                    storyIdea={storyIdea}
+                    onStoryIdeaChange={setStoryIdea}
+                    onToggleForm={() => setShowCreateArc(!showCreateArc)}
+                    onSubmit={handleCreateArc}
+                  />
+                )
               )}
             </div>
           </div>
@@ -445,17 +455,17 @@ export function WorldDetailLayout() {
 
           {/* Characters Tab */}
           <div className={`world-detail__section ${activeMobileTab === 'characters' ? 'world-detail__section--active' : ''}`}>
+            <FactionSection
+              factions={factions}
+              factionCount={factionCount}
+              onFactionClick={handleFactionClick}
+            />
+            
             <CharacterSection
               majorCharacters={majorCharacters}
               minorCharacters={minorCharacters}
               characterCount={characterCount}
               onCharacterClick={handleCharacterClick}
-            />
-            
-            <FactionSection
-              factions={factions}
-              factionCount={factionCount}
-              onFactionClick={handleFactionClick}
             />
           </div>
         </div>

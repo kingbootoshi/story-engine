@@ -77,7 +77,11 @@ interface LocationModalProps {
       previous_status?: string;
       beat_index?: number;
     }>;
-    last_significant_change: string | null;
+    /**
+     * Timestamp of the last meaningful change to this location.
+     * Optional because freshly generated locations have no change history yet.
+     */
+    last_significant_change?: string | null;
     created_at: string;
     updated_at: string;
   } | null;

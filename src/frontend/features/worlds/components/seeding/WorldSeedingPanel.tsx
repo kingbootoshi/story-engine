@@ -45,6 +45,19 @@ export function WorldSeedingPanel({
         </div>
 
         <div className="world-seeding-panel__progress">
+          {/* Animated magical orb */}
+          <div className="world-seeding-panel__orb-container">
+            <div className="world-seeding-panel__orb">
+              <div className="world-seeding-panel__orb-core"></div>
+              <div className="world-seeding-panel__particles">
+                <span className="world-seeding-panel__particle"></span>
+                <span className="world-seeding-panel__particle"></span>
+                <span className="world-seeding-panel__particle"></span>
+                <span className="world-seeding-panel__particle"></span>
+              </div>
+            </div>
+          </div>
+
           <div className="world-seeding-panel__phases">
             <div className={`world-seeding-panel__phase ${
               seedingProgress?.phase === 'locations' ? 'world-seeding-panel__phase--active' : ''
@@ -76,15 +89,11 @@ export function WorldSeedingPanel({
           {seedingProgress && (
             <div className="world-seeding-panel__status">
               <p className="world-seeding-panel__message">{seedingProgress.message}</p>
-              {seedingProgress.count && (
+              {seedingProgress.count !== undefined && (
                 <p className="world-seeding-panel__count">Created: {seedingProgress.count}</p>
               )}
             </div>
           )}
-
-          <div className="world-seeding-panel__spinner">
-            <div className="world-seeding-panel__spinner-ring"></div>
-          </div>
         </div>
       </div>
     );
