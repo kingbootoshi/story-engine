@@ -1,6 +1,6 @@
 # general to do b4 launch
 
-- add smart ai logic and small ai logic
+1. add smart ai logic and small ai logic
 
 smart models
 - [global] handle all initial seeding (locations/factions/characters)
@@ -12,6 +12,16 @@ smart models
 small models
 - [character] handle all chosen characters reactions to beat (in parallel)
 - [location] handle all locations reactions to beat (in parallel)
+
+2. instead of generating all AI stuff instantly on world gen,
+let the user:
+
+a. gen with AI (then trigger existing pipeline, ensure page knows its happening)
+b. add entities manually (with the option of ai assistance for fast gens)
+
+3. add full details of locations/factions/characters to the world view
+
+4. allow people to fully add/delete/edit entities from the front end
 
 # modules to do:
 

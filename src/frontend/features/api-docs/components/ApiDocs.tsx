@@ -143,23 +143,14 @@ export function ApiDocs() {
 
   return (
     <div className="api-docs">
-      {/* Fixed Mobile Header */}
-      <header className="api-docs__mobile-header">
-        <button 
-          className="api-docs__mobile-menu-btn"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          aria-label="Toggle documentation menu"
-        >
-          <span className="material-icons">menu</span>
-        </button>
-        <div className="api-docs__mobile-header-content">
-          <span className="material-icons">{currentSection?.icon}</span>
-          <h1>{currentSection?.label}</h1>
-        </div>
-        <div className="api-docs__mobile-header-spacer" />
-      </header>
-
-      {/* Mobile Menu Toggle Button - REMOVED (replaced by header button) */}
+      {/* Mobile Menu Toggle Button - Simple floating button */}
+      <button 
+        className="api-docs__mobile-menu-btn api-docs__mobile-menu-btn--floating"
+        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        aria-label="Toggle documentation menu"
+      >
+        <span className="material-icons">menu</span>
+      </button>
 
       {/* Mobile Overlay */}
       <div 

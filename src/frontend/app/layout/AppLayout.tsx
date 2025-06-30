@@ -12,9 +12,9 @@ export function AppLayout() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   /**
    * Handle scroll to add backdrop blur to header
@@ -41,26 +41,24 @@ export function AppLayout() {
   }, [location.pathname]);
 
   /**
-   * Close mobile menu when route changes
+   * Close user menu when clicking outside
    */
   useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [location.pathname]);
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.app-layout__user-menu-container')) {
+        setIsUserMenuOpen(false);
+      }
+    };
 
-  /**
-   * Prevent body scroll when mobile menu is open
-   */
-  useEffect(() => {
-    if (isMobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
+    if (isUserMenuOpen) {
+      document.addEventListener('click', handleClickOutside);
     }
 
     return () => {
-      document.body.style.overflow = 'unset';
+      document.removeEventListener('click', handleClickOutside);
     };
-  }, [isMobileMenuOpen]);
+  }, [isUserMenuOpen]);
 
   /**
    * Determine if a nav link is active based on the current path
@@ -82,11 +80,34 @@ export function AppLayout() {
   };
 
   /**
-   * Toggle mobile menu
+   * Navigation items configuration
    */
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
+  const navItems = [
+    {
+      path: '/app',
+      label: 'Dashboard',
+      icon: 'dashboard',
+      exact: true // Only active when exactly at /app
+    },
+    {
+      path: '/app/worlds',
+      label: 'Worlds',
+      icon: 'public',
+      exact: false
+    },
+    {
+      path: '/app/api-docs',
+      label: 'Docs',
+      icon: 'description',
+      exact: false
+    },
+    {
+      path: '/app/api-keys',
+      label: 'API Keys',
+      icon: 'vpn_key',
+      exact: false
+    }
+  ];
 
   return (
     <div className="app-layout">
@@ -116,130 +137,65 @@ export function AppLayout() {
               </Link>
             </div>
             
-            {/* Desktop Navigation */}
-            <nav className="app-layout__nav app-layout__nav--desktop">
-              <Link 
-                to="/app" 
-                className={`app-layout__nav-link ${isActive('/app') && !isActive('/app/worlds') && !isActive('/app/api-keys') && !isActive('/app/api-docs') ? 'app-layout__nav-link--active' : ''}`}
-              >
-                <span className="material-icons">dashboard</span>
-                <span>Dashboard</span>
-              </Link>
-              <Link 
-                to="/app/worlds" 
-                className={`app-layout__nav-link ${isActive('/app/worlds') ? 'app-layout__nav-link--active' : ''}`}
-              >
-                <span className="material-icons">public</span>
-                <span>Worlds</span>
-              </Link>
-              <Link 
-                to="/app/api-keys" 
-                className={`app-layout__nav-link ${isActive('/app/api-keys') ? 'app-layout__nav-link--active' : ''}`}
-              >
-                <span className="material-icons">vpn_key</span>
-                API Keys
-              </Link>
-              <Link 
-                to="/app/api-docs" 
-                className={`app-layout__nav-link ${isActive('/app/api-docs') ? 'app-layout__nav-link--active' : ''}`}
-              >
-                <span className="material-icons">description</span>
-                API Docs
-              </Link>
+            {/* Navigation - Now visible on all screen sizes */}
+            <nav className="app-layout__nav">
+              <div className="app-layout__nav-scroll">
+                {navItems.map(item => {
+                  const active = item.exact 
+                    ? location.pathname === item.path 
+                    : isActive(item.path);
+                  
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className={`app-layout__nav-link ${active ? 'app-layout__nav-link--active' : ''}`}
+                    >
+                      <span className="material-icons">{item.icon}</span>
+                      <span className="app-layout__nav-label">{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
             </nav>
             
-            {/* User Menu */}
-            <div className="app-layout__user-section">
-              <div className="app-layout__user-info">
-                <div className="app-layout__user-avatar">
-                  <span className="material-icons">account_circle</span>
-                </div>
-                <span className="app-layout__user-email">{user?.email}</span>
-              </div>
-              <button 
-                onClick={handleSignOut}
-                className="app-layout__sign-out"
-                aria-label="Sign out"
+            {/* User Menu - Now a dropdown on mobile */}
+            <div className="app-layout__user-menu-container">
+              <button
+                className="app-layout__user-button"
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                aria-label="User menu"
               >
-                <span className="material-icons">logout</span>
+                <span className="material-icons">account_circle</span>
+                <span className="app-layout__user-button-label">{user?.email}</span>
+                <span className="material-icons app-layout__user-button-arrow">
+                  {isUserMenuOpen ? 'expand_less' : 'expand_more'}
+                </span>
               </button>
+              
+              {/* User Dropdown Menu */}
+              {isUserMenuOpen && (
+                <div className="app-layout__user-dropdown">
+                  <div className="app-layout__user-dropdown-info">
+                    <span className="material-icons">account_circle</span>
+                    <div>
+                      <div className="app-layout__user-dropdown-email">{user?.email}</div>
+                      <div className="app-layout__user-dropdown-label">Signed in</div>
+                    </div>
+                  </div>
+                  <div className="app-layout__user-dropdown-divider" />
+                  <button
+                    onClick={handleSignOut}
+                    className="app-layout__user-dropdown-item app-layout__user-dropdown-item--danger"
+                  >
+                    <span className="material-icons">logout</span>
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              )}
             </div>
-            
-            {/* Mobile Menu Button */}
-            <button 
-              className="app-layout__mobile-menu-button"
-              onClick={toggleMobileMenu}
-              aria-label="Toggle menu"
-            >
-              <span className="material-icons">
-                {isMobileMenuOpen ? 'close' : 'menu'}
-              </span>
-            </button>
           </div>
         </header>
-        
-        {/* Mobile Menu Overlay */}
-        <div className={`app-layout__mobile-menu ${isMobileMenuOpen ? 'app-layout__mobile-menu--open' : ''}`}>
-          <div className="app-layout__mobile-menu-content">
-            {/* User Info in Mobile Menu */}
-            <div className="app-layout__mobile-user">
-              <div className="app-layout__mobile-user-avatar">
-                <span className="material-icons">account_circle</span>
-              </div>
-              <div className="app-layout__mobile-user-info">
-                <span className="app-layout__mobile-user-email">{user?.email}</span>
-                <span className="app-layout__mobile-user-label">Signed in</span>
-              </div>
-            </div>
-            
-            {/* Mobile Navigation */}
-            <nav className="app-layout__mobile-nav">
-              <Link 
-                to="/app" 
-                className={`app-layout__mobile-nav-link ${isActive('/app') && !isActive('/app/worlds') && !isActive('/app/api-keys') && !isActive('/app/api-docs') ? 'app-layout__mobile-nav-link--active' : ''}`}
-              >
-                <span className="material-icons">dashboard</span>
-                <span>Dashboard</span>
-                <span className="material-icons app-layout__mobile-nav-arrow">chevron_right</span>
-              </Link>
-              <Link 
-                to="/app/worlds" 
-                className={`app-layout__mobile-nav-link ${isActive('/app/worlds') ? 'app-layout__mobile-nav-link--active' : ''}`}
-              >
-                <span className="material-icons">public</span>
-                <span>Worlds</span>
-                <span className="material-icons app-layout__mobile-nav-arrow">chevron_right</span>
-              </Link>
-              <Link 
-                to="/app/api-keys" 
-                className={`app-layout__mobile-nav-link ${isActive('/app/api-keys') ? 'app-layout__mobile-nav-link--active' : ''}`}
-              >
-                <span className="material-icons">vpn_key</span>
-                <span>API Keys</span>
-                <span className="material-icons app-layout__mobile-nav-arrow">chevron_right</span>
-              </Link>
-              <Link 
-                to="/app/api-docs" 
-                className={`app-layout__mobile-nav-link ${isActive('/app/api-docs') ? 'app-layout__mobile-nav-link--active' : ''}`}
-              >
-                <span className="material-icons">description</span>
-                <span>API Docs</span>
-                <span className="material-icons app-layout__mobile-nav-arrow">chevron_right</span>
-              </Link>
-            </nav>
-            
-            {/* Mobile Sign Out */}
-            <div className="app-layout__mobile-footer">
-              <button 
-                onClick={handleSignOut}
-                className="app-layout__mobile-sign-out"
-              >
-                <span className="material-icons">logout</span>
-                <span>Sign Out</span>
-              </button>
-            </div>
-          </div>
-        </div>
         
         {/* Main content area */}
         <main className={`app-layout__main ${isTransitioning ? 'app-layout__main--transitioning' : ''}`}>
