@@ -51,3 +51,10 @@ export const SpawnDecisionSchema = z.object({
     spawn_location: z.string()
   }))
 });
+
+export const CharacterSelectionSchema = z.object({
+  affected_characters: z.array(z.object({
+    character_name: z.string(),
+    reason: z.string()
+  }))
+});

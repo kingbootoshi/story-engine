@@ -21,8 +21,10 @@ import type {
   CityGenerationResult,
   LandmarkGenerationResult,
   WildernessGenerationResult,
-  MutationDecisionContext,
-  MutationDecisionResult
+  LocationSelectionContext,
+  LocationSelectionResult,
+  IndividualLocationMutationContext,
+  IndividualLocationMutationResult
 } from '../../domain/ports';
 import { 
   buildWorldMapPrompt, 
@@ -49,15 +51,20 @@ import {
   WILDERNESS_GENERATION_SCHEMA 
 } from './prompts/wildernessGeneration.prompts';
 import { 
-  buildMutationDecisionPrompt, 
-  MUTATION_DECISION_SCHEMA 
-} from './prompts/mutationDecision.prompts';
+  buildLocationSelectionPrompt, 
+  LOCATION_SELECTION_SCHEMA 
+} from './prompts/locationSelection.prompts';
+import { 
+  buildIndividualLocationMutationPrompt, 
+  INDIVIDUAL_LOCATION_MUTATION_SCHEMA 
+} from './prompts/individualLocationMutation.prompts';
 import { 
   RegionGenerationResultSchema, 
   CityGenerationResultSchema, 
   LandmarkGenerationResultSchema, 
   WildernessGenerationResultSchema,
-  MutationDecisionResultSchema
+  LocationSelectionResultSchema,
+  IndividualLocationMutationResultSchema
 } from './schemas';
 import { validateMapGenerationResult, validateLocationMutations } from './validation';
 
@@ -559,26 +566,27 @@ export class LocationAIAdapter implements LocationAI {
   }
 
   /**
-   * Decide if locations should be mutated based on story beat
+   * Select which locations should react to a story beat
    */
-  async decideMutation(context: MutationDecisionContext): Promise<MutationDecisionResult> {
+  async selectReactingLocations(context: LocationSelectionContext): Promise<LocationSelectionResult> {
     const startTime = Date.now();
     
-    logger.info('Calling AI for mutation decision', {
+    logger.info('Calling AI for location selection', {
       worldId: context.worldId,
+      locationCount: context.currentLocations.length,
       correlation: context.worldId
     });
 
     try {
-      const messages = buildMutationDecisionPrompt(context);
+      const messages = buildLocationSelectionPrompt(context);
       
       const completion = await retryWithBackoff(
         () => chat({
           messages,
-          tools: [{ type: 'function', function: MUTATION_DECISION_SCHEMA }],
-          tool_choice: { type: 'function', function: { name: 'decide_mutation' } },
+          tools: [{ type: 'function', function: LOCATION_SELECTION_SCHEMA }],
+          tool_choice: { type: 'function', function: { name: 'select_reacting_locations' } },
           temperature: 0.7,
-          metadata: buildMetadata('location', 'decide_mutation@v1', context.userId || 'anonymous', {
+          metadata: buildMetadata('location', 'select_reacting_locations@v1', context.userId || 'anonymous', {
             world_id: context.worldId,
             correlation: context.worldId
           })
@@ -589,7 +597,7 @@ export class LocationAIAdapter implements LocationAI {
 
       const toolCall = extractToolCall(
         completion,
-        'decide_mutation',
+        'select_reacting_locations',
         { worldId: context.worldId }
       );
 
@@ -599,37 +607,125 @@ export class LocationAIAdapter implements LocationAI {
       );
       
       const duration_ms = Date.now() - startTime;
-      const decisionValidation = MutationDecisionResultSchema.safeParse(result);
-      if (!decisionValidation.success) {
-        logger.error('Invalid mutation decision result', {
+      const selectionValidation = LocationSelectionResultSchema.safeParse(result);
+      if (!selectionValidation.success) {
+        logger.error('Invalid location selection result', {
           worldId: context.worldId,
-          errors: decisionValidation.error.errors,
+          errors: selectionValidation.error.errors,
           correlation: context.worldId
         });
         throw new AIValidationError(
-          decisionValidation.error,
+          selectionValidation.error,
           result,
           { worldId: context.worldId }
         );
       }
       
-      logger.info('AI mutation decision complete', {
+      logger.info('AI location selection complete', {
         worldId: context.worldId,
-        shouldMutate: decisionValidation.data.shouldMutate,
-        think: decisionValidation.data.think.substring(0, 100),
+        reactionCount: selectionValidation.data.reactions.length,
+        locationIds: selectionValidation.data.reactions.map(r => r.locationId),
         duration_ms,
         tokens: completion.usage,
         correlation: context.worldId
       });
 
-      return decisionValidation.data;
+      return selectionValidation.data;
       
     } catch (error) {
-      logger.error('Failed to decide mutation', {
+      logger.error('Failed to select reacting locations', {
         error: error instanceof Error ? error.message : String(error),
         rawResponse: (error as any).rawResponse,
         ...{
         worldId: context.worldId,
+        correlation: context.worldId
+      }
+      });
+      throw new Error('AI returned an invalid response');
+    }
+  }
+
+  /**
+   * Mutate an individual location based on story beat
+   */
+  async mutateIndividualLocation(context: IndividualLocationMutationContext): Promise<IndividualLocationMutationResult> {
+    const startTime = Date.now();
+    
+    logger.info('Calling AI for individual location mutation', {
+      worldId: context.worldId,
+      locationId: context.location.id,
+      locationName: context.location.name,
+      currentStatus: context.location.status,
+      correlation: context.worldId
+    });
+
+    try {
+      const messages = buildIndividualLocationMutationPrompt(context);
+      
+      const completion = await retryWithBackoff(
+        () => chat({
+          messages,
+          tools: [{ type: 'function', function: INDIVIDUAL_LOCATION_MUTATION_SCHEMA }],
+          tool_choice: { type: 'function', function: { name: 'mutate_individual_location' } },
+          temperature: 0.7,
+          metadata: buildMetadata('location', 'mutate_individual_location@v1', context.userId || 'anonymous', {
+            world_id: context.worldId,
+            location_id: context.location.id,
+            correlation: context.worldId
+          })
+        }),
+        { maxAttempts: 3 },
+        { worldId: context.worldId, locationId: context.location.id }
+      );
+
+      const toolCall = extractToolCall(
+        completion,
+        'mutate_individual_location',
+        { worldId: context.worldId, locationId: context.location.id }
+      );
+
+      const result = safeParseJSON(
+        toolCall.function.arguments,
+        { worldId: context.worldId, locationId: context.location.id }
+      );
+      
+      const duration_ms = Date.now() - startTime;
+      const mutationValidation = IndividualLocationMutationResultSchema.safeParse(result);
+      if (!mutationValidation.success) {
+        logger.error('Invalid individual location mutation result', {
+          worldId: context.worldId,
+          locationId: context.location.id,
+          errors: mutationValidation.error.errors,
+          correlation: context.worldId
+        });
+        throw new AIValidationError(
+          mutationValidation.error,
+          result,
+          { worldId: context.worldId, locationId: context.location.id }
+        );
+      }
+      
+      logger.info('AI individual location mutation complete', {
+        worldId: context.worldId,
+        locationId: context.location.id,
+        locationName: context.location.name,
+        hasStatusChange: !!mutationValidation.data.newStatus,
+        hasDescriptionAppend: !!mutationValidation.data.descriptionAppend,
+        hasHistoricalEvent: !!mutationValidation.data.historicalEvent,
+        duration_ms,
+        tokens: completion.usage,
+        correlation: context.worldId
+      });
+
+      return mutationValidation.data;
+      
+    } catch (error) {
+      logger.error('Failed to mutate individual location', {
+        error: error instanceof Error ? error.message : String(error),
+        rawResponse: (error as any).rawResponse,
+        ...{
+        worldId: context.worldId,
+        locationId: context.location.id,
         correlation: context.worldId
       }
       });

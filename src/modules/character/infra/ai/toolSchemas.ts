@@ -132,3 +132,31 @@ export const ANALYZE_SPAWN_SCHEMA = {
     strict: true
   }
 } as const;
+
+export const SELECT_AFFECTED_CHARACTERS_SCHEMA = {
+  type: 'function',
+  function: {
+    name: 'select_affected_characters',
+    description: 'Select which characters are affected by a story beat',
+    parameters: {
+      type: 'object',
+      properties: {
+        affected_characters: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              character_name: { type: 'string' },
+              reason: { type: 'string' }
+            },
+            required: ['character_name', 'reason'],
+            additionalProperties: false
+          }
+        }
+      },
+      required: ['affected_characters'],
+      additionalProperties: false
+    },
+    strict: true
+  }
+} as const;

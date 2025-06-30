@@ -50,7 +50,8 @@ export function buildEvaluateBeatUserPrompt(
     faction_relations?: Record<string, Record<string, string>>;
     available_locations: string[];
     available_factions: string[];
-  }
+  },
+  selectionReason?: string
 ): string {
   return `Evaluate how this beat affects the character:
 
@@ -71,7 +72,10 @@ ${character.recent_memories.map(m =>
 BEAT:
 Description: ${beat.description}
 World Changes: ${beat.directives.join('; ')}
-Emergent Stories: ${beat.emergent.join('; ')}
+Emergent Stories: ${beat.emergent.join('; ')}${selectionReason ? `
+
+WHY THIS CHARACTER WAS SELECTED:
+${selectionReason}` : ''}
 
 CONTEXT:
 Available Locations: ${worldContext.available_locations.join(', ')}

@@ -1,7 +1,8 @@
 import { injectable } from 'tsyringe';
-import type { ICharacterAI, CharacterGenerationContext, CharacterReactionContext, SpawnAnalysisContext } from '../../domain/ports';
-import type { CharacterBatch, CharacterReaction, SpawnDecision } from '../../domain/schema';
+import type { ICharacterAI, CharacterGenerationContext, CharacterReactionContext, SpawnAnalysisContext, CharacterSelectionContext } from '../../domain/ports';
+import type { CharacterBatch, CharacterReaction, SpawnDecision, Character } from '../../domain/schema';
 import type { TrpcCtx } from '../../../../core/trpc/context';
+import { resolveCharacterIdentifier } from '../../../../shared/utils/resolveCharacterIdentifier';
 import { 
   chat, 
   buildMetadata, 
@@ -23,8 +24,12 @@ import {
   SPAWN_CHARACTERS_SYSTEM_PROMPT,
   buildSpawnCharactersUserPrompt
 } from './prompts/spawnCharacters.prompts';
-import { CharacterBatchSchema, CharacterReactionSchema, SpawnDecisionSchema } from './schemas';
-import { GENERATE_CHARACTERS_SCHEMA, EVALUATE_REACTION_SCHEMA, ANALYZE_SPAWN_SCHEMA } from './toolSchemas';
+import {
+  SELECT_AFFECTED_CHARACTERS_SYSTEM_PROMPT,
+  buildSelectAffectedCharactersUserPrompt
+} from './prompts/selectAffectedCharacters.prompts';
+import { CharacterBatchSchema, CharacterReactionSchema, SpawnDecisionSchema, CharacterSelectionSchema } from './schemas';
+import { GENERATE_CHARACTERS_SCHEMA, EVALUATE_REACTION_SCHEMA, ANALYZE_SPAWN_SCHEMA, SELECT_AFFECTED_CHARACTERS_SCHEMA } from './toolSchemas';
 
 const logger = createLogger('character.ai');
 
@@ -123,6 +128,100 @@ export class CharacterAIAdapter implements ICharacterAI {
     }
   }
 
+  async selectAffectedCharacters(
+    context: CharacterSelectionContext,
+    trace: TrpcCtx
+  ): Promise<Array<{ characterId: string; reason: string }>> {
+    const promptId = 'select_affected_characters@v1';
+    const contextData = {
+      worldId: context.beat.beatId.split('-')[0],
+      beatId: context.beat.beatId,
+      beatIndex: context.beat.beatIndex,
+      totalCharacters: context.characters.length,
+      correlation: trace.reqId
+    };
+
+    logger.info('Selecting affected characters for beat', contextData);
+
+    try {
+      const userPrompt = buildSelectAffectedCharactersUserPrompt(context);
+
+      const completion = await retryWithBackoff(
+        () => chat({
+          messages: [
+            { role: 'system', content: SELECT_AFFECTED_CHARACTERS_SYSTEM_PROMPT },
+            { role: 'user', content: userPrompt }
+          ],
+          tools: [SELECT_AFFECTED_CHARACTERS_SCHEMA],
+          tool_choice: { type: 'function', function: { name: 'select_affected_characters' } },
+          temperature: 0.7,
+          metadata: buildMetadata(this.MODULE, promptId, trace.user?.id || 'anonymous', {
+            correlation: trace.reqId,
+            beat_id: context.beat.beatId,
+            beat_index: context.beat.beatIndex,
+            total_characters: context.characters.length
+          })
+        }),
+        { maxAttempts: 3 },
+        contextData
+      );
+
+      const toolCall = extractToolCall(
+        completion,
+        'select_affected_characters',
+        contextData
+      );
+
+      const parsedData = safeParseJSON(
+        toolCall.function.arguments,
+        contextData
+      );
+
+      const validationResult = CharacterSelectionSchema.safeParse(parsedData);
+      if (!validationResult.success) {
+        throw new AIValidationError(
+          validationResult.error,
+          parsedData,
+          contextData
+        );
+      }
+
+      const allCharacters = context.characters as unknown as Character[];
+      
+      const selectedCharacters = validationResult.data.affected_characters
+        .map(selection => {
+          const characterId = resolveCharacterIdentifier(selection.character_name, allCharacters);
+          if (!characterId) {
+            logger.warn('Character name not found in selection', {
+              characterName: selection.character_name,
+              ...contextData
+            });
+            return null;
+          }
+          return {
+            characterId,
+            reason: selection.reason
+          };
+        })
+        .filter((selection): selection is { characterId: string; reason: string } => selection !== null);
+
+      logger.info('Characters selected for beat', {
+        ...contextData,
+        selectedCount: selectedCharacters.length,
+        selectedCharacters: selectedCharacters.map(s => ({ id: s.characterId, reason: s.reason }))
+      });
+
+      return selectedCharacters;
+    } catch (error) {
+      logger.error('Failed to select affected characters', {
+        error: error instanceof Error ? error.message : String(error),
+        rawResponse: (error as any).rawResponse,
+        ...contextData
+      });
+      throw new Error('AI returned an invalid response');
+    }
+  }
+
   async evaluateCharacterReaction(
     context: CharacterReactionContext,
     trace: TrpcCtx
@@ -144,7 +243,8 @@ export class CharacterAIAdapter implements ICharacterAI {
           faction_relations: context.world_context.faction_relations,
           available_locations: context.world_context.available_locations.map(l => l.name),
           available_factions: context.world_context.available_factions.map(f => f.name)
-        }
+        },
+        context.selectionReason
       );
 
       const completion = await retryWithBackoff(

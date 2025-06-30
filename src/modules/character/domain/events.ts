@@ -87,6 +87,19 @@ export interface CharacterBatchGenerated {
   trigger: 'faction_seeding' | 'beat_spawn';
 }
 
+export interface CharactersSelectedForBeat {
+  v: 1;
+  worldId: string;
+  beatId: string;
+  beatIndex: number;
+  selectedCharacters: Array<{
+    characterId: string;
+    characterName: string;
+    reason: string;
+  }>;
+  totalCharacters: number;
+}
+
 export type CharacterEvent =
   | CharacterCreated
   | CharacterDied
@@ -96,4 +109,5 @@ export type CharacterEvent =
   | CharacterMotivationChanged
   | CharacterLocationChanged
   | CharacterFactionChanged
-  | CharacterBatchGenerated;
+  | CharacterBatchGenerated
+  | CharactersSelectedForBeat;

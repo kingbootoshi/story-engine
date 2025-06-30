@@ -76,3 +76,17 @@ export const MutationDecisionResultSchema = z.object({
   think: z.string(),
   shouldMutate: z.boolean()
 });
+
+export const LocationSelectionResultSchema = z.object({
+  reactions: z.array(z.object({
+    locationId: z.string(),
+    locationName: z.string(),
+    reason: z.string()
+  }))
+});
+
+export const IndividualLocationMutationResultSchema = z.object({
+  newStatus: z.enum(['thriving', 'stable', 'declining', 'ruined', 'abandoned', 'lost']).optional(),
+  descriptionAppend: z.string().optional(),
+  historicalEvent: z.string().optional()
+});
