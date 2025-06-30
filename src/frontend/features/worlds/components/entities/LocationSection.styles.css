@@ -1,0 +1,95 @@
+/**
+ * Location Section styles
+ * Location browsing and display
+ */
+
+/* Locations Panel */
+.world-detail__locations-content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: theme('spacing.4');
+}
+
+.world-detail__location-group {
+  margin-bottom: theme('spacing.4');
+}
+
+.world-detail__location-group-title {
+  font-family: 'Cinzel', serif;
+  font-size: theme('fontSize.base');
+  font-weight: theme('fontWeight.semibold');
+  margin-top: 0;
+  margin-bottom: theme('spacing.2');
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.world-detail__location-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.world-detail__location-item {
+  display: flex;
+  align-items: center;
+  gap: theme('spacing.2');
+  padding: theme('spacing.2') theme('spacing.3');
+  font-size: theme('fontSize.sm');
+  color: rgba(255, 255, 255, 0.8);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border-radius: theme('borderRadius.md');
+  margin: theme('spacing.1') 0;
+}
+
+.world-detail__location-item:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateX(theme('spacing.1'));
+}
+
+.world-detail__location-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.world-detail__location-status--thriving {
+  background-color: #10b981;
+}
+
+.world-detail__location-status--stable {
+  background-color: #3b82f6;
+}
+
+.world-detail__location-status--declining {
+  background-color: #f59e0b;
+}
+
+.world-detail__location-status--ruined {
+  background-color: #ef4444;
+}
+
+.world-detail__location-status--abandoned {
+  background-color: #6b7280;
+}
+
+.world-detail__location-status--lost {
+  background-color: #1f2937;
+}
+
+/* Compact density adjustments */
+.world-detail__unified-panel--compact .world-detail__location-group-title {
+  font-size: theme('fontSize.sm');
+}
+
+/* Detailed density adjustments */
+.world-detail__unified-panel--detailed .world-detail__location-item {
+  padding: theme('spacing.3') theme('spacing.4');
+  font-size: theme('fontSize.base');
+}

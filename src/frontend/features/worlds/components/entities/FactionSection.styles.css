@@ -1,0 +1,85 @@
+/**
+ * Faction Section styles
+ * Faction display and management
+ */
+
+/* Factions Panel */
+.world-detail__factions-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.world-detail__faction-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.world-detail__faction-item {
+  display: flex;
+  align-items: center;
+  gap: theme('spacing.2');
+  padding: theme('spacing.2') theme('spacing.3');
+  font-size: theme('fontSize.sm');
+  color: rgba(255, 255, 255, 0.8);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border-radius: theme('borderRadius.md');
+  margin: theme('spacing.1') 0;
+}
+
+.world-detail__faction-item:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateX(theme('spacing.1'));
+}
+
+.world-detail__faction-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.world-detail__faction-status--rising {
+  background-color: #10b981;
+}
+
+.world-detail__faction-status--stable {
+  background-color: #3b82f6;
+}
+
+.world-detail__faction-status--declining {
+  background-color: #f59e0b;
+}
+
+.world-detail__faction-status--collapsed {
+  background-color: #6b7280;
+}
+
+/* Entities Section General */
+.world-detail__entity-section {
+  margin-bottom: theme('spacing.6');
+}
+
+.world-detail__entity-section:last-child {
+  margin-bottom: 0;
+}
+
+.world-detail__empty-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  font-size: theme('fontSize.sm');
+}
+
+/* Detailed density adjustments */
+.world-detail__unified-panel--detailed .world-detail__faction-item {
+  padding: theme('spacing.3') theme('spacing.4');
+  font-size: theme('fontSize.base');
+}

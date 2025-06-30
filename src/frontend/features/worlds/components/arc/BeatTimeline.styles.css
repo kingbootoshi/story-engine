@@ -1,0 +1,110 @@
+/**
+ * Beat Timeline styles
+ * Interactive timeline for beat progression
+ */
+
+/* Beat Markers */
+.world-detail__beat-marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  z-index: 10;
+}
+
+.world-detail__beat-marker-dot {
+  display: block;
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.world-detail__beat-marker--anchor .world-detail__beat-marker-dot {
+  background: #f59e0b;
+  width: 20px;
+  height: 20px;
+}
+
+.world-detail__beat-marker--active .world-detail__beat-marker-dot {
+  border-color: white;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3);
+  animation: beatPulse 2s ease-in-out infinite;
+}
+
+@keyframes beatPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+/* Beat Timeline (Horizontal) */
+.world-detail__beat-timeline {
+  margin-bottom: theme('spacing.4');
+}
+
+.world-detail__timeline-title {
+  font-family: 'Cinzel', serif;
+  font-size: theme('fontSize.base');
+  margin-top: 0;
+  margin-bottom: theme('spacing.2');
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.world-detail__timeline-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: theme('spacing.2');
+}
+
+.world-detail__timeline-track {
+  display: flex;
+  gap: theme('spacing.2');
+  padding: theme('spacing.2') 0;
+  min-width: fit-content;
+}
+
+.world-detail__timeline-beat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: theme('spacing.1');
+  padding: theme('spacing.3') theme('spacing.4');
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: theme('borderRadius.lg');
+  min-width: 100px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.world-detail__timeline-beat:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.world-detail__timeline-beat--active {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.world-detail__timeline-beat--anchor {
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.world-detail__timeline-beat-number {
+  font-size: theme('fontSize.xs');
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.world-detail__timeline-beat-name {
+  font-size: theme('fontSize.sm');
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

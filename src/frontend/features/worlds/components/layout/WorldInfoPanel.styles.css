@@ -1,0 +1,53 @@
+/**
+ * World info panel styles
+ * World sphere, arc status, and basic info display
+ */
+
+.world-detail__world-info {
+  text-align: center;
+  margin-bottom: theme('spacing.6');
+  padding-bottom: theme('spacing.6');
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.world-detail__sphere-container {
+  display: flex;
+  justify-content: center;
+  position: relative;
+  margin: theme('spacing.4') 0;
+}
+
+.world-detail__sphere {
+  filter: drop-shadow(0 0 20px rgba(165, 180, 252, 0.5));
+}
+
+.world-detail__arc-status {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.world-detail__arc-badge {
+  display: flex;
+  align-items: center;
+  gap: theme('spacing.2');
+  background: linear-gradient(135deg, #10b981, #3b82f6);
+  color: white;
+  font-size: theme('fontSize.sm');
+  padding: theme('spacing.2') theme('spacing.4');
+  border-radius: theme('borderRadius.full');
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.world-detail__arc-badge--inactive {
+  background: linear-gradient(135deg, #6b7280, #4b5563);
+}
+
+/* Responsive styles */
+@media (max-width: theme('screens.md')) {
+  .world-detail__sphere {
+    width: 200px;
+    height: 200px;
+  }
+}

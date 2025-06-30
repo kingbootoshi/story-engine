@@ -20,7 +20,7 @@ import {
   useEntityModals,
   useUIState
 } from '../../hooks';
-import '../WorldDetail.styles.css';
+import '../../styles/index.css';
 
 export function WorldDetailLayout() {
   const { worldId } = useParams<{ worldId: string }>();

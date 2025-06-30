@@ -1,0 +1,76 @@
+/**
+ * Character Section styles
+ * Character management and display
+ */
+
+/* Characters Panel */
+.world-detail__characters-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.world-detail__character-group {
+  margin-bottom: theme('spacing.4');
+}
+
+.world-detail__character-group-title {
+  font-family: 'Cinzel', serif;
+  font-size: theme('fontSize.base');
+  font-weight: theme('fontWeight.semibold');
+  margin-top: 0;
+  margin-bottom: theme('spacing.2');
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.world-detail__character-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.world-detail__character-item {
+  display: flex;
+  align-items: center;
+  gap: theme('spacing.2');
+  padding: theme('spacing.2') theme('spacing.3');
+  font-size: theme('fontSize.sm');
+  color: rgba(255, 255, 255, 0.8);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border-radius: theme('borderRadius.md');
+  margin: theme('spacing.1') 0;
+}
+
+.world-detail__character-item:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateX(theme('spacing.1'));
+}
+
+.world-detail__character-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.world-detail__character-status--alive {
+  background-color: #10b981;
+}
+
+.world-detail__character-status--deceased {
+  background-color: #6b7280;
+}
+
+/* Compact density adjustments */
+.world-detail__unified-panel--compact .world-detail__character-group-title {
+  font-size: theme('fontSize.sm');
+}
+
+/* Detailed density adjustments */
+.world-detail__unified-panel--detailed .world-detail__character-item {
+  padding: theme('spacing.3') theme('spacing.4');
+  font-size: theme('fontSize.base');
+}

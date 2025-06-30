@@ -1,0 +1,226 @@
+/**
+ * Layout styles for WorldDetailLayout component
+ * Main container, header, dashboard layout
+ */
+
+.world-detail {
+  min-height: 100vh;
+  color: white;
+  background: linear-gradient(to bottom, rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.95));
+}
+
+.world-detail__loading,
+.world-detail__not-found {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.world-detail__loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s linear infinite;
+  margin-bottom: theme('spacing.4');
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.world-detail__error {
+  background-color: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: white;
+  padding: theme('spacing.4');
+  border-radius: theme('borderRadius.md');
+  margin: 0 theme('spacing.4') theme('spacing.6');
+  display: flex;
+  align-items: center;
+  gap: theme('spacing.2');
+}
+
+.world-detail__dashboard {
+  margin: 0;
+  padding: 0 theme('spacing.4') theme('spacing.8');
+  position: relative;
+}
+
+/* Unified Gamemaster Panel Layout */
+.world-detail__unified-panel {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr 1fr;
+  gap: theme('spacing.4');
+  margin-bottom: theme('spacing.6');
+}
+
+.world-detail__section {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: theme('borderRadius.lg');
+  padding: theme('spacing.6');
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 400px;
+}
+
+/* Legacy panel styles for compatibility */
+.world-detail__panel {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: theme('borderRadius.lg');
+  padding: theme('spacing.6');
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 400px;
+}
+
+.world-detail__panel--arc-beat {
+  margin-top: theme('spacing.6');
+}
+
+.world-detail__section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: theme('spacing.4');
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: theme('spacing.3');
+}
+
+/* Legacy panel header styles for compatibility */
+.world-detail__panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: theme('spacing.4');
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: theme('spacing.3');
+}
+
+.world-detail__section-title {
+  font-family: 'Cinzel', serif;
+  font-size: theme('fontSize.xl');
+  font-weight: theme('fontWeight.semibold');
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: theme('spacing.2');
+}
+
+/* Legacy panel title styles for compatibility */
+.world-detail__panel-title {
+  font-family: 'Cinzel', serif;
+  font-size: theme('fontSize.xl');
+  font-weight: theme('fontWeight.semibold');
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: theme('spacing.2');
+}
+
+.world-detail__panel-link {
+  color: rgba(255, 255, 255, 0.6);
+  transition: color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.world-detail__panel-link:hover {
+  color: white;
+}
+
+/* Center column specific styles */
+.world-detail__section--center {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Density Variations */
+.world-detail__unified-panel--compact {
+  font-size: theme('fontSize.sm');
+}
+
+.world-detail__unified-panel--compact .world-detail__section {
+  padding: theme('spacing.4');
+}
+
+.world-detail__unified-panel--detailed .world-detail__section {
+  padding: theme('spacing.8');
+}
+
+/* Responsive adjustments */
+@media (max-width: theme('screens.lg')) {
+  .world-detail__unified-panel {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .world-detail__section--entities {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: theme('screens.md')) {
+  .world-detail__dashboard {
+    padding-left: theme('spacing.3');
+    padding-right: theme('spacing.3');
+  }
+  
+  .world-detail__unified-panel {
+    grid-template-columns: 1fr;
+  }
+  
+  .world-detail__section--entities {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: theme('screens.sm')) {
+  .world-detail__dashboard {
+    padding-left: theme('spacing.2');
+    padding-right: theme('spacing.2');
+  }
+  
+  .world-detail__panel {
+    padding: theme('spacing.4');
+  }
+}
+
+/* Large screens - optimize for full width usage */
+@media (min-width: theme('screens.xl')) {
+  .world-detail__unified-panel {
+    grid-template-columns: minmax(300px, 1fr) minmax(400px, 1.5fr) minmax(300px, 1fr);
+    gap: theme('spacing.6');
+  }
+  
+  .world-detail__dashboard {
+    padding-left: theme('spacing.6');
+    padding-right: theme('spacing.6');
+  }
+}
+
+/* Extra large screens */
+@media (min-width: theme('screens.2xl')) {
+  .world-detail__dashboard {
+    padding-left: theme('spacing.8');
+    padding-right: theme('spacing.8');
+  }
+  
+  .world-detail__unified-panel {
+    gap: theme('spacing.8');
+  }
+}

@@ -121,14 +121,14 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       setTimeout(() => {
         setSignupSlideIn(true);
         setIsLogin(false);
-      }, 300);
+      }, 200); // Reduced delay for smoother transition
     } else {
       // Animate from signup to login
       setSignupSlideIn(false);
       setTimeout(() => {
         setLoginSlideOut(false);
         setIsLogin(true);
-      }, 300);
+      }, 200); // Reduced delay for smoother transition
     }
   };
 
@@ -205,7 +205,6 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           <form 
             onSubmit={handleSubmit} 
             className={`auth-form auth-form--login ${loginSlideOut ? 'slide-out' : ''}`}
-            style={{ display: (!isLogin && signupSlideIn) ? 'none' : 'block' }}
           >
             <div className="auth-modal__form-group">
               <label htmlFor="login-email" className="auth-modal__label">
@@ -219,6 +218,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="auth-modal__input"
+                disabled={!isLogin || loginSlideOut}
               />
             </div>
             
@@ -233,13 +233,14 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 className="auth-modal__input"
+                disabled={!isLogin || loginSlideOut}
               />
             </div>
             
             <button 
               type="submit" 
               className={`auth-modal__button ${isSubmitting ? 'auth-modal__button--submitting' : ''}`}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !isLogin || loginSlideOut}
             >
               {isSubmitting ? 'Logging in...' : 'Login'}
             </button>
@@ -249,7 +250,6 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           <form 
             onSubmit={handleSubmit} 
             className={`auth-form auth-form--signup ${signupSlideIn ? 'slide-in' : ''}`}
-            style={{ display: (isLogin && !loginSlideOut) ? 'none' : 'block' }}
           >
             <div className="auth-modal__form-group">
               <label htmlFor="signup-email" className="auth-modal__label">
@@ -262,6 +262,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="auth-modal__input"
+                disabled={isLogin || !signupSlideIn}
               />
             </div>
             
@@ -276,6 +277,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 className="auth-modal__input"
+                disabled={isLogin || !signupSlideIn}
               />
             </div>
             
@@ -290,13 +292,14 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 className="auth-modal__input"
+                disabled={isLogin || !signupSlideIn}
               />
             </div>
             
             <button 
               type="submit" 
               className={`auth-modal__button ${isSubmitting ? 'auth-modal__button--submitting' : ''}`}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isLogin || !signupSlideIn}
             >
               {isSubmitting ? 'Creating Account...' : 'Create Account'}
             </button>

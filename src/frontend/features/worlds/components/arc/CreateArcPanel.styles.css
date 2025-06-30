@@ -1,0 +1,78 @@
+/**
+ * Create Arc Panel styles
+ * Arc creation form and related elements
+ */
+
+.world-detail__create-arc-button {
+  display: flex;
+  align-items: center;
+  gap: theme('spacing.2');
+  margin-top: theme('spacing.4');
+  padding: theme('spacing.3') theme('spacing.5');
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: white;
+  border: none;
+  border-radius: theme('borderRadius.md');
+  font-family: 'Cinzel', serif;
+  font-weight: theme('fontWeight.medium');
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.world-detail__create-arc-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+}
+
+.world-detail__create-arc {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: theme('borderRadius.md');
+  padding: theme('spacing.4');
+  margin-top: theme('spacing.4');
+}
+
+.world-detail__create-arc h3 {
+  font-family: 'Cinzel', serif;
+  font-size: theme('fontSize.lg');
+  margin-top: 0;
+  margin-bottom: theme('spacing.4');
+}
+
+.world-detail__create-arc label {
+  display: block;
+  margin-bottom: theme('spacing.2');
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.world-detail__create-arc textarea {
+  width: 100%;
+  padding: theme('spacing.3');
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: theme('borderRadius.md');
+  color: white;
+  resize: vertical;
+  min-height: 80px;
+  margin-bottom: theme('spacing.4');
+}
+
+.world-detail__create-arc textarea:focus {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.5);
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.world-detail__create-arc-form {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.world-detail__create-arc-form h2 {
+  font-family: 'Cinzel', serif;
+  font-size: theme('fontSize.2xl');
+  margin-top: 0;
+  margin-bottom: theme('spacing.4');
+  text-align: center;
+}

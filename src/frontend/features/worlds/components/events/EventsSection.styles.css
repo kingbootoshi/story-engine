@@ -1,0 +1,25 @@
+/**
+ * Events Section styles
+ * Combined events UI container
+ */
+
+.world-detail__events-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.world-detail__events-list {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: theme('spacing.2');
+}
+
+.world-detail__events-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+}

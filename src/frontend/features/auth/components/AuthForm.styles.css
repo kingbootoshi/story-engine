@@ -68,11 +68,7 @@
   transition: color 0.3s ease;
 }
 
-.auth-form__tab--active {
-  color: white;
-}
-
-.auth-form__tab--active::after {
+.auth-form__tab::after {
   content: '';
   position: absolute;
   bottom: -1px;
@@ -80,12 +76,17 @@
   right: 0;
   height: 2px;
   background-color: white;
-  animation: tabIndicator 0.3s ease forwards;
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes tabIndicator {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
+.auth-form__tab--active {
+  color: white;
+}
+
+.auth-form__tab--active::after {
+  transform: scaleX(1);
 }
 
 .auth-form__error {
@@ -139,6 +140,7 @@
   cursor: pointer;
   transition: all 0.3s ease;
   margin-top: theme('spacing.6');
+  margin-bottom: theme('spacing.2');
 }
 
 .auth-form__button:hover {
@@ -160,44 +162,87 @@
 /* Form slide animation */
 .auth-forms-wrapper {
   position: relative;
-  /* Set a minimum height to ensure all content is visible */
-  min-height: 350px;
+  /* Increased min-height to accommodate signup form with 3 fields */
+  min-height: 420px;
+  overflow-x: hidden; /* Prevent horizontal overflow during transitions */
+  overflow-y: visible; /* Allow vertical overflow if needed */
 }
 
 .auth-form__form {
-  transition: transform 0.5s ease, opacity 0.5s ease;
-  /* Use relative positioning to ensure proper layout */
-  position: relative;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+              opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              visibility 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              filter 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Use absolute positioning for smooth transitions */
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
+  visibility: visible;
+  pointer-events: auto;
+  filter: blur(0px);
+  /* Add padding to ensure button isn't cut off */
+  padding-bottom: theme('spacing.4');
 }
 
+/* Initial states */
 .auth-form__form--login {
   transform: translateX(0);
   opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .auth-form__form--signup {
-  transform: translateX(0);
+  transform: translateX(100%);
   opacity: 0;
-  display: none;
+  visibility: hidden;
+  pointer-events: none;
 }
 
+/* Login sliding out */
 .auth-form__form--login.slide-out {
   transform: translateX(-100%);
   opacity: 0;
-  display: none;
+  visibility: hidden;
+  pointer-events: none;
+  filter: blur(4px);
 }
 
+/* Signup sliding in */
 .auth-form__form--signup.slide-in {
   transform: translateX(0);
   opacity: 1;
-  display: block;
+  visibility: visible;
+  pointer-events: auto;
+  filter: blur(0px);
+}
+
+/* Add scale effect for smoother transition */
+.auth-form__form--login.slide-out,
+.auth-form__form--signup:not(.slide-in) {
+  transform: translateX(-100%) scale(0.95);
+  filter: blur(4px);
+}
+
+.auth-form__form--signup.slide-in {
+  transform: translateX(0) scale(1);
+  filter: blur(0px);
+}
+
+.auth-form__form--login:not(.slide-out) {
+  transform: translateX(0) scale(1);
+  filter: blur(0px);
 }
 
 /* Responsive adjustments */
 @media (max-width: theme('screens.sm')) {
   .auth-form-container {
     padding: theme('spacing.6');
+  }
+  
+  .auth-forms-wrapper {
+    min-height: 380px; /* Slightly less on mobile but still enough */
   }
   
   .auth-form__title {

@@ -1,0 +1,51 @@
+/**
+ * Event List styles
+ * Event display and listing
+ */
+
+.world-detail__event-item {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: theme('borderRadius.md');
+  padding: theme('spacing.3');
+  margin-bottom: theme('spacing.3');
+}
+
+.world-detail__event-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: theme('spacing.2');
+}
+
+.world-detail__event-impact {
+  font-size: theme('fontSize.xs');
+  font-weight: theme('fontWeight.medium');
+  padding: theme('spacing.1') theme('spacing.2');
+  border-radius: theme('borderRadius.full');
+}
+
+.world-detail__event-impact--minor {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+.world-detail__event-impact--moderate {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+.world-detail__event-impact--major {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.world-detail__event-time {
+  font-size: theme('fontSize.xs');
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.world-detail__event-description {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: theme('fontSize.sm');
+}
