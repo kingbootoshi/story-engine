@@ -96,6 +96,21 @@ export function LandingPage() {
           )}
         </main>
       </div>
+
+      {/* Bolt.new Badge */}
+      <a 
+        href="https://bolt.new/" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="bolt-badge"
+        aria-label="Built with Bolt.new"
+      >
+        <img 
+          src="/bolt_badge.png" 
+          alt="Built with Bolt.new" 
+          className="bolt-badge__image"
+        />
+      </a>
     </div>
   );
 }
