@@ -9,6 +9,7 @@ import { Locations } from '@/features/locations/components/Locations';
 import { Factions } from '@/features/factions/components/Factions';
 import { Characters } from '@/features/characters/components/Characters';
 import { ApiKeys } from '@/features/api-keys/components/ApiKeys';
+import { ApiDocs } from '@/features/api-docs';
 
 /**
  * Private route component that checks authentication status
@@ -75,6 +76,10 @@ export const router = createBrowserRouter([
       {
         path: 'api-keys',
         element: <ApiKeys />,
+      },
+      {
+        path: 'api-docs',
+        element: <ApiDocs />,
       },
     ],
   },

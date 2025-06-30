@@ -53,13 +53,12 @@
 }
 
 .world-detail__header {
-  padding: theme('spacing.4') theme('spacing.8');
+  padding: theme('spacing.4') theme('spacing.4');
   position: relative;
 }
 
 .world-detail__header-content {
-  max-width: 1400px;
-  margin: 0 auto;
+  margin: 0;
 }
 
 .world-detail__back-link {
@@ -106,19 +105,15 @@
   color: white;
   padding: theme('spacing.4');
   border-radius: theme('borderRadius.md');
-  margin: 0 theme('spacing.8') theme('spacing.6');
+  margin: 0 theme('spacing.4') theme('spacing.6');
   display: flex;
   align-items: center;
   gap: theme('spacing.2');
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .world-detail__dashboard {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 theme('spacing.8') theme('spacing.8');
+  margin: 0;
+  padding: 0 theme('spacing.4') theme('spacing.8');
   position: relative;
 }
 
@@ -179,7 +174,7 @@
 .world-detail__unified-panel {
   display: grid;
   grid-template-columns: 1fr 1.5fr 1fr;
-  gap: theme('spacing.6');
+  gap: theme('spacing.4');
   margin-bottom: theme('spacing.6');
 }
 
@@ -933,7 +928,8 @@
 @media (max-width: theme('screens.md')) {
   .world-detail__header,
   .world-detail__dashboard {
-    padding: theme('spacing.4');
+    padding-left: theme('spacing.3');
+    padding-right: theme('spacing.3');
   }
   
   .world-detail__title {
@@ -955,11 +951,42 @@
 }
 
 @media (max-width: theme('screens.sm')) {
+  .world-detail__header,
+  .world-detail__dashboard {
+    padding-left: theme('spacing.2');
+    padding-right: theme('spacing.2');
+  }
+  
   .world-detail__form-actions {
     flex-direction: column;
   }
   
   .world-detail__panel {
     padding: theme('spacing.4');
+  }
+}
+
+/* Large screens - optimize for full width usage */
+@media (min-width: theme('screens.xl')) {
+  .world-detail__unified-panel {
+    grid-template-columns: minmax(300px, 1fr) minmax(400px, 1.5fr) minmax(300px, 1fr);
+    gap: theme('spacing.6');
+  }
+  
+  .world-detail__dashboard {
+    padding-left: theme('spacing.6');
+    padding-right: theme('spacing.6');
+  }
+}
+
+/* Extra large screens */
+@media (min-width: theme('screens.2xl')) {
+  .world-detail__dashboard {
+    padding-left: theme('spacing.8');
+    padding-right: theme('spacing.8');
+  }
+  
+  .world-detail__unified-panel {
+    gap: theme('spacing.8');
   }
 }

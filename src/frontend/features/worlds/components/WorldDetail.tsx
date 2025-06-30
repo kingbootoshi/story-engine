@@ -68,12 +68,20 @@ export function WorldDetail() {
     if (worldId) {
       fetchWorldDetails();
       fetchAllWorldData();
+    } else {
+      setError('No world ID provided');
+      setIsLoading(false);
     }
   }, [worldId]);
 
   const fetchWorldDetails = async () => {
+    if (!worldId) {
+      setError('No world ID provided');
+      return;
+    }
+    
     try {
-      const worldState = await trpc.world.getWorldState.query(worldId!);
+      const worldState = await trpc.world.getWorldState.query(worldId);
       console.debug('[WorldDetail] Loaded world state', {
         worldId: worldState.world.id,
         arcId: worldState.currentArc?.id,

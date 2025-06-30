@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { trpc } from '@/shared/lib/trpcClient';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@/shared/lib/trpcClient';
@@ -397,6 +398,15 @@ export function ApiKeys() {
           <span className="material-icons">help_outline</span>
           How to use API keys
         </h3>
+        
+        <div className="api-keys__docs-link">
+          <Link to="/docs/api" className="api-keys__docs-button">
+            <span className="material-icons">description</span>
+            View Complete API Documentation
+          </Link>
+          <p>See full endpoint reference, examples, and best practices</p>
+        </div>
+        
         <p>Include your API key in the Authorization header of your requests:</p>
         <div className="api-keys__code">
           <code>Authorization: Bearer YOUR_API_KEY</code>
