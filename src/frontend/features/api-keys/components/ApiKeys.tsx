@@ -404,15 +404,15 @@ export function ApiKeys() {
         
         <h4 className="api-keys__instructions-subtitle">Example with curl</h4>
         <div className="api-keys__code">
-          <pre><code>{`curl -H "Authorization: Bearer YOUR_API_KEY" \\
-  https://api.storyengine.dev/trpc/world.list`}</code></pre>
+          <pre><code>curl -H "Authorization: Bearer YOUR_API_KEY" \
+  https://api.storyengine.dev/trpc/world.list</code></pre>
         </div>
         
         <h4 className="api-keys__instructions-subtitle">Example with JavaScript SDK</h4>
         <div className="api-keys__code">
-          <pre><code>{`const client = new StoryEngineClient({
+          <pre><code>const client = new StoryEngineClient({
   apiKey: 'YOUR_API_KEY'
-});`}</code></pre>
+});</code></pre>
         </div>
         
         <div className="api-keys__security-tips">
