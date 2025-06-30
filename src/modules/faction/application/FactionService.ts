@@ -39,10 +39,6 @@ export class FactionService {
     eventBus.on('world.beat.created', async (evt: DomainEvent<StoryBeatCreated>) => {
       await this.reactToBeat(evt);
     });
-    
-    eventBus.on('location.status_changed', async (evt: any) => {
-      await this.checkTerritory(evt.payload);
-    });
   }
 
   async create(input: CreateFaction, enrichAI: boolean = false): Promise<Faction> {
@@ -439,35 +435,6 @@ export class FactionService {
     
     const beatContext = directives.join('\n');
     await this.evaluateRelations(worldId, beatContext, userId);
-  }
-
-  private async checkTerritory(payload: any): Promise<void> {
-    const { locationId, newStatus } = payload;
-    logger.info('Checking territory after location status change', { locationId, newStatus });
-    
-    const location = await this.locationRepo.findById(locationId);
-    if (!location || !location.controlling_faction_id) return;
-    
-    const faction = await this.repo.findById(location.controlling_faction_id);
-    if (!faction) return;
-    
-    if (newStatus === 'ruins' || newStatus === 'destroyed') {
-      await this.releaseLocation(
-        faction.id, 
-        locationId, 
-        `Location became ${newStatus}`
-      );
-      
-      const controlledCount = faction.controlled_locations.length - 1;
-      if (controlledCount === 0 && faction.status !== 'collapsed') {
-        await this.setStatus(
-          faction.id,
-          'declining',
-          'Lost last controlled location',
-          faction
-        );
-      }
-    }
   }
 
   async delete(id: string): Promise<void> {
