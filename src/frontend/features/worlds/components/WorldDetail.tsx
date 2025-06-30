@@ -13,9 +13,15 @@ type Arc = WorldState['currentArc'];
 type WorldEvent = WorldState['recentEvents'][number];
 type WorldBeat = WorldState['currentBeats'][number];
 
+// Types for other entities
+type Location = RouterOutputs['location']['list'][number];
+type Character = RouterOutputs['character']['list'][number];
+type Faction = RouterOutputs['faction']['list'][number];
+
 export function WorldDetail() {
   const { worldId } = useParams<{ worldId: string }>();
   
+  // World state
   const [world, setWorld] = useState<World | null>(null);
   const [currentArc, setCurrentArc] = useState<Arc | null>(null);
   const [beatEvents, setBeatEvents] = useState<WorldEvent[]>([]);
@@ -25,8 +31,16 @@ export function WorldDetail() {
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [storyIdea, setStoryIdea] = useState('');
   const [isProgressing, setIsProgressing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'locations' | 'characters' | 'factions' | 'events'>('locations');
-  const [locationsSummary, setLocationsSummary] = useState<{total: number, byType: Record<string, number>} | null>(null);
+
+  // Entity states
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [characters, setCharacters] = useState<Character[]>([]);
+  const [factions, setFactions] = useState<Faction[]>([]);
+  
+  // Grouped entities
+  const [groupedLocations, setGroupedLocations] = useState<Record<string, Location[]>>({});
+  const [majorCharacters, setMajorCharacters] = useState<Character[]>([]);
+  const [minorCharacters, setMinorCharacters] = useState<Character[]>([]);
 
   // Event form state
   const [newEvent, setNewEvent] = useState({
@@ -44,7 +58,7 @@ export function WorldDetail() {
   useEffect(() => {
     if (worldId) {
       fetchWorldDetails();
-      fetchLocationsSummary();
+      fetchAllWorldData();
     }
   }, [worldId]);
 
@@ -83,6 +97,41 @@ export function WorldDetail() {
       setError('Failed to load world details');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchAllWorldData = async () => {
+    if (!worldId) return;
+    
+    try {
+      // Fetch all entity types in parallel
+      const [locationsData, charactersData, factionsData] = await Promise.all([
+        trpc.location.list.query({ worldId }),
+        trpc.character.list.query({ worldId }),
+        trpc.faction.list.query({ worldId })
+      ]);
+      
+      // Set raw data
+      setLocations(locationsData);
+      setCharacters(charactersData);
+      setFactions(factionsData);
+      
+      // Group locations by type
+      const locationsByType = locationsData.reduce((acc, loc) => {
+        if (!acc[loc.type]) acc[loc.type] = [];
+        acc[loc.type].push(loc);
+        return acc;
+      }, {} as Record<string, Location[]>);
+      setGroupedLocations(locationsByType);
+      
+      // Separate characters by story_role
+      setMajorCharacters(charactersData.filter(c => c.story_role === 'major'));
+      setMinorCharacters(charactersData.filter(c => 
+        c.story_role === 'minor' || c.story_role === 'wildcard'
+      ));
+    } catch (err) {
+      console.error('[WorldDetail] Failed to fetch world data:', err);
+      // Don't set error state here to avoid blocking the main world view
     }
   };
 
@@ -166,6 +215,7 @@ export function WorldDetail() {
       }
       
       await fetchWorldDetails();
+      await fetchAllWorldData(); // Refresh all data after progression
     } catch (err) {
       console.error('[WorldDetail] Failed to progress arc:', err);
       setError('Failed to progress arc');
@@ -180,22 +230,6 @@ export function WorldDetail() {
       setBeatEvents(events);
     } catch (err) {
       console.error('[WorldDetail] Failed to fetch beat events:', err);
-    }
-  };
-
-  const fetchLocationsSummary = async () => {
-    try {
-      const locations = await trpc.location.list.query({ worldId: worldId! });
-      const summary = {
-        total: locations.length,
-        byType: locations.reduce((acc, loc) => {
-          acc[loc.type] = (acc[loc.type] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>)
-      };
-      setLocationsSummary(summary);
-    } catch (err) {
-      console.error('[WorldDetail] Failed to fetch locations summary:', err);
     }
   };
 
@@ -225,6 +259,16 @@ export function WorldDetail() {
       </div>
     );
   }
+
+  // Count entities by type
+  const regionCount = groupedLocations['region']?.length || 0;
+  const cityCount = groupedLocations['city']?.length || 0;
+  const landmarkCount = groupedLocations['landmark']?.length || 0;
+  const wildernessCount = groupedLocations['wilderness']?.length || 0;
+  const totalLocationCount = locations.length;
+  
+  const characterCount = characters.length;
+  const factionCount = factions.length;
 
   return (
     <div className="world-detail">
@@ -270,102 +314,100 @@ export function WorldDetail() {
           </div>
         </div>
 
-        {/* Main Dashboard Grid */}
-        <div className="world-detail__grid">
-          {/* Left Column - Current Arc */}
-          <div className="world-detail__panel world-detail__panel--arc">
+        {/* Gamemaster Panel - 3 Column Layout */}
+        <div className="world-detail__gamemaster-panel">
+          {/* Left Column - Locations */}
+          <div className="world-detail__panel world-detail__panel--locations">
             <div className="world-detail__panel-header">
               <h2 className="world-detail__panel-title">
-                <span className="material-icons">auto_stories</span>
-                Current Arc
+                <span className="material-icons">place</span>
+                Locations ({totalLocationCount})
               </h2>
+              <Link to={`/app/worlds/${worldId}/locations`} className="world-detail__panel-link">
+                <span className="material-icons">open_in_new</span>
+              </Link>
             </div>
             
-            {currentArc ? (
-              <div className="world-detail__arc-content">
-                <h3 className="world-detail__arc-name">{currentArc.story_name}</h3>
-                <p className="world-detail__arc-idea">{currentArc.story_idea}</p>
-                
-                {currentArc.detailed_description && (
-                  <div className="world-detail__arc-description">
-                    <strong>Arc Overview:</strong>
-                    <p>{currentArc.detailed_description}</p>
-                  </div>
-                )}
-                
-                <div className="world-detail__arc-meta">
-                  <div>Arc #{currentArc.arc_number} — Status: {currentArc.status}</div>
-                  <div className="world-detail__progress-bar">
-                    <div 
-                      className="world-detail__progress-fill"
-                      style={{ width: `${(beats.length / 15) * 100}%` }}
-                    ></div>
-                  </div>
-                </div>
-                
-                <button
-                  onClick={progressArc}
-                  disabled={isProgressing}
-                  className="world-detail__progress-button"
-                >
-                  {isProgressing ? (
-                    <>
-                      <div className="world-detail__button-spinner"></div>
-                      Progressing Story...
-                    </>
-                  ) : (
-                    <>
-                      <span className="material-icons">play_arrow</span>
-                      Progress Story
-                    </>
+            <div className="world-detail__locations-content">
+              {Object.entries(groupedLocations).length > 0 ? (
+                <>
+                  {/* Regions */}
+                  {groupedLocations['region'] && (
+                    <div className="world-detail__location-group">
+                      <h3 className="world-detail__location-group-title">
+                        Regions ({groupedLocations['region'].length})
+                      </h3>
+                      <ul className="world-detail__location-list">
+                        {groupedLocations['region'].map(location => (
+                          <li key={location.id} className="world-detail__location-item">
+                            <span className={`world-detail__location-status world-detail__location-status--${location.status}`}></span>
+                            {location.name}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
-                </button>
-              </div>
-            ) : (
-              <div className="world-detail__arc-empty">
-                <p>No active arc. Create one to start the story!</p>
-                <button
-                  onClick={() => setShowCreateArc(true)}
-                  className="world-detail__create-arc-button"
-                >
-                  <span className="material-icons">add</span>
-                  Create New Arc
-                </button>
-              </div>
-            )}
-
-            {showCreateArc && (
-              <div className="world-detail__create-arc">
-                <h3>Create New Story Arc</h3>
-                <form onSubmit={createNewArc}>
-                  <label htmlFor="storyIdea">
-                    Story Idea (optional)
-                  </label>
-                  <textarea
-                    id="storyIdea"
-                    value={storyIdea}
-                    onChange={(e) => setStoryIdea(e.target.value)}
-                    placeholder="Describe your story idea, or leave blank for a random arc..."
-                    rows={3}
-                  />
-                  <div className="world-detail__form-actions">
-                    <button type="submit" className="world-detail__submit-button">
-                      Create Arc
-                    </button>
-                    <button 
-                      type="button" 
-                      onClick={() => setShowCreateArc(false)}
-                      className="world-detail__cancel-button"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
+                  
+                  {/* Cities */}
+                  {groupedLocations['city'] && (
+                    <div className="world-detail__location-group">
+                      <h3 className="world-detail__location-group-title">
+                        Cities ({groupedLocations['city'].length})
+                      </h3>
+                      <ul className="world-detail__location-list">
+                        {groupedLocations['city'].map(location => (
+                          <li key={location.id} className="world-detail__location-item">
+                            <span className={`world-detail__location-status world-detail__location-status--${location.status}`}></span>
+                            {location.name}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {/* Landmarks */}
+                  {groupedLocations['landmark'] && (
+                    <div className="world-detail__location-group">
+                      <h3 className="world-detail__location-group-title">
+                        Landmarks ({groupedLocations['landmark'].length})
+                      </h3>
+                      <ul className="world-detail__location-list">
+                        {groupedLocations['landmark'].map(location => (
+                          <li key={location.id} className="world-detail__location-item">
+                            <span className={`world-detail__location-status world-detail__location-status--${location.status}`}></span>
+                            {location.name}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {/* Wilderness */}
+                  {groupedLocations['wilderness'] && (
+                    <div className="world-detail__location-group">
+                      <h3 className="world-detail__location-group-title">
+                        Wilderness ({groupedLocations['wilderness'].length})
+                      </h3>
+                      <ul className="world-detail__location-list">
+                        {groupedLocations['wilderness'].map(location => (
+                          <li key={location.id} className="world-detail__location-item">
+                            <span className={`world-detail__location-status world-detail__location-status--${location.status}`}></span>
+                            {location.name}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="world-detail__empty-message">
+                  No locations found for this world
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Right Column - World Events */}
+          {/* Center Column - World Events */}
           <div className="world-detail__panel world-detail__panel--events">
             <div className="world-detail__panel-header">
               <h2 className="world-detail__panel-title">
@@ -473,162 +515,267 @@ export function WorldDetail() {
             </div>
           </div>
 
-          {/* Bottom Row - Tabs for Locations, Characters, Factions */}
-          <div className="world-detail__panel world-detail__panel--tabs">
-            <div className="world-detail__tabs">
-              <button 
-                className={`world-detail__tab ${activeTab === 'locations' ? 'world-detail__tab--active' : ''}`}
-                onClick={() => setActiveTab('locations')}
-              >
-                <span className="material-icons">place</span>
-                Locations
-              </button>
-              <button 
-                className={`world-detail__tab ${activeTab === 'characters' ? 'world-detail__tab--active' : ''}`}
-                onClick={() => setActiveTab('characters')}
-              >
-                <span className="material-icons">person</span>
-                Characters
-              </button>
-              <button 
-                className={`world-detail__tab ${activeTab === 'factions' ? 'world-detail__tab--active' : ''}`}
-                onClick={() => setActiveTab('factions')}
-              >
-                <span className="material-icons">groups</span>
-                Factions
-              </button>
-              <button 
-                className={`world-detail__tab ${activeTab === 'events' ? 'world-detail__tab--active' : ''}`}
-                onClick={() => setActiveTab('events')}
-              >
-                <span className="material-icons">history</span>
-                Beat History
-              </button>
-            </div>
-
-            <div className="world-detail__tab-content">
-              {activeTab === 'locations' && (
-                <div className="world-detail__locations">
-                  {locationsSummary ? (
-                    <div className="world-detail__locations-summary">
-                      <div className="world-detail__locations-total">
-                        <span className="world-detail__stat-number">{locationsSummary.total}</span>
-                        <span className="world-detail__stat-label">Total Locations</span>
-                      </div>
-                      <div className="world-detail__locations-types">
-                        {Object.entries(locationsSummary.byType).map(([type, count]) => (
-                          <div key={type} className="world-detail__location-type">
-                            <span className="world-detail__stat-number">{count}</span>
-                            <span className="world-detail__stat-label">{type}s</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="world-detail__loading">Loading locations...</div>
-                  )}
-                  <Link to={`/app/worlds/${worldId}/locations`} className="world-detail__view-all">
-                    <span className="material-icons">visibility</span>
-                    View All Locations
-                  </Link>
-                </div>
-              )}
-
-              {activeTab === 'characters' && (
-                <div className="world-detail__characters">
-                  <div className="world-detail__characters-placeholder">
-                    <span className="material-icons">people</span>
-                    <p>Characters bring your world to life</p>
-                  </div>
-                  <Link to={`/app/worlds/${worldId}/characters`} className="world-detail__view-all">
-                    <span className="material-icons">visibility</span>
-                    View All Characters
-                  </Link>
-                </div>
-              )}
-
-              {activeTab === 'factions' && (
-                <div className="world-detail__factions">
-                  <div className="world-detail__factions-placeholder">
-                    <span className="material-icons">account_balance</span>
-                    <p>Factions shape the political landscape</p>
-                  </div>
-                  <Link to={`/app/worlds/${worldId}/factions`} className="world-detail__view-all">
-                    <span className="material-icons">visibility</span>
-                    View All Factions
-                  </Link>
-                </div>
-              )}
-
-              {activeTab === 'events' && (
-                <div className="world-detail__beats">
-                  <h3 className="world-detail__beats-title">Story Beats</h3>
-                  {beats.length === 0 ? (
-                    <p className="world-detail__beats-empty">No beats generated yet.</p>
-                  ) : (
-                    <ul className="world-detail__beats-list">
-                      {beats
-                        .sort((a, b) => a.beat_index - b.beat_index)
-                        .map((beat) => (
-                          <li
-                            key={beat.id}
-                            onClick={() => setSelectedBeat(beat)}
-                            className={`world-detail__beat-item ${selectedBeat?.id === beat.id ? 'world-detail__beat-item--selected' : ''} ${beat.beat_type === 'anchor' ? 'world-detail__beat-item--anchor' : ''}`}
-                          >
-                            <span className="world-detail__beat-index">Beat {beat.beat_index}</span>
-                            <span className="world-detail__beat-name">{beat.beat_name}</span>
-                            {beat.beat_type === 'anchor' && (
-                              <span className="world-detail__beat-anchor-badge">Anchor</span>
-                            )}
+          {/* Right Column - Characters & Factions */}
+          <div className="world-detail__panel world-detail__panel--entities">
+            {/* Characters Section */}
+            <div className="world-detail__entity-section">
+              <div className="world-detail__panel-header">
+                <h2 className="world-detail__panel-title">
+                  <span className="material-icons">person</span>
+                  Characters ({characterCount})
+                </h2>
+                <Link to={`/app/worlds/${worldId}/characters`} className="world-detail__panel-link">
+                  <span className="material-icons">open_in_new</span>
+                </Link>
+              </div>
+              
+              <div className="world-detail__characters-content">
+                {characters.length > 0 ? (
+                  <>
+                    {/* Major Characters */}
+                    <div className="world-detail__character-group">
+                      <h3 className="world-detail__character-group-title">
+                        Major Characters ({majorCharacters.length})
+                      </h3>
+                      <ul className="world-detail__character-list">
+                        {majorCharacters.map(character => (
+                          <li key={character.id} className="world-detail__character-item">
+                            <span className={`world-detail__character-status world-detail__character-status--${character.status}`}></span>
+                            {character.name}
                           </li>
                         ))}
-                    </ul>
+                      </ul>
+                    </div>
+                    
+                    {/* Minor Characters */}
+                    <div className="world-detail__character-group">
+                      <h3 className="world-detail__character-group-title">
+                        Minor Characters ({minorCharacters.length})
+                      </h3>
+                      <ul className="world-detail__character-list">
+                        {minorCharacters.map(character => (
+                          <li key={character.id} className="world-detail__character-item">
+                            <span className={`world-detail__character-status world-detail__character-status--${character.status}`}></span>
+                            {character.name}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </>
+                ) : (
+                  <div className="world-detail__empty-message">
+                    No characters found for this world
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Factions Section */}
+            <div className="world-detail__entity-section">
+              <div className="world-detail__panel-header">
+                <h2 className="world-detail__panel-title">
+                  <span className="material-icons">groups</span>
+                  Factions ({factionCount})
+                </h2>
+                <Link to={`/app/worlds/${worldId}/factions`} className="world-detail__panel-link">
+                  <span className="material-icons">open_in_new</span>
+                </Link>
+              </div>
+              
+              <div className="world-detail__factions-content">
+                {factions.length > 0 ? (
+                  <ul className="world-detail__faction-list">
+                    {factions.map(faction => (
+                      <li key={faction.id} className="world-detail__faction-item">
+                        <span className={`world-detail__faction-status world-detail__faction-status--${faction.status}`}></span>
+                        {faction.name}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="world-detail__empty-message">
+                    No factions found for this world
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Panel - Arc & Beat Information */}
+        <div className="world-detail__panel world-detail__panel--arc-beat">
+          <div className="world-detail__arc-beat-container">
+            {/* Current Arc */}
+            <div className="world-detail__arc-section">
+              <h2 className="world-detail__panel-title">
+                <span className="material-icons">auto_stories</span>
+                Current Arc
+              </h2>
+              
+              {currentArc ? (
+                <div className="world-detail__arc-content">
+                  <h3 className="world-detail__arc-name">{currentArc.story_name}</h3>
+                  <p className="world-detail__arc-idea">{currentArc.story_idea}</p>
+                  
+                  {currentArc.detailed_description && (
+                    <div className="world-detail__arc-description">
+                      <strong>Arc Overview:</strong>
+                      <p>{currentArc.detailed_description}</p>
+                    </div>
                   )}
+                  
+                  <div className="world-detail__arc-meta">
+                    <div>Arc #{currentArc.arc_number} — Status: {currentArc.status}</div>
+                    <div className="world-detail__progress-bar">
+                      <div 
+                        className="world-detail__progress-fill"
+                        style={{ width: `${(beats.length / 15) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={progressArc}
+                    disabled={isProgressing}
+                    className="world-detail__progress-button"
+                  >
+                    {isProgressing ? (
+                      <>
+                        <div className="world-detail__button-spinner"></div>
+                        Progressing Story...
+                      </>
+                    ) : (
+                      <>
+                        <span className="material-icons">play_arrow</span>
+                        Progress Story
+                      </>
+                    )}
+                  </button>
                 </div>
+              ) : (
+                <div className="world-detail__arc-empty">
+                  <p>No active arc. Create one to start the story!</p>
+                  <button
+                    onClick={() => setShowCreateArc(true)}
+                    className="world-detail__create-arc-button"
+                  >
+                    <span className="material-icons">add</span>
+                    Create New Arc
+                  </button>
+                </div>
+              )}
+
+              {showCreateArc && (
+                <div className="world-detail__create-arc">
+                  <h3>Create New Story Arc</h3>
+                  <form onSubmit={createNewArc}>
+                    <label htmlFor="storyIdea">
+                      Story Idea (optional)
+                    </label>
+                    <textarea
+                      id="storyIdea"
+                      value={storyIdea}
+                      onChange={(e) => setStoryIdea(e.target.value)}
+                      placeholder="Describe your story idea, or leave blank for a random arc..."
+                      rows={3}
+                    />
+                    <div className="world-detail__form-actions">
+                      <button type="submit" className="world-detail__submit-button">
+                        Create Arc
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => setShowCreateArc(false)}
+                        className="world-detail__cancel-button"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+            </div>
+            
+            {/* Current Beat */}
+            <div className="world-detail__beat-section">
+              <h2 className="world-detail__panel-title">
+                <span className="material-icons">history_edu</span>
+                Current Beat
+              </h2>
+              
+              {selectedBeat ? (
+                <div className="world-detail__beat-content">
+                  <h3 className="world-detail__beat-detail-title">
+                    {selectedBeat.beat_name}
+                    {selectedBeat.beat_type === 'anchor' && (
+                      <span className="world-detail__beat-type-badge">Anchor</span>
+                    )}
+                  </h3>
+                  <p className="world-detail__beat-description">{selectedBeat.description}</p>
+                  
+                  <div className="world-detail__beat-directives">
+                    <h4 className="world-detail__beat-section-title">World Directives</h4>
+                    {selectedBeat.world_directives.length === 0 ? (
+                      <p className="world-detail__beat-empty">—</p>
+                    ) : (
+                      <ul className="world-detail__beat-list">
+                        {selectedBeat.world_directives.map((d, i) => (
+                          <li key={i} className="world-detail__beat-list-item">{d}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  
+                  <div className="world-detail__beat-storylines">
+                    <h4 className="world-detail__beat-section-title">Emergent Storylines</h4>
+                    {selectedBeat.emergent_storylines.length === 0 ? (
+                      <p className="world-detail__beat-empty">—</p>
+                    ) : (
+                      <ul className="world-detail__beat-list">
+                        {selectedBeat.emergent_storylines.map((s, i) => (
+                          <li key={i} className="world-detail__beat-list-item">{s}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="world-detail__beat-empty-state">
+                  No beat selected
+                </div>
+              )}
+            </div>
+            
+            {/* Beat History */}
+            <div className="world-detail__history-section">
+              <h2 className="world-detail__panel-title">
+                <span className="material-icons">history</span>
+                Beat History
+              </h2>
+              
+              {beats.length === 0 ? (
+                <p className="world-detail__beats-empty">No beats generated yet.</p>
+              ) : (
+                <ul className="world-detail__beats-list">
+                  {beats
+                    .sort((a, b) => a.beat_index - b.beat_index)
+                    .map((beat) => (
+                      <li
+                        key={beat.id}
+                        onClick={() => setSelectedBeat(beat)}
+                        className={`world-detail__beat-item ${selectedBeat?.id === beat.id ? 'world-detail__beat-item--selected' : ''} ${beat.beat_type === 'anchor' ? 'world-detail__beat-item--anchor' : ''}`}
+                      >
+                        <span className="world-detail__beat-index">Beat {beat.beat_index}</span>
+                        <span className="world-detail__beat-name">{beat.beat_name}</span>
+                        {beat.beat_type === 'anchor' && (
+                          <span className="world-detail__beat-anchor-badge">Anchor</span>
+                        )}
+                      </li>
+                    ))}
+                </ul>
               )}
             </div>
           </div>
-
-          {/* Bottom Panel - Selected Beat Details */}
-          {selectedBeat && (
-            <div className="world-detail__panel world-detail__panel--beat-details">
-              <h3 className="world-detail__beat-detail-title">
-                {selectedBeat.beat_name}
-                {selectedBeat.beat_type === 'anchor' && (
-                  <span className="world-detail__beat-type-badge">Anchor</span>
-                )}
-              </h3>
-              <p className="world-detail__beat-description">{selectedBeat.description}</p>
-
-              <div className="world-detail__beat-sections">
-                <div className="world-detail__beat-section">
-                  <h4 className="world-detail__beat-section-title">World Directives</h4>
-                  {selectedBeat.world_directives.length === 0 ? (
-                    <p className="world-detail__beat-empty">—</p>
-                  ) : (
-                    <ul className="world-detail__beat-list">
-                      {selectedBeat.world_directives.map((d, i) => (
-                        <li key={i} className="world-detail__beat-list-item">{d}</li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-
-                <div className="world-detail__beat-section">
-                  <h4 className="world-detail__beat-section-title">Emergent Storylines</h4>
-                  {selectedBeat.emergent_storylines.length === 0 ? (
-                    <p className="world-detail__beat-empty">—</p>
-                  ) : (
-                    <ul className="world-detail__beat-list">
-                      {selectedBeat.emergent_storylines.map((s, i) => (
-                        <li key={i} className="world-detail__beat-list-item">{s}</li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
