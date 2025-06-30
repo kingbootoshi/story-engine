@@ -400,7 +400,7 @@ export function ApiKeys() {
         </h3>
         
         <div className="api-keys__docs-link">
-          <Link to="/docs/api" className="api-keys__docs-button">
+          <Link to="/app/api-docs" className="api-keys__docs-button">
             <span className="material-icons">description</span>
             View Complete API Documentation
           </Link>
