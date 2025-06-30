@@ -4,10 +4,23 @@
  * Features glass morphism effects and responsive mobile menu
  */
 
+/* Fade-in animation for smooth transition from landing */
+@keyframes appLayoutFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .app-layout {
   min-height: 100vh;
   position: relative;
   color: white;
+  animation: appLayoutFadeIn 0.8s ease-out forwards;
 }
 
 .app-layout__background {
@@ -125,7 +138,7 @@
   text-decoration: none;
   border-radius: theme('borderRadius.lg');
   font-weight: theme('fontWeight.medium');
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
 }
@@ -139,7 +152,27 @@
   height: 100%;
   background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(124, 58, 237, 0.1));
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1;
+}
+
+/* Add animated underline for active state */
+.app-layout__nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.app-layout__nav-link > * {
+  position: relative;
+  z-index: 3;
 }
 
 .app-layout__nav-link:hover {
@@ -155,10 +188,21 @@
   color: white;
   background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(124, 58, 237, 0.2));
   border: 1px solid rgba(165, 180, 252, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(79, 70, 229, 0.2);
+}
+
+.app-layout__nav-link--active::after {
+  width: 100%;
 }
 
 .app-layout__nav-link .material-icons {
   font-size: 20px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-layout__nav-link:hover .material-icons {
+  transform: scale(1.1);
 }
 
 /* User Section */
@@ -361,9 +405,20 @@
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   font-weight: theme('fontWeight.medium');
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
+}
+
+.app-layout__mobile-nav-link::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .app-layout__mobile-nav-link:hover {
@@ -372,14 +427,25 @@
   transform: translateX(4px);
 }
 
+.app-layout__mobile-nav-link:hover::before {
+  left: 100%;
+}
+
 .app-layout__mobile-nav-link--active {
   background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(124, 58, 237, 0.2));
   border-color: rgba(165, 180, 252, 0.3);
   color: white;
+  transform: translateX(4px);
+  box-shadow: 0 4px 20px rgba(79, 70, 229, 0.2);
 }
 
 .app-layout__mobile-nav-link .material-icons {
   font-size: 24px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-layout__mobile-nav-link:hover .material-icons {
+  transform: scale(1.1) rotate(5deg);
 }
 
 .app-layout__mobile-nav-link span:nth-child(2) {
@@ -433,6 +499,67 @@
 .app-layout__main {
   flex: 1;
   position: relative;
+  animation: mainContentFadeIn 1s ease-out forwards;
+  animation-delay: 0.2s;
+  opacity: 0;
+  min-height: 100vh;
+}
+
+/* Page transition animation */
+@keyframes pageTransition {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Smooth fade between pages */
+.app-layout__main > * {
+  animation: pageTransition 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Transitioning state for route changes */
+.app-layout__main--transitioning > * {
+  opacity: 0.8;
+  transform: scale(0.99);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes mainContentFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* View Transitions API support for modern browsers */
+@supports (view-transition-name: root) {
+  .app-layout__main {
+    view-transition-name: main-content;
+  }
+}
+
+/* Navigation link transitions */
+.app-layout__nav-link {
+  display: flex;
+  align-items: center;
+  gap: theme('spacing.2');
+  padding: theme('spacing.2') theme('spacing.4');
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  border-radius: theme('borderRadius.lg');
+  font-weight: theme('fontWeight.medium');
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
 
 /* Responsive adjustments */

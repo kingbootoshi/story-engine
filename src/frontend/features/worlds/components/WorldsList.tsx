@@ -13,6 +13,11 @@ type RouterOutputs = inferRouterOutputs<AppRouter>;
 type World = RouterOutputs['world']['list'][number];
 
 /**
+ * Number of worlds to display per page
+ */
+const WORLDS_PER_PAGE = 8;
+
+/**
  * WorldsList component displays all worlds and allows creating new ones
  */
 export function WorldsList() {
@@ -21,6 +26,7 @@ export function WorldsList() {
   const [error, setError] = useState<string>('');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const navigate = useNavigate();
 
   // Form state for new world
@@ -35,6 +41,13 @@ export function WorldsList() {
   useEffect(() => {
     fetchWorlds();
   }, []);
+
+  /**
+   * Reset to page 1 when search query changes
+   */
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   /**
    * Fetch worlds from the API
@@ -79,6 +92,21 @@ export function WorldsList() {
     world.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     world.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  /**
+   * Calculate pagination
+   */
+  const totalPages = Math.ceil(filteredWorlds.length / WORLDS_PER_PAGE);
+  const startIndex = (currentPage - 1) * WORLDS_PER_PAGE;
+  const endIndex = startIndex + WORLDS_PER_PAGE;
+  const paginatedWorlds = filteredWorlds.slice(startIndex, endIndex);
+
+  /**
+   * Handle page navigation
+   */
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
 
   return (
     <div className="worlds-list">
@@ -179,6 +207,7 @@ export function WorldsList() {
         </div>
         <div className="worlds-list__count">
           {filteredWorlds.length} {filteredWorlds.length === 1 ? 'world' : 'worlds'}
+          {totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
         </div>
       </div>
 
@@ -214,34 +243,73 @@ export function WorldsList() {
           )}
         </div>
       ) : (
-        <div className="worlds-list__grid">
-          {filteredWorlds.map((world) => (
-            <Link 
-              key={world.id} 
-              to={`/app/worlds/${world.id}`}
-              className="worlds-list__card"
-            >
-              <div className="worlds-list__card-sphere">
-                <WorldSphere seed={world.id} />
-              </div>
-              <div className="worlds-list__card-content">
-                <h3 className="worlds-list__card-title">{world.name}</h3>
-                <p className="worlds-list__card-description">{world.description}</p>
-                <div className="worlds-list__card-footer">
-                  <span className="worlds-list__card-date">
-                    {new Date(world.created_at).toLocaleDateString()}
-                  </span>
-                  {world.current_arc_id && (
-                    <span className="worlds-list__card-badge">
-                      <span className="material-icons">auto_stories</span>
-                      Active Arc
-                    </span>
-                  )}
+        <>
+          <div className="worlds-list__grid">
+            {paginatedWorlds.map((world) => (
+              <Link 
+                key={world.id} 
+                to={`/app/worlds/${world.id}`}
+                className="worlds-list__card"
+              >
+                <div className="worlds-list__card-sphere">
+                  <WorldSphere seed={world.id} />
                 </div>
+                <div className="worlds-list__card-content">
+                  <h3 className="worlds-list__card-title">{world.name}</h3>
+                  <p className="worlds-list__card-description">{world.description}</p>
+                  <div className="worlds-list__card-footer">
+                    <span className="worlds-list__card-date">
+                      {new Date(world.created_at).toLocaleDateString()}
+                    </span>
+                    {world.current_arc_id && (
+                      <span className="worlds-list__card-badge">
+                        <span className="material-icons">auto_stories</span>
+                        Active Arc
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* Pagination controls */}
+          {totalPages > 1 && (
+            <div className="worlds-list__pagination">
+              <button
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="worlds-list__pagination-button"
+                aria-label="Previous page"
+              >
+                <span className="material-icons">chevron_left</span>
+              </button>
+              
+              <div className="worlds-list__pagination-pages">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    onClick={() => goToPage(page)}
+                    className={`worlds-list__pagination-page ${page === currentPage ? 'worlds-list__pagination-page--active' : ''}`}
+                    aria-label={`Go to page ${page}`}
+                    aria-current={page === currentPage ? 'page' : undefined}
+                  >
+                    {page}
+                  </button>
+                ))}
               </div>
-            </Link>
-          ))}
-        </div>
+              
+              <button
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="worlds-list__pagination-button"
+                aria-label="Next page"
+              >
+                <span className="material-icons">chevron_right</span>
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

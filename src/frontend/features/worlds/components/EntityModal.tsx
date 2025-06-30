@@ -216,7 +216,7 @@ interface FactionModalProps {
   faction: {
     id: string;
     name: string;
-    type: string;
+    type?: string;
     status: string;
     description?: string;
     goals?: string[];
@@ -237,10 +237,12 @@ export function FactionModal({ faction, isOpen, onClose }: FactionModalProps) {
       <div className="entity-modal__section">
         <h3 className="entity-modal__section-title">Basic Information</h3>
         <div className="entity-modal__info-grid">
-          <div className="entity-modal__info-item">
-            <span className="entity-modal__info-label">Type:</span>
-            <span className="entity-modal__info-value">{faction.type}</span>
-          </div>
+          {faction.type && (
+            <div className="entity-modal__info-item">
+              <span className="entity-modal__info-label">Type:</span>
+              <span className="entity-modal__info-value">{faction.type}</span>
+            </div>
+          )}
           <div className="entity-modal__info-item">
             <span className="entity-modal__info-label">Status:</span>
             <span className={`entity-modal__status entity-modal__status--${faction.status}`}>

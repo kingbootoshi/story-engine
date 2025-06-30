@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import './ApiDocs.styles.css';
 
 /**
  * API Documentation component with multi-section navigation
  * Provides comprehensive guide to using the Story Engine API
+ * Features glassmorphic design with mobile-friendly navigation
  */
 export function ApiDocs() {
   const [activeSection, setActiveSection] = useState('overview');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   /**
    * Copy code to clipboard and show feedback
@@ -20,6 +22,14 @@ export function ApiDocs() {
     } catch (err) {
       console.error('Failed to copy:', err);
     }
+  };
+
+  /**
+   * Handle section change and close mobile menu
+   */
+  const handleSectionChange = (sectionId: string) => {
+    setActiveSection(sectionId);
+    setIsMobileMenuOpen(false);
   };
 
   // Navigation sections
@@ -36,16 +46,144 @@ export function ApiDocs() {
     { id: 'best-practices', label: 'Best Practices', icon: 'tips_and_updates' },
   ];
 
+  /**
+   * Get current section index
+   */
+  const currentSectionIndex = sections.findIndex(s => s.id === activeSection);
+  const currentSection = sections[currentSectionIndex];
+  const prevSection = currentSectionIndex > 0 ? sections[currentSectionIndex - 1] : null;
+  const nextSection = currentSectionIndex < sections.length - 1 ? sections[currentSectionIndex + 1] : null;
+
+  /**
+   * Navigate to previous/next section
+   */
+  const navigateToPrev = useCallback(() => {
+    if (prevSection) {
+      handleSectionChange(prevSection.id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [prevSection]);
+
+  const navigateToNext = useCallback(() => {
+    if (nextSection) {
+      handleSectionChange(nextSection.id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [nextSection]);
+
+  /**
+   * Handle keyboard navigation
+   */
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Don't interfere with form inputs
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      switch (e.key) {
+        case 'ArrowLeft':
+          navigateToPrev();
+          break;
+        case 'ArrowRight':
+          navigateToNext();
+          break;
+        case 'Escape':
+          setIsMobileMenuOpen(false);
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [navigateToPrev, navigateToNext]); // Use callbacks as dependencies
+
+  /**
+   * Handle swipe gestures for mobile
+   */
+  useEffect(() => {
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartX = e.changedTouches[0].screenX;
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      touchEndX = e.changedTouches[0].screenX;
+      handleSwipe();
+    };
+
+    const handleSwipe = () => {
+      const swipeThreshold = 50;
+      const diff = touchStartX - touchEndX;
+
+      if (Math.abs(diff) > swipeThreshold) {
+        if (diff > 0) {
+          // Swiped left - go to next
+          navigateToNext();
+        } else {
+          // Swiped right - go to prev
+          navigateToPrev();
+        }
+      }
+    };
+
+    const contentEl = document.querySelector('.api-docs__content');
+    if (contentEl) {
+      contentEl.addEventListener('touchstart', handleTouchStart as any);
+      contentEl.addEventListener('touchend', handleTouchEnd as any);
+
+      return () => {
+        contentEl.removeEventListener('touchstart', handleTouchStart as any);
+        contentEl.removeEventListener('touchend', handleTouchEnd as any);
+      };
+    }
+  }, [navigateToPrev, navigateToNext]); // Use callbacks as dependencies
+
   return (
     <div className="api-docs">
+      {/* Fixed Mobile Header */}
+      <header className="api-docs__mobile-header">
+        <button 
+          className="api-docs__mobile-menu-btn"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          aria-label="Toggle documentation menu"
+        >
+          <span className="material-icons">menu</span>
+        </button>
+        <div className="api-docs__mobile-header-content">
+          <span className="material-icons">{currentSection?.icon}</span>
+          <h1>{currentSection?.label}</h1>
+        </div>
+        <div className="api-docs__mobile-header-spacer" />
+      </header>
+
+      {/* Mobile Menu Toggle Button - REMOVED (replaced by header button) */}
+
+      {/* Mobile Overlay */}
+      <div 
+        className={`api-docs__mobile-overlay ${isMobileMenuOpen ? 'api-docs__mobile-overlay--visible' : ''}`}
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
+
       {/* Sidebar Navigation */}
-      <nav className="api-docs__sidebar">
+      <nav className={`api-docs__sidebar ${isMobileMenuOpen ? 'api-docs__sidebar--mobile-open' : ''}`}>
+        {/* Mobile Close Button */}
+        <button 
+          className="api-docs__mobile-close"
+          onClick={() => setIsMobileMenuOpen(false)}
+          aria-label="Close menu"
+        >
+          <span className="material-icons">close</span>
+        </button>
+
         <h2 className="api-docs__sidebar-title">Documentation</h2>
         {sections.map(section => (
           <button
             key={section.id}
             className={`api-docs__nav-item ${activeSection === section.id ? 'api-docs__nav-item--active' : ''}`}
-            onClick={() => setActiveSection(section.id)}
+            onClick={() => handleSectionChange(section.id)}
           >
             <span className="material-icons">{section.icon}</span>
             {section.label}
@@ -98,8 +236,8 @@ export function ApiDocs() {
             <div className="api-docs__alert api-docs__alert--info">
               <span className="material-icons">info</span>
               <p>
-                Ready to dive in? Check out the <a onClick={() => setActiveSection('quickstart')}>Quick Start</a> guide 
-                or learn <a onClick={() => setActiveSection('how-it-works')}>How It Works</a>.
+                Ready to dive in? Check out the <a onClick={() => handleSectionChange('quickstart')}>Quick Start</a> guide 
+                or learn <a onClick={() => handleSectionChange('how-it-works')}>How It Works</a>.
               </p>
             </div>
           </section>
@@ -969,6 +1107,49 @@ const worlds = await response.json();`}</code>
             </div>
           </section>
         )}
+
+        {/* Section Navigation Footer */}
+        <nav className="api-docs__section-nav">
+          <button 
+            className={`api-docs__section-nav-btn api-docs__section-nav-btn--prev ${!prevSection ? 'api-docs__section-nav-btn--disabled' : ''}`}
+            onClick={navigateToPrev}
+            disabled={!prevSection}
+          >
+            <span className="material-icons">navigate_before</span>
+            {prevSection && (
+              <div className="api-docs__section-nav-content">
+                <span className="api-docs__section-nav-label">Previous</span>
+                <span className="api-docs__section-nav-title">{prevSection.label}</span>
+              </div>
+            )}
+          </button>
+
+          <div className="api-docs__section-nav-indicator">
+            <div className="api-docs__section-nav-dots">
+              {sections.map((section, index) => (
+                <span 
+                  key={section.id}
+                  className={`api-docs__section-nav-dot ${index === currentSectionIndex ? 'api-docs__section-nav-dot--active' : ''}`}
+                  onClick={() => handleSectionChange(section.id)}
+                />
+              ))}
+            </div>
+          </div>
+
+          <button 
+            className={`api-docs__section-nav-btn api-docs__section-nav-btn--next ${!nextSection ? 'api-docs__section-nav-btn--disabled' : ''}`}
+            onClick={navigateToNext}
+            disabled={!nextSection}
+          >
+            {nextSection && (
+              <div className="api-docs__section-nav-content">
+                <span className="api-docs__section-nav-label">Next</span>
+                <span className="api-docs__section-nav-title">{nextSection.label}</span>
+              </div>
+            )}
+            <span className="material-icons">navigate_next</span>
+          </button>
+        </nav>
       </main>
     </div>
   );

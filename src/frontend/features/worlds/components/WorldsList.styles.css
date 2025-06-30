@@ -360,6 +360,86 @@
   100% { transform: rotate(360deg); }
 }
 
+/* Pagination Styles */
+.worlds-list__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: theme('spacing.2');
+  margin-top: theme('spacing.8');
+  padding-top: theme('spacing.8');
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.worlds-list__pagination-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: theme('borderRadius.md');
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.worlds-list__pagination-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.1);
+}
+
+.worlds-list__pagination-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.worlds-list__pagination-pages {
+  display: flex;
+  align-items: center;
+  gap: theme('spacing.1');
+}
+
+.worlds-list__pagination-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 40px;
+  padding: theme('spacing.2');
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: theme('borderRadius.md');
+  color: rgba(255, 255, 255, 0.7);
+  font-family: 'Cinzel', serif;
+  font-weight: theme('fontWeight.medium');
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.worlds-list__pagination-page:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.worlds-list__pagination-page--active {
+  background: linear-gradient(135deg, #10b981, #3b82f6);
+  border-color: transparent;
+  color: white;
+}
+
+.worlds-list__pagination-page--active:hover {
+  transform: scale(1.05);
+}
+
+/* Ensure consistent height for paginated view */
+.worlds-list__grid {
+  min-height: 500px;
+}
+
 /* Responsive adjustments */
 @media (max-width: theme('screens.md')) {
   .worlds-list__header {
@@ -386,6 +466,19 @@
   .worlds-list__count {
     margin-left: theme('spacing.3');
   }
+  
+  /* Pagination responsive styles */
+  .worlds-list__pagination {
+    flex-wrap: wrap;
+    gap: theme('spacing.3');
+  }
+  
+  .worlds-list__pagination-pages {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    margin-top: theme('spacing.2');
+  }
 }
 
 @media (max-width: theme('screens.sm')) {
@@ -395,5 +488,16 @@
   
   .worlds-list__grid {
     grid-template-columns: 1fr;
+    min-height: auto;
+  }
+  
+  /* Hide page numbers on very small screens, keep only arrows */
+  .worlds-list__pagination-pages {
+    display: none;
+  }
+  
+  .worlds-list__pagination {
+    justify-content: space-between;
+    width: 100%;
   }
 }

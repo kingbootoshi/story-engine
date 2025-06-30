@@ -29,17 +29,23 @@ export function AuthForm({ onBack }: AuthFormProps) {
   // Animation state
   const [loginSlideOut, setLoginSlideOut] = useState(false);
   const [signupSlideIn, setSignupSlideIn] = useState(false);
+  const [isTransitioningOut, setIsTransitioningOut] = useState(false);
   
   // Auth context for login/signup functionality
   const { user, signIn, signUp } = useAuth();
 
   /**
    * Redirect to dashboard when user is authenticated
+   * Now with smooth transition for cached users
    */
   useEffect(() => {
     if (user) {
-      console.debug('[AuthForm] User authenticated, redirecting to dashboard');
-      navigate('/app/worlds');
+      console.debug('[AuthForm] User authenticated, preparing smooth transition');
+      // Add a delay and transition state for smooth exit
+      setIsTransitioningOut(true);
+      setTimeout(() => {
+        navigate('/app/worlds');
+      }, 600); // Match with fade-out animation duration
     }
   }, [user, navigate]);
 
@@ -110,7 +116,7 @@ export function AuthForm({ onBack }: AuthFormProps) {
   };
 
   return (
-    <div className="auth-form-container">
+    <div className={`auth-form-container ${isTransitioningOut ? 'auth-form-container--exiting' : ''}`}>
       {onBack && (
         <button 
           className="auth-form__back-button" 

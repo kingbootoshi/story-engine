@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthForm } from '@/features/auth/components/AuthForm';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import './LandingPage.styles.css';
 
 /**
@@ -12,17 +14,34 @@ export function LandingPage() {
   const [showAuth, setShowAuth] = useState(false);
   // State to track if content is transitioning out
   const [isContentExiting, setIsContentExiting] = useState(false);
+  // State to track if we're transitioning to app (for logged in users)
+  const [isTransitioningToApp, setIsTransitioningToApp] = useState(false);
+  
+  // Navigation hook
+  const navigate = useNavigate();
+  
+  // Check if user is already authenticated
+  const { user } = useAuth();
 
   /**
-   * Handles the transition to show the auth form
-   * First fades out the content, then shows the auth form
+   * Handles the transition to show the auth form or navigate to app
+   * First fades out the content, then shows auth or navigates
    */
   const handleBeginJourney = () => {
     setIsContentExiting(true);
-    // Wait for content exit animation to complete before showing auth
-    setTimeout(() => {
-      setShowAuth(true);
-    }, 600); // Match this with the exit animation duration
+    
+    if (user) {
+      // User is already authenticated, transition directly to app
+      setIsTransitioningToApp(true);
+      setTimeout(() => {
+        navigate('/app/worlds');
+      }, 600); // Match this with the exit animation duration
+    } else {
+      // User not authenticated, show auth form
+      setTimeout(() => {
+        setShowAuth(true);
+      }, 600); // Match this with the exit animation duration
+    }
   };
 
   /**
@@ -37,7 +56,7 @@ export function LandingPage() {
   };
 
   return (
-    <div className="landing-container">
+    <div className={`landing-container ${isTransitioningToApp ? 'landing-container--exiting' : ''}`}>
       {/* Video Background */}
       <video 
         className="background-video" 
@@ -53,7 +72,7 @@ export function LandingPage() {
       {/* Content Overlay */}
       <div className="content-overlay">
         <main className="landing-main">
-          {/* Hero Section - shown when auth is not active */}
+          {/* Hero Section - always shown initially */}
           {!showAuth && (
             <section className={`hero-section ${isContentExiting ? 'hero-section--exiting' : ''}`}>
               <h1 className="title">
@@ -69,8 +88,8 @@ export function LandingPage() {
             </section>
           )}
 
-          {/* Auth Form - shown when auth is active */}
-          {showAuth && (
+          {/* Auth Form - only shown when auth is active and user is NOT logged in */}
+          {showAuth && !user && (
             <section className="auth-section">
               <AuthForm onBack={handleBackToLanding} />
             </section>

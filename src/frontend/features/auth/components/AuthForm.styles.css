@@ -208,3 +208,19 @@
     padding: theme('spacing.2') theme('spacing.4');
   }
 }
+
+/* Exit animation for smooth transition to app */
+@keyframes authFormExit {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(-20px);
+  }
+}
+
+.auth-form-container--exiting {
+  animation: authFormExit 0.6s ease-out forwards;
+}

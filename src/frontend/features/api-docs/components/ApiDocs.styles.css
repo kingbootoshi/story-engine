@@ -1,6 +1,7 @@
 /**
  * Styles for the API Documentation component
  * Uses Tailwind's theme function for consistent design language
+ * Features glassmorphic design matching the main app header
  */
 
 /* API Documentation Styles */
@@ -14,14 +15,298 @@
 /* Sidebar Navigation */
 .api-docs__sidebar {
   width: 280px;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(10px);
   border-right: 1px solid rgba(255, 255, 255, 0.1);
   padding: 2rem;
   position: sticky;
   top: 0;
   height: 100vh;
   overflow-y: auto;
+  transition: all 0.3s ease;
+}
+
+/* Mobile Menu Toggle - Only visible on mobile */
+/* DEPRECATED - Replaced by fixed header
+.api-docs__mobile-toggle {
+  display: none;
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  border-radius: 50%;
+  box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+  cursor: pointer;
+  z-index: 100;
+  transition: all 0.3s ease;
+  border: none;
+  color: white;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .api-docs__mobile-toggle {
+    display: flex;
+  }
+}
+
+.api-docs__mobile-toggle:hover {
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.6);
+  transform: scale(1.05);
+}
+
+.api-docs__mobile-toggle:active {
+  transform: scale(0.95);
+}
+
+.api-docs__mobile-toggle .material-icons {
+  font-size: 28px;
+}
+*/
+
+/* Fixed Mobile Header */
+.api-docs__mobile-header {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: rgba(15, 23, 42, 0.95);
   backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 40;
+  align-items: center;
+  padding: 0 1rem;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .api-docs__mobile-header {
+    display: flex;
+  }
+  
+  /* Add padding to content when header is visible */
+  .api-docs__content {
+    padding-top: calc(60px + 1.5rem);
+  }
+}
+
+.api-docs__mobile-menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.api-docs__mobile-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+}
+
+.api-docs__mobile-menu-btn .material-icons {
+  font-size: 24px;
+}
+
+.api-docs__mobile-header-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.api-docs__mobile-header-content .material-icons {
+  font-size: 1.5rem;
+  color: #9370db;
+}
+
+.api-docs__mobile-header-content h1 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+  color: white;
+  font-family: 'Cinzel', serif;
+}
+
+.api-docs__mobile-header-spacer {
+  width: 40px; /* Match menu button width for centering */
+}
+
+/* Section Navigation Footer */
+.api-docs__section-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-top: 4rem;
+  padding: 2rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.api-docs__section-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  text-align: left;
+  min-width: 180px;
+}
+
+.api-docs__section-nav-btn:hover:not(:disabled) {
+  background: rgba(147, 112, 219, 0.1);
+  border-color: rgba(147, 112, 219, 0.3);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(147, 112, 219, 0.2);
+}
+
+.api-docs__section-nav-btn--disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.api-docs__section-nav-btn--prev {
+  justify-content: flex-start;
+}
+
+.api-docs__section-nav-btn--next {
+  justify-content: flex-end;
+}
+
+.api-docs__section-nav-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.api-docs__section-nav-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+
+.api-docs__section-nav-title {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.api-docs__section-nav-btn .material-icons {
+  font-size: 1.75rem;
+  flex-shrink: 0;
+}
+
+/* Section Progress Indicator */
+.api-docs__section-nav-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  max-width: 200px;
+}
+
+.api-docs__section-nav-dots {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.api-docs__section-nav-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.api-docs__section-nav-dot:hover {
+  background: rgba(255, 255, 255, 0.4);
+  transform: scale(1.2);
+}
+
+.api-docs__section-nav-dot--active {
+  background: #9370db;
+  transform: scale(1.3);
+}
+
+/* Mobile Navigation Adjustments */
+@media (max-width: 768px) {
+  .api-docs__section-nav {
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem 0;
+  }
+  
+  .api-docs__section-nav-btn {
+    width: 100%;
+    min-width: unset;
+  }
+  
+  .api-docs__section-nav-indicator {
+    order: -1; /* Move dots to top on mobile */
+    width: 100%;
+    max-width: none;
+  }
+  
+  .api-docs__section-nav-dots {
+    justify-content: center;
+    gap: 0.75rem;
+  }
+  
+  /* Hide labels on very small screens */
+  @media (max-width: 400px) {
+    .api-docs__section-nav-label {
+      display: none;
+    }
+    
+    .api-docs__section-nav-btn {
+      padding: 0.75rem 1rem;
+    }
+  }
+}
+
+/* Swipe Hint for Mobile */
+@media (max-width: 768px) {
+  .api-docs__content::after {
+    content: '';
+    position: fixed;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 4px;
+    background: rgba(147, 112, 219, 0.5);
+    border-radius: 2px;
+    animation: swipeHint 2s ease-in-out infinite;
+  }
+  
+  @keyframes swipeHint {
+    0%, 100% {
+      transform: translateX(-50%) scaleX(1);
+      opacity: 0.5;
+    }
+    50% {
+      transform: translateX(-50%) scaleX(1.5);
+      opacity: 1;
+    }
+  }
 }
 
 .api-docs__sidebar-title {
@@ -30,6 +315,11 @@
   margin-bottom: 2rem;
   color: #fff;
   font-family: 'Cinzel', serif;
+  background: linear-gradient(to right, #ffffff, #a5b4fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
 }
 
 .api-docs__nav-item {
@@ -39,30 +329,52 @@
   width: 100%;
   padding: 0.75rem 1rem;
   margin-bottom: 0.5rem;
-  background: transparent;
-  border: none;
-  color: #a0a0a0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   border-radius: 0.5rem;
   text-align: left;
   font-family: inherit;
+  position: relative;
+  overflow: hidden;
+}
+
+.api-docs__nav-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(124, 58, 237, 0.1));
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .api-docs__nav-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  transform: translateX(4px);
+}
+
+.api-docs__nav-item:hover::before {
+  opacity: 1;
 }
 
 .api-docs__nav-item--active {
-  background: rgba(147, 112, 219, 0.2);
-  color: #9370db;
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(124, 58, 237, 0.2));
+  border: 1px solid rgba(165, 180, 252, 0.3);
+  color: white;
   font-weight: 500;
 }
 
 .api-docs__nav-item .material-icons {
   font-size: 1.25rem;
+  z-index: 1;
+  position: relative;
 }
 
 /* Main Content */
@@ -707,7 +1019,7 @@
   font-weight: bold;
 }
 
-/* Responsive */
+/* Mobile Responsive Styles - Updated */
 @media (max-width: 1024px) {
   .api-docs__sidebar {
     width: 240px;
@@ -729,19 +1041,92 @@
 @media (max-width: 768px) {
   .api-docs {
     flex-direction: column;
+    position: relative;
   }
   
+  /* Mobile Toggle Button */
+  .api-docs__mobile-toggle {
+    display: flex;
+  }
+  
+  /* Sidebar transforms into mobile menu */
   .api-docs__sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
-    height: auto;
-    position: relative;
-    border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 1rem;
+    max-width: 320px;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
+    backdrop-filter: blur(20px);
+    box-shadow: 4px 0 30px rgba(0, 0, 0, 0.5);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 50;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Show sidebar when active */
+  .api-docs__sidebar--mobile-open {
+    transform: translateX(0);
+  }
+  
+  /* Mobile Overlay */
+  .api-docs__mobile-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    z-index: 45;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+  }
+  
+  .api-docs__mobile-overlay--visible {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  /* Mobile Close Button */
+  .api-docs__mobile-close {
+    display: none;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.5rem;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: rgba(255, 255, 255, 0.8);
+  }
+  
+  @media (max-width: 768px) {
+    .api-docs__mobile-close {
+      display: flex;
+    }
+  }
+  
+  .api-docs__mobile-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+  }
+  
+  .api-docs__mobile-close .material-icons {
+    font-size: 24px;
   }
   
   .api-docs__content {
     padding: 1.5rem;
+    margin-top: 0;
   }
   
   .api-docs__title {

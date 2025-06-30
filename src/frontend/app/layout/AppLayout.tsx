@@ -14,6 +14,7 @@ export function AppLayout() {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   /**
    * Handle scroll to add backdrop blur to header
@@ -26,6 +27,18 @@ export function AppLayout() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  /**
+   * Handle route transitions with smooth animation
+   */
+  useEffect(() => {
+    setIsTransitioning(true);
+    const timer = setTimeout(() => {
+      setIsTransitioning(false);
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
 
   /**
    * Close mobile menu when route changes
@@ -107,7 +120,7 @@ export function AppLayout() {
             <nav className="app-layout__nav app-layout__nav--desktop">
               <Link 
                 to="/app" 
-                className={`app-layout__nav-link ${isActive('/app') && !isActive('/app/worlds') && !isActive('/app/api-keys') ? 'app-layout__nav-link--active' : ''}`}
+                className={`app-layout__nav-link ${isActive('/app') && !isActive('/app/worlds') && !isActive('/app/api-keys') && !isActive('/app/api-docs') ? 'app-layout__nav-link--active' : ''}`}
               >
                 <span className="material-icons">dashboard</span>
                 <span>Dashboard</span>
@@ -183,7 +196,7 @@ export function AppLayout() {
             <nav className="app-layout__mobile-nav">
               <Link 
                 to="/app" 
-                className={`app-layout__mobile-nav-link ${isActive('/app') && !isActive('/app/worlds') && !isActive('/app/api-keys') ? 'app-layout__mobile-nav-link--active' : ''}`}
+                className={`app-layout__mobile-nav-link ${isActive('/app') && !isActive('/app/worlds') && !isActive('/app/api-keys') && !isActive('/app/api-docs') ? 'app-layout__mobile-nav-link--active' : ''}`}
               >
                 <span className="material-icons">dashboard</span>
                 <span>Dashboard</span>
@@ -229,7 +242,7 @@ export function AppLayout() {
         </div>
         
         {/* Main content area */}
-        <main className="app-layout__main">
+        <main className={`app-layout__main ${isTransitioning ? 'app-layout__main--transitioning' : ''}`}>
           <Outlet />
         </main>
       </div>

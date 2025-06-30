@@ -12,7 +12,7 @@ type WorldState = RouterOutputs['world']['getWorldState'];
 type World = WorldState['world'];
 type Arc = WorldState['currentArc'];
 type WorldEvent = WorldState['recentEvents'][number];
-type WorldBeat = WorldState['currentBeats'][number];
+
 
 // Types for other entities
 type Location = RouterOutputs['location']['list'][number];
@@ -63,6 +63,11 @@ export function WorldDetail() {
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [isCharacterModalOpen, setIsCharacterModalOpen] = useState(false);
   const [isFactionModalOpen, setIsFactionModalOpen] = useState(false);
+  
+  // UI state
+  const [expandedBeat, setExpandedBeat] = useState(false);
+  const [showEventsList, setShowEventsList] = useState(true);
+  const [viewDensity, setViewDensity] = useState<'compact' | 'standard' | 'detailed'>('standard');
 
   useEffect(() => {
     if (worldId) {
@@ -331,9 +336,248 @@ export function WorldDetail() {
       )}
 
       <div className="world-detail__dashboard">
+        
+        {/* Story Arc Control Panel - Now at the top */}
+        {currentArc && (
+          <div className="world-detail__arc-control-panel">
+            <div className="world-detail__arc-header">
+              <div className="world-detail__arc-info">
+                <h2 className="world-detail__arc-title">
+                  <span className="material-icons">auto_stories</span>
+                  {currentArc.story_name}
+                </h2>
+                <span className="world-detail__arc-status-badge">
+                  Arc #{currentArc.arc_number} • {currentArc.status}
+                </span>
+              </div>
+              
+              <button
+                onClick={progressArc}
+                disabled={isProgressing}
+                className="world-detail__progress-button-primary"
+              >
+                {isProgressing ? (
+                  <>
+                    <div className="world-detail__button-spinner"></div>
+                    <span>Progressing Story...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-icons">play_arrow</span>
+                    <span>PROGRESS STORY</span>
+                  </>
+                )}
+              </button>
+            </div>
+            
+            {/* Progress Bar with Beat Markers */}
+            <div className="world-detail__arc-progress">
+              <div className="world-detail__progress-bar-enhanced">
+                <div 
+                  className="world-detail__progress-fill-enhanced"
+                  style={{ width: `${(beats.length / 15) * 100}%` }}
+                >
+                  <div className="world-detail__progress-glow"></div>
+                </div>
+                {/* Beat markers */}
+                {beats.map((beat, index) => (
+                  <div
+                    key={beat.id}
+                    className={`world-detail__beat-marker ${beat.beat_type === 'anchor' ? 'world-detail__beat-marker--anchor' : ''} ${selectedBeat?.id === beat.id ? 'world-detail__beat-marker--active' : ''}`}
+                    style={{ left: `${(index / 14) * 100}%` }}
+                    onClick={() => setSelectedBeat(beat)}
+                    title={beat.beat_name}
+                  >
+                    <span className="world-detail__beat-marker-dot"></span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Current Beat Summary */}
+            <div className="world-detail__current-beat-summary">
+              {selectedBeat ? (
+                <>
+                  <div className="world-detail__beat-summary-header">
+                    <h3 className="world-detail__beat-summary-title">
+                      Current Beat: {selectedBeat.beat_name}
+                      {selectedBeat.beat_type === 'anchor' && (
+                        <span className="world-detail__beat-type-badge">Anchor</span>
+                      )}
+                    </h3>
+                    <button
+                      onClick={() => setExpandedBeat(!expandedBeat)}
+                      className="world-detail__expand-button"
+                    >
+                      <span className="material-icons">
+                        {expandedBeat ? 'expand_less' : 'expand_more'}
+                      </span>
+                      {expandedBeat ? 'Show Less' : 'Show More'}
+                    </button>
+                  </div>
+                  
+                  <p className="world-detail__beat-summary-description">
+                    {selectedBeat.description}
+                  </p>
+                  
+                  {expandedBeat && (
+                    <div className="world-detail__beat-expanded">
+                      <div className="world-detail__beat-details-grid">
+                        <div className="world-detail__beat-directives">
+                          <h4>World Directives</h4>
+                          {selectedBeat.world_directives.length === 0 ? (
+                            <p className="world-detail__beat-empty">None</p>
+                          ) : (
+                            <ul>
+                              {selectedBeat.world_directives.map((d, i) => (
+                                <li key={i}>{d}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                        
+                        <div className="world-detail__beat-storylines">
+                          <h4>Emergent Storylines</h4>
+                          {selectedBeat.emergent_storylines.length === 0 ? (
+                            <p className="world-detail__beat-empty">None</p>
+                          ) : (
+                            <ul>
+                              {selectedBeat.emergent_storylines.map((s, i) => (
+                                <li key={i}>{s}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="world-detail__beat-empty-state">
+                  No beat generated yet. Click "Progress Story" to begin!
+                </p>
+              )}
+            </div>
+            
+            {/* Beat Timeline (Horizontal) */}
+            <div className="world-detail__beat-timeline">
+              <h4 className="world-detail__timeline-title">Story Timeline</h4>
+              <div className="world-detail__timeline-scroll">
+                <div className="world-detail__timeline-track">
+                  {beats.map((beat, index) => (
+                    <button
+                      key={beat.id}
+                      onClick={() => setSelectedBeat(beat)}
+                      className={`world-detail__timeline-beat ${selectedBeat?.id === beat.id ? 'world-detail__timeline-beat--active' : ''} ${beat.beat_type === 'anchor' ? 'world-detail__timeline-beat--anchor' : ''}`}
+                    >
+                      <span className="world-detail__timeline-beat-number">
+                        {beat.beat_index}
+                      </span>
+                      <span className="world-detail__timeline-beat-name">
+                        {beat.beat_name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            {/* Quick Actions Bar */}
+            <div className="world-detail__quick-actions">
+              <button
+                onClick={() => setShowAddEvent(!showAddEvent)}
+                className="world-detail__quick-action"
+              >
+                <span className="material-icons">add_circle</span>
+                Add Event
+              </button>
+              <button
+                onClick={() => setShowEventsList(!showEventsList)}
+                className="world-detail__quick-action"
+              >
+                <span className="material-icons">{showEventsList ? 'visibility_off' : 'visibility'}</span>
+                {showEventsList ? 'Hide' : 'Show'} Events
+              </button>
+              <div className="world-detail__density-toggle">
+                <button
+                  onClick={() => setViewDensity('compact')}
+                  className={`world-detail__density-option ${viewDensity === 'compact' ? 'world-detail__density-option--active' : ''}`}
+                  title="Compact View"
+                >
+                  <span className="material-icons">view_agenda</span>
+                </button>
+                <button
+                  onClick={() => setViewDensity('standard')}
+                  className={`world-detail__density-option ${viewDensity === 'standard' ? 'world-detail__density-option--active' : ''}`}
+                  title="Standard View"
+                >
+                  <span className="material-icons">view_module</span>
+                </button>
+                <button
+                  onClick={() => setViewDensity('detailed')}
+                  className={`world-detail__density-option ${viewDensity === 'detailed' ? 'world-detail__density-option--active' : ''}`}
+                  title="Detailed View"
+                >
+                  <span className="material-icons">view_comfy</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Create Arc Panel if no active arc */}
+        {!currentArc && (
+          <div className="world-detail__no-arc-panel">
+            {!showCreateArc ? (
+              <div className="world-detail__no-arc-content">
+                <span className="material-icons world-detail__no-arc-icon">auto_stories</span>
+                <h2>Start Your Story</h2>
+                <p>No active arc. Create one to begin your narrative journey!</p>
+                <button
+                  onClick={() => setShowCreateArc(true)}
+                  className="world-detail__create-arc-button-hero"
+                >
+                  <span className="material-icons">add</span>
+                  Create New Arc
+                </button>
+              </div>
+            ) : (
+              <div className="world-detail__create-arc-form">
+                <h2>Create New Story Arc</h2>
+                <form onSubmit={createNewArc}>
+                  <div className="world-detail__form-group">
+                    <label htmlFor="storyIdea">
+                      Story Idea (optional)
+                    </label>
+                    <textarea
+                      id="storyIdea"
+                      value={storyIdea}
+                      onChange={(e) => setStoryIdea(e.target.value)}
+                      placeholder="Describe your story idea, or leave blank for a random arc..."
+                      rows={4}
+                    />
+                  </div>
+                  <div className="world-detail__form-actions">
+                    <button type="submit" className="world-detail__submit-button">
+                      <span className="material-icons">auto_stories</span>
+                      Create Arc
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => setShowCreateArc(false)}
+                      className="world-detail__cancel-button"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Unified Gamemaster Panel */}
-        <div className="world-detail__unified-panel">
+        <div className={`world-detail__unified-panel world-detail__unified-panel--${viewDensity}`}>
           {/* Left Section - Locations */}
           <div className="world-detail__section world-detail__section--locations">
             <div className="world-detail__section-header">
@@ -535,7 +779,8 @@ export function WorldDetail() {
               </div>
             )}
 
-            <div className="world-detail__events-list">
+            {showEventsList && (
+              <div className="world-detail__events-list">
               {beatEvents.length === 0 ? (
                 <div className="world-detail__events-empty">
                   No events recorded yet
@@ -559,6 +804,7 @@ export function WorldDetail() {
                 ))
               )}
             </div>
+            )}
             </div>
           </div>
 
@@ -643,181 +889,7 @@ export function WorldDetail() {
           </div>
         </div>
 
-        {/* Bottom Panel - Arc & Beat Information */}
-        <div className="world-detail__panel world-detail__panel--arc-beat">
-          <div className="world-detail__arc-beat-container">
-            {/* Current Arc */}
-            <div className="world-detail__arc-section">
-              <h2 className="world-detail__panel-title">
-                <span className="material-icons">auto_stories</span>
-                Current Arc
-              </h2>
-              
-              {currentArc ? (
-                <div className="world-detail__arc-content">
-                  <h3 className="world-detail__arc-name">{currentArc.story_name}</h3>
-                  <p className="world-detail__arc-idea">{currentArc.story_idea}</p>
-                  
-                  {currentArc.detailed_description && (
-                    <div className="world-detail__arc-description">
-                      <strong>Arc Overview:</strong>
-                      <p>{currentArc.detailed_description}</p>
-                    </div>
-                  )}
-                  
-                  <div className="world-detail__arc-meta">
-                    <div>Arc #{currentArc.arc_number} — Status: {currentArc.status}</div>
-                    <div className="world-detail__progress-bar">
-                      <div 
-                        className="world-detail__progress-fill"
-                        style={{ width: `${(beats.length / 15) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  
-                  <button
-                    onClick={progressArc}
-                    disabled={isProgressing}
-                    className="world-detail__progress-button"
-                  >
-                    {isProgressing ? (
-                      <>
-                        <div className="world-detail__button-spinner"></div>
-                        Progressing Story...
-                      </>
-                    ) : (
-                      <>
-                        <span className="material-icons">play_arrow</span>
-                        Progress Story
-                      </>
-                    )}
-                  </button>
-                </div>
-              ) : (
-                <div className="world-detail__arc-empty">
-                  <p>No active arc. Create one to start the story!</p>
-                  <button
-                    onClick={() => setShowCreateArc(true)}
-                    className="world-detail__create-arc-button"
-                  >
-                    <span className="material-icons">add</span>
-                    Create New Arc
-                  </button>
-                </div>
-              )}
 
-              {showCreateArc && (
-                <div className="world-detail__create-arc">
-                  <h3>Create New Story Arc</h3>
-                  <form onSubmit={createNewArc}>
-                    <label htmlFor="storyIdea">
-                      Story Idea (optional)
-                    </label>
-                    <textarea
-                      id="storyIdea"
-                      value={storyIdea}
-                      onChange={(e) => setStoryIdea(e.target.value)}
-                      placeholder="Describe your story idea, or leave blank for a random arc..."
-                      rows={3}
-                    />
-                    <div className="world-detail__form-actions">
-                      <button type="submit" className="world-detail__submit-button">
-                        Create Arc
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={() => setShowCreateArc(false)}
-                        className="world-detail__cancel-button"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              )}
-            </div>
-            
-            {/* Current Beat */}
-            <div className="world-detail__beat-section">
-              <h2 className="world-detail__panel-title">
-                <span className="material-icons">history_edu</span>
-                Current Beat
-              </h2>
-              
-              {selectedBeat ? (
-                <div className="world-detail__beat-content">
-                  <h3 className="world-detail__beat-detail-title">
-                    {selectedBeat.beat_name}
-                    {selectedBeat.beat_type === 'anchor' && (
-                      <span className="world-detail__beat-type-badge">Anchor</span>
-                    )}
-                  </h3>
-                  <p className="world-detail__beat-description">{selectedBeat.description}</p>
-                  
-                  <div className="world-detail__beat-directives">
-                    <h4 className="world-detail__beat-section-title">World Directives</h4>
-                    {selectedBeat.world_directives.length === 0 ? (
-                      <p className="world-detail__beat-empty">—</p>
-                    ) : (
-                      <ul className="world-detail__beat-list">
-                        {selectedBeat.world_directives.map((d, i) => (
-                          <li key={i} className="world-detail__beat-list-item">{d}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                  
-                  <div className="world-detail__beat-storylines">
-                    <h4 className="world-detail__beat-section-title">Emergent Storylines</h4>
-                    {selectedBeat.emergent_storylines.length === 0 ? (
-                      <p className="world-detail__beat-empty">—</p>
-                    ) : (
-                      <ul className="world-detail__beat-list">
-                        {selectedBeat.emergent_storylines.map((s, i) => (
-                          <li key={i} className="world-detail__beat-list-item">{s}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="world-detail__beat-empty-state">
-                  No beat selected
-                </div>
-              )}
-            </div>
-            
-            {/* Beat History */}
-            <div className="world-detail__history-section">
-              <h2 className="world-detail__panel-title">
-                <span className="material-icons">history</span>
-                Beat History
-              </h2>
-              
-              {beats.length === 0 ? (
-                <p className="world-detail__beats-empty">No beats generated yet.</p>
-              ) : (
-                <ul className="world-detail__beats-list">
-                  {beats
-                    .sort((a, b) => a.beat_index - b.beat_index)
-                    .map((beat) => (
-                      <li
-                        key={beat.id}
-                        onClick={() => setSelectedBeat(beat)}
-                        className={`world-detail__beat-item ${selectedBeat?.id === beat.id ? 'world-detail__beat-item--selected' : ''} ${beat.beat_type === 'anchor' ? 'world-detail__beat-item--anchor' : ''}`}
-                      >
-                        <span className="world-detail__beat-index">Beat {beat.beat_index}</span>
-                        <span className="world-detail__beat-name">{beat.beat_name}</span>
-                        {beat.beat_type === 'anchor' && (
-                          <span className="world-detail__beat-anchor-badge">Anchor</span>
-                        )}
-                      </li>
-                    ))}
-                </ul>
-              )}
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Modals */}
@@ -836,6 +908,22 @@ export function WorldDetail() {
         isOpen={isFactionModalOpen}
         onClose={closeAllModals}
       />
+      
+      {/* Floating Action Button for Progress Story */}
+      {currentArc && beats.length > 0 && (
+        <button
+          onClick={progressArc}
+          disabled={isProgressing}
+          className="world-detail__fab"
+          title="Progress Story"
+        >
+          {isProgressing ? (
+            <div className="world-detail__button-spinner"></div>
+          ) : (
+            <span className="material-icons">play_arrow</span>
+          )}
+        </button>
+      )}
     </div>
   );
 }
