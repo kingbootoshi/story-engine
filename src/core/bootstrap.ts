@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import express from 'express';
+import path from 'path';
 import { glob } from 'glob';
 import { DI } from './infra/container';
 import { eventBus } from './infra/eventBus';
@@ -111,7 +112,33 @@ export async function createServer(): Promise<express.Application> {
       }
     });
   });
+
+
   
+  // Static file serving for production (placed before error handler)
+  if (process.env.NODE_ENV === 'production' || process.env.SERVE_STATIC === 'true') {
+    const staticPath = path.join(process.cwd(), 'dist');
+    
+    // Serve static files from the dist directory
+    app.use(express.static(staticPath));
+    
+    // Handle client-side routing for non-API routes
+    // Using specific route patterns instead of wildcards
+    const clientRoutes = ['/', '/playground', '/api-docs', '/worlds', '/worlds/:id'];
+    
+    clientRoutes.forEach(route => {
+      app.get(route, (_req, res) => {
+        res.sendFile(path.join(staticPath, 'index.html'));
+      });
+    });
+    
+    logger.info('📁 Static file serving enabled', { 
+      staticPath,
+      mode: process.env.NODE_ENV || 'development',
+      clientRoutes
+    });
+  }
+
   app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
     // Extract request ID if available
     const reqId = req.headers['x-request-id'] as string;
@@ -148,6 +175,8 @@ export async function createServer(): Promise<express.Application> {
       });
     }
   });
+  
+
   
   return app;
 }
