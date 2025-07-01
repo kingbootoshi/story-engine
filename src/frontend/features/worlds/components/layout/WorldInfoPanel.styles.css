@@ -10,11 +10,42 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* Desktop compact layout */
+@media (min-width: theme('screens.md')) {
+  .world-detail__world-info {
+    margin-bottom: theme('spacing.4');
+    padding-bottom: theme('spacing.4');
+  }
+  
+  .world-detail__title {
+    font-size: theme('fontSize.2xl'); /* Smaller on desktop for space */
+    margin-bottom: theme('spacing.1');
+  }
+  
+  .world-detail__description {
+    font-size: theme('fontSize.base');
+    margin-bottom: theme('spacing.2');
+    line-height: 1.4; /* Tighter line height */
+  }
+}
+
 .world-detail__sphere-container {
   display: flex;
   justify-content: center;
   position: relative;
   margin: theme('spacing.4') 0;
+}
+
+/* Smaller sphere on desktop */
+@media (min-width: theme('screens.md')) {
+  .world-detail__sphere-container {
+    margin: theme('spacing.3') 0;
+  }
+  
+  .world-detail__sphere {
+    width: 150px !important;
+    height: 150px !important;
+  }
 }
 
 .world-detail__sphere {

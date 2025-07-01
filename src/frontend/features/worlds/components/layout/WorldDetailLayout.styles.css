@@ -61,6 +61,14 @@
   margin-bottom: theme('spacing.6');
 }
 
+/* Desktop-only height constraints to prevent excessive scrolling */
+@media (min-width: theme('screens.md')) {
+  .world-detail__unified-panel {
+    max-height: calc(100vh - 200px); /* Account for header and arc controls */
+    height: 600px; /* Fixed height for consistency */
+  }
+}
+
 .world-detail__section {
   background: rgba(30, 41, 59, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -72,6 +80,7 @@
   flex-direction: column;
   height: 100%;
   min-height: 400px;
+  overflow: hidden; /* Prevent content from breaking out */
 }
 
 /* Legacy panel styles for compatibility */
@@ -536,5 +545,102 @@
   
   .world-detail__unified-panel {
     gap: theme('spacing.8');
+  }
+}
+
+/* Desktop-specific enhancements for content organization */
+@media (min-width: theme('screens.md')) {
+  /* Scroll shadow indicators */
+  .world-detail__locations-content,
+  .world-detail__characters-content,
+  .world-detail__factions-content,
+  .world-detail__events-list {
+    position: relative;
+    /* Add subtle shadows at top/bottom when scrollable */
+    background:
+      linear-gradient(rgba(30, 41, 59, 0.5) 30%, transparent),
+      linear-gradient(transparent, rgba(30, 41, 59, 0.5) 70%) 0 100%,
+      radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, 0.2), transparent),
+      radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, 0.2), transparent) 0 100%;
+    background-repeat: no-repeat;
+    background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px;
+    background-attachment: local, local, scroll, scroll;
+  }
+  
+  /* Ensure entity sections properly share space */
+  .world-detail__entity-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* Important for nested flexbox */
+  }
+  
+  .world-detail__entity-section + .world-detail__entity-section {
+    margin-top: theme('spacing.4');
+    padding-top: theme('spacing.4');
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Adjust section headers for compactness */
+  .world-detail__section-header {
+    flex-shrink: 0;
+    margin-bottom: theme('spacing.3');
+    padding-bottom: theme('spacing.2');
+  }
+  
+  .world-detail__section-title {
+    font-size: theme('fontSize.lg');
+  }
+  
+  /* Scroll hint indicator */
+  .world-detail__scroll-hint {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: theme('fontSize.sm');
+    display: flex;
+    align-items: center;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
+  
+  /* Visual hint for scrollable areas */
+  .world-detail__locations-content:hover,
+  .world-detail__characters-content:hover,
+  .world-detail__factions-content:hover,
+  .world-detail__events-list:hover {
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    border-radius: theme('borderRadius.md');
+  }
+  
+  /* Ensure center column uses space efficiently */
+  .world-detail__section--center {
+    display: flex;
+    flex-direction: column;
+    gap: theme('spacing.4');
+  }
+  
+  /* Compact padding for all sections on desktop */
+  .world-detail__section {
+    padding: theme('spacing.4');
+  }
+  
+  /* Add subtle "more content" indicator when scrollable */
+  [data-scrollable="true"]::after {
+    content: "Scroll for more";
+    position: absolute;
+    bottom: theme('spacing.2');
+    right: theme('spacing.2');
+    font-size: theme('fontSize.xs');
+    color: rgba(255, 255, 255, 0.4);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  [data-scrollable="true"]:hover::after {
+    opacity: 1;
   }
 }

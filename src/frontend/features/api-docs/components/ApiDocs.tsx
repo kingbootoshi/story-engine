@@ -339,7 +339,7 @@ export function ApiDocs() {
                   <span className="api-docs__code-lang">javascript</span>
                   <button 
                     className="api-docs__code-copy"
-                    onClick={() => copyToClipboard(`const response = await fetch('https://api.storyengine.dev/api/worlds', {
+                    onClick={() => copyToClipboard(`const response = await fetch('https://playstoryengine.com/api/worlds', {
   headers: {
     'x-api-key': 'YOUR_API_KEY',
     'Content-Type': 'application/json'
@@ -355,7 +355,7 @@ const worlds = await response.json();`, 'auth-example')}
                   </button>
                 </div>
                 <pre>
-                  <code>{`const response = await fetch('https://api.storyengine.dev/api/worlds', {
+                  <code>{`const response = await fetch('https://playstoryengine.com/api/worlds', {
   headers: {
     'x-api-key': 'YOUR_API_KEY',
     'Content-Type': 'application/json'
@@ -394,12 +394,12 @@ const worlds = await response.json();`}</code>
                   <h3>Create Your First World</h3>
                   <p>Use the world creation endpoint to generate a complete narrative universe:</p>
                   
-                  <div className="api-docs__code-block">
-                    <div className="api-docs__code-header">
-                      <span className="api-docs__code-lang">javascript</span>
-                      <button 
-                        className="api-docs__code-copy"
-                        onClick={() => copyToClipboard(`const response = await fetch('https://api.storyengine.dev/api/worlds', {
+                                <div className="api-docs__code-block">
+                <div className="api-docs__code-header">
+                  <span className="api-docs__code-lang">javascript</span>
+                  <button 
+                    className="api-docs__code-copy"
+                    onClick={() => copyToClipboard(`const response = await fetch('https://playstoryengine.com/api/worlds', {
   method: 'POST',
   headers: {
     'x-api-key': 'YOUR_API_KEY',
@@ -412,15 +412,15 @@ const worlds = await response.json();`}</code>
 });
 
 const world = await response.json();`, 'quickstart-create')}
-                      >
-                        <span className="material-icons">
-                          {copiedCode === 'quickstart-create' ? 'check' : 'content_copy'}
-                        </span>
-                        {copiedCode === 'quickstart-create' ? 'Copied!' : 'Copy'}
-                      </button>
-                    </div>
-                    <pre>
-                      <code>{`const response = await fetch('https://api.storyengine.dev/api/worlds', {
+                  >
+                    <span className="material-icons">
+                      {copiedCode === 'quickstart-create' ? 'check' : 'content_copy'}
+                    </span>
+                    {copiedCode === 'quickstart-create' ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+                <pre>
+                  <code>{`const response = await fetch('https://playstoryengine.com/api/worlds', {
   method: 'POST',
   headers: {
     'x-api-key': 'YOUR_API_KEY',
@@ -433,8 +433,8 @@ const world = await response.json();`, 'quickstart-create')}
 });
 
 const world = await response.json();`}</code>
-                    </pre>
-                  </div>
+                </pre>
+              </div>
                 </div>
               </div>
 
@@ -447,9 +447,9 @@ const world = await response.json();`}</code>
                   <div className="api-docs__code-block">
                     <div className="api-docs__code-header">
                       <span className="api-docs__code-lang">javascript</span>
-                      <button 
-                        className="api-docs__code-copy"
-                        onClick={() => copyToClipboard(`const event = await fetch(\`https://api.storyengine.dev/api/worlds/\${world.id}/events\`, {
+                                        <button 
+                    className="api-docs__code-copy"
+                    onClick={() => copyToClipboard(`const event = await fetch(\`https://playstoryengine.com/api/worlds/\${world.id}/events\`, {
   method: 'POST',
   headers: {
     'x-api-key': 'YOUR_API_KEY',
@@ -461,15 +461,15 @@ const world = await response.json();`}</code>
     description: "The hero discovers an ancient artifact in the ruins"
   })
 });`, 'quickstart-event')}
-                      >
-                        <span className="material-icons">
-                          {copiedCode === 'quickstart-event' ? 'check' : 'content_copy'}
-                        </span>
-                        {copiedCode === 'quickstart-event' ? 'Copied!' : 'Copy'}
-                      </button>
-                    </div>
-                    <pre>
-                      <code>{`const event = await fetch(\`https://api.storyengine.dev/api/worlds/\${world.id}/events\`, {
+                  >
+                    <span className="material-icons">
+                      {copiedCode === 'quickstart-event' ? 'check' : 'content_copy'}
+                    </span>
+                    {copiedCode === 'quickstart-event' ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+                <pre>
+                  <code>{`const event = await fetch(\`https://playstoryengine.com/api/worlds/\${world.id}/events\`, {
   method: 'POST',
   headers: {
     'x-api-key': 'YOUR_API_KEY',
@@ -495,9 +495,9 @@ const world = await response.json();`}</code>
                   <div className="api-docs__code-block">
                     <div className="api-docs__code-header">
                       <span className="api-docs__code-lang">javascript</span>
-                      <button 
-                        className="api-docs__code-copy"
-                        onClick={() => copyToClipboard(`const nextBeat = await fetch(\`https://api.storyengine.dev/api/worlds/arcs/\${arcId}/progress\`, {
+                                        <button 
+                    className="api-docs__code-copy"
+                    onClick={() => copyToClipboard(`const nextBeat = await fetch(\`https://playstoryengine.com/api/worlds/arcs/\${arcId}/progress\`, {
   method: 'POST',
   headers: {
     'x-api-key': 'YOUR_API_KEY',
@@ -508,15 +508,15 @@ const world = await response.json();`}</code>
     recentEvents: "The hero found a powerful artifact"
   })
 });`, 'quickstart-progress')}
-                      >
-                        <span className="material-icons">
-                          {copiedCode === 'quickstart-progress' ? 'check' : 'content_copy'}
-                        </span>
-                        {copiedCode === 'quickstart-progress' ? 'Copied!' : 'Copy'}
-                      </button>
-                    </div>
-                    <pre>
-                      <code>{`const nextBeat = await fetch(\`https://api.storyengine.dev/api/worlds/arcs/\${arcId}/progress\`, {
+                  >
+                    <span className="material-icons">
+                      {copiedCode === 'quickstart-progress' ? 'check' : 'content_copy'}
+                    </span>
+                    {copiedCode === 'quickstart-progress' ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+                <pre>
+                  <code>{`const nextBeat = await fetch(\`https://playstoryengine.com/api/worlds/arcs/\${arcId}/progress\`, {
   method: 'POST',
   headers: {
     'x-api-key': 'YOUR_API_KEY',

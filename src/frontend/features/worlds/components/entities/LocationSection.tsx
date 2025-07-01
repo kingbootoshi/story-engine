@@ -14,6 +14,11 @@ export function LocationSection({ groupedLocations, totalLocationCount, onLocati
           <span className="material-icons">place</span>
           Locations ({totalLocationCount})
         </h2>
+        {totalLocationCount > 10 && (
+          <span className="world-detail__scroll-hint" title="Scroll to see more">
+            <span className="material-icons">unfold_more</span>
+          </span>
+        )}
       </div>
       
       <div className="world-detail__locations-content">

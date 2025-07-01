@@ -146,3 +146,30 @@
     border-radius: theme('borderRadius.full');
   }
 }
+
+/* Desktop height constraints */
+@media (min-width: theme('screens.md')) {
+  .world-detail__factions-content {
+    max-height: 200px; /* Smaller since factions list is usually shorter */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  }
+  
+  /* Custom scrollbar for webkit browsers */
+  .world-detail__factions-content::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .world-detail__factions-content::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .world-detail__factions-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+  }
+  
+  .world-detail__factions-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
+}

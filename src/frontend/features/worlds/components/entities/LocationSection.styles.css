@@ -182,3 +182,51 @@
     color: rgba(255, 255, 255, 0.5);
   }
 }
+
+/* Desktop height constraints */
+@media (min-width: theme('screens.md')) {
+  .world-detail__locations-content {
+    max-height: 480px; /* Reasonable height for desktop */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  }
+  
+  /* Custom scrollbar for webkit browsers */
+  .world-detail__locations-content::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .world-detail__locations-content::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .world-detail__locations-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+  }
+  
+  .world-detail__locations-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
+  
+  /* Desktop compact groups */
+  .world-detail__location-group {
+    margin-bottom: theme('spacing.3');
+  }
+  
+  .world-detail__location-group-title {
+    font-size: theme('fontSize.sm');
+    margin-bottom: theme('spacing.1');
+    padding: theme('spacing.1') 0;
+  }
+  
+  .world-detail__location-list {
+    gap: theme('spacing.1');
+  }
+  
+  .world-detail__location-item {
+    padding: theme('spacing.1') theme('spacing.2');
+    font-size: theme('fontSize.sm');
+    margin: 0;
+  }
+}
