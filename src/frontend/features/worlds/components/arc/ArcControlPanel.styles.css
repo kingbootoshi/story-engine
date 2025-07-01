@@ -3,6 +3,18 @@
  * Main arc progression controls and overview
  */
 
+/* Arc Control Panel entrance animation */
+@keyframes arcPanelEntranceAnimation {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Arc Control Panel - Now at the top */
 .world-detail__arc-control-panel {
   background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9));
@@ -14,6 +26,7 @@
   backdrop-filter: blur(20px);
   position: relative;
   overflow: hidden;
+  animation: arcPanelEntranceAnimation 0.5s ease-out forwards;
 }
 
 .world-detail__arc-control-panel::before {

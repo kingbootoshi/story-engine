@@ -3,10 +3,23 @@
  * Main container, header, dashboard layout
  */
 
+/* Page entrance animation for smooth transitions */
+@keyframes pageEntranceAnimation {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .world-detail {
   min-height: 100vh;
   color: white;
   background: linear-gradient(to bottom, rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.95));
+  animation: pageEntranceAnimation 0.5s ease-out forwards;
 }
 
 .world-detail__loading,
@@ -61,6 +74,18 @@
   margin-bottom: theme('spacing.6');
 }
 
+/* Section entrance animation */
+@keyframes sectionEntranceAnimation {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Desktop-only height constraints to prevent excessive scrolling */
 @media (min-width: theme('screens.md')) {
   .world-detail__unified-panel {
@@ -81,7 +106,14 @@
   height: 100%;
   min-height: 400px;
   overflow: hidden; /* Prevent content from breaking out */
+  opacity: 0;
+  animation: sectionEntranceAnimation 0.6s ease-out forwards;
 }
+
+/* Stagger animation for sections */
+.world-detail__section:nth-child(1) { animation-delay: 0.2s; }
+.world-detail__section:nth-child(2) { animation-delay: 0.3s; }
+.world-detail__section:nth-child(3) { animation-delay: 0.4s; }
 
 /* Legacy panel styles for compatibility */
 .world-detail__panel {
