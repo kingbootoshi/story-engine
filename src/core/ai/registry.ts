@@ -23,12 +23,12 @@ interface Model {
  */
 const MODELS: Model[] = [
   // Smart models - for complex reasoning and generation
-  { name: 'openai/gpt-4o', type: 'smart' },
+  { name: 'openai/gpt-4o', type: 'smart', default: true },
   { name: 'anthropic/claude-sonnet-4', type: 'smart' },
   { name: 'openai/gpt-4-turbo', type: 'smart' },
   
   // Small models - for quick reactions and simple tasks
-  { name: 'openai/gpt-4o-mini', type: 'smart', default: true },
+  { name: 'openai/gpt-4o-mini', type: 'smart' },
   { name: 'openai/gpt-4.1-nano', type: 'small', default: true  },
   { name: 'anthropic/claude-haiku', type: 'small' },
 ];
