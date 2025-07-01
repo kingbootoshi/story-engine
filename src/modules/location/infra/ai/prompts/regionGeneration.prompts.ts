@@ -68,6 +68,18 @@ export function buildRegionGenerationPrompt(context: RegionGenerationContext) {
 World Name: ${context.worldName}
 World Description: ${context.worldDescription}
 
+IMPORTANT: You must return a JSON object with the following exact structure for each region:
+
+{
+  "name": "Region Name",
+  "description": "A rich description of 100-200 words (NO tags in the description text)",
+  "tags": ["tag1", "tag2", "tag3"],  // Array of descriptive string tags
+  "relative_position": {
+    "x": 50,  // Number between 0-100
+    "y": 50   // Number between 0-100
+  }
+}
+
 Guidelines:
 1. Create 2-4 major regions that represent distinct geographical areas
 2. Each region should have unique characteristics that differentiate it from others
@@ -79,18 +91,24 @@ Guidelines:
    - Natural resources or notable features
    - General atmosphere and character
    - Hints at potential stories or conflicts
-7. Use descriptive tags for future reference
-8. Consider how regions might interact (trade, conflict, isolation)
+7. For the 'tags' field: Create an ARRAY of descriptive strings (e.g., ["coastal", "mountainous", "fertile"])
+   - DO NOT include tags in the description text
+   - Each region needs 3-6 relevant tags
+8. For the 'relative_position' field: Provide x,y coordinates (0-100 scale)
+   - x=0 is far west, x=100 is far east
+   - y=0 is far north, y=100 is far south
+   - Spread regions across the map
+9. Consider how regions might interact (trade, conflict, isolation)
 
-Remember:
-- Each region must have a unique name
-- Regions should cover different parts of the map
-- Balance variety with coherence to the world theme
-- These regions will contain cities, landmarks, and wilderness areas`
+CRITICAL Requirements:
+- Every region MUST have ALL four fields: name, description, tags (as array), relative_position (with x,y)
+- Tags must be a separate array field, NOT text within the description
+- Description should focus on narrative details, not list tags
+- All coordinates must be numbers between 0 and 100`
     },
     {
       role: 'user' as const,
-      content: 'Generate the major regions for this world.'
+      content: 'Generate the major regions for this world. Remember to include all required fields (name, description, tags array, and relative_position with x,y coordinates) for each region.'
     }
   ];
 }

@@ -57,7 +57,7 @@ CREATE TABLE world_events (
   world_id UUID NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
   arc_id UUID REFERENCES world_arcs(id) ON DELETE SET NULL,
   beat_id UUID REFERENCES world_beats(id) ON DELETE SET NULL,
-  event_type VARCHAR(50) NOT NULL CHECK (event_type IN ('player_action', 'system_event', 'environmental', 'social')),
+  event_type VARCHAR(50) NOT NULL CHECK (event_type IN ('player_action', 'system_event', 'world_event')),
   description TEXT NOT NULL,
   impact_level VARCHAR(50) DEFAULT 'minor' CHECK (impact_level IN ('minor', 'moderate', 'major', 'catastrophic')),
   affected_regions TEXT[] DEFAULT '{}',
