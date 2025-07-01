@@ -4,6 +4,7 @@ import type { World, Arc } from '../types';
 
 export function useArcProgression() {
   const [isProgressing, setIsProgressing] = useState(false);
+  const [isCreatingArc, setIsCreatingArc] = useState(false);
   const [showCreateArc, setShowCreateArc] = useState(false);
   const [storyIdea, setStoryIdea] = useState('');
 
@@ -15,6 +16,7 @@ export function useArcProgression() {
   ) => {
     if (!world) return;
 
+    setIsCreatingArc(true);
     try {
       const { arc } = await trpc.world.createNewArc.mutate({
         worldId: world.id,
@@ -30,6 +32,8 @@ export function useArcProgression() {
     } catch (err) {
       console.error('[useArcProgression] Failed to create arc:', err);
       onError('Failed to create new arc');
+    } finally {
+      setIsCreatingArc(false);
     }
   };
 
@@ -65,6 +69,7 @@ export function useArcProgression() {
 
   return {
     isProgressing,
+    isCreatingArc,
     showCreateArc,
     storyIdea,
     setShowCreateArc,

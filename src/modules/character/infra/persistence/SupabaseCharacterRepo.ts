@@ -134,16 +134,32 @@ export class SupabaseCharacterRepo implements ICharacterRepository {
     
     const { data, error } = await supabase
       .from('characters')
-      .insert(characters.map(char => ({
+      .upsert(characters.map(char => ({
         ...char,
         memories: char.memories || [],
         story_beats_witnessed: char.story_beats_witnessed || []
-      })))
+      })), {
+        onConflict: 'world_id,name',
+        ignoreDuplicates: true
+      })
       .select();
     
     if (error) {
       logger.error('Failed to batch create characters', error, { count: characters.length });
       throw new Error(`Failed to create characters: ${error.message}`);
+    }
+    
+    const insertedCount = data?.length || 0;
+    const skippedCount = characters.length - insertedCount;
+    
+    if (skippedCount > 0) {
+      logger.warn(`Skipped ${skippedCount} characters due to duplicate names`, { 
+        totalAttempted: characters.length,
+        inserted: insertedCount,
+        worldId: characters[0]?.world_id 
+      });
+    } else {
+      logger.info('All characters created successfully', { count: insertedCount });
     }
     
     return (data || []).map(row => this.toDomain(row));

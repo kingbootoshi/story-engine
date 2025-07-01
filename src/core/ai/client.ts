@@ -1,7 +1,7 @@
 import OpenAI from 'openpipe/openai';
 import { log } from '../infra/logger';
 import { env } from '../../shared/config/env';
-import { modelRegistry } from './registry';
+import { modelRegistry, type ModelType } from './registry';
 import { validateMetadata, type AIMetadata } from './metadata';
 import { usageTracker } from './usage-tracker';
 
@@ -19,6 +19,8 @@ const client = new OpenAI({
 export interface ChatParams {
   /** defaults to modelRegistry.getDefault() if omitted */
   model?: string;
+  /** Model type to use if model not specified. Defaults to 'smart' for backward compatibility */
+  modelType?: ModelType;
   messages: { role: 'system' | 'user' | 'assistant'; content: string }[];
   tools?: any[];
   tool_choice?: any;
@@ -29,7 +31,9 @@ export interface ChatParams {
 }
 
 export async function chat(params: ChatParams): Promise<any> {
-  const model = params.model ?? modelRegistry.getDefault();
+  // Determine model based on explicit model, model type, or default
+  const model = params.model ?? 
+    (params.modelType ? modelRegistry.getDefaultForType(params.modelType) : modelRegistry.getDefault());
   const startTime = Date.now();
   
   try {

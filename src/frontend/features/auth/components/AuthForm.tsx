@@ -44,7 +44,7 @@ export function AuthForm({ onBack }: AuthFormProps) {
       // Add a delay and transition state for smooth exit
       setIsTransitioningOut(true);
       setTimeout(() => {
-        navigate('/app/worlds');
+        navigate('/app');
       }, 600); // Match with fade-out animation duration
     }
   }, [user, navigate]);
@@ -86,7 +86,7 @@ export function AuthForm({ onBack }: AuthFormProps) {
         await signIn(email, password);
         console.debug('[AuthForm] Sign in successful, redirecting to dashboard');
         // Immediate redirect after successful login
-        navigate('/app/worlds');
+        navigate('/app');
       } else {
         // Signup flow
         if (password !== confirmPassword) {
@@ -95,7 +95,7 @@ export function AuthForm({ onBack }: AuthFormProps) {
         await signUp(email, password);
         console.debug('[AuthForm] Sign up successful, redirecting to dashboard');
         // Immediate redirect after successful signup
-        navigate('/app/worlds');
+        navigate('/app');
       }
     } catch (err) {
       console.error('[AuthForm] Auth error:', err);

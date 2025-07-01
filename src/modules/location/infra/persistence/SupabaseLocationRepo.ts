@@ -38,7 +38,10 @@ export class SupabaseLocationRepo implements LocationRepository {
 
     const { data, error } = await supabase
       .from('locations')
-      .insert(locations)
+      .upsert(locations, {
+        onConflict: 'world_id,name',
+        ignoreDuplicates: true
+      })
       .select();
 
     if (error) {
@@ -50,14 +53,28 @@ export class SupabaseLocationRepo implements LocationRepository {
       throw error;
     }
 
+    const insertedCount = data?.length || 0;
+    const skippedCount = locations.length - insertedCount;
+    
+    if (skippedCount > 0) {
+      logger.warn(`Skipped ${skippedCount} locations due to duplicate names`, { 
+        totalAttempted: locations.length,
+        inserted: insertedCount,
+        worldId: locations[0]?.world_id,
+        correlation,
+        duration_ms: Date.now() - startTime
+      });
+    }
+
     logger.info('Created bulk locations', { 
-      count: data.length,
+      count: insertedCount,
+      skipped: skippedCount,
       duration_ms: Date.now() - startTime,
       correlation,
       success: true
     });
     
-    return data;
+    return data || [];
   }
 
   /**

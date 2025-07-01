@@ -26,8 +26,9 @@
   list-style: none;
   padding: 0;
   margin: 0;
-  max-height: 120px;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: theme('spacing.2');
 }
 
 .world-detail__character-item {
@@ -73,4 +74,145 @@
 .world-detail__unified-panel--detailed .world-detail__character-item {
   padding: theme('spacing.3') theme('spacing.4');
   font-size: theme('fontSize.base');
+}
+
+/* Mobile Styles */
+@media (max-width: theme('screens.md')) {
+  .world-detail__characters-content {
+    padding: theme('spacing.3');
+  }
+  
+  .world-detail__character-group {
+    margin-bottom: theme('spacing.6');
+  }
+  
+  .world-detail__character-group-title {
+    font-size: theme('fontSize.lg');
+    margin-bottom: theme('spacing.3');
+    padding-left: theme('spacing.2');
+  }
+  
+  .world-detail__character-list {
+    max-height: none;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: theme('spacing.2');
+  }
+  
+  .world-detail__character-item {
+    padding: theme('spacing.4');
+    font-size: theme('fontSize.base');
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin: 0;
+  }
+  
+  .world-detail__character-item:active {
+    background: rgba(255, 255, 255, 0.08);
+    transform: scale(0.98);
+  }
+  
+  .world-detail__character-status {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+/* Enhanced Mobile Styles for Small Screens */
+@media (max-width: theme('screens.sm')) {
+  .world-detail__section--entities {
+    padding: theme('spacing.2');
+  }
+  
+  .world-detail__character-group {
+    margin-bottom: theme('spacing.8');
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: theme('borderRadius.lg');
+    padding: theme('spacing.4');
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  
+  .world-detail__character-group-title {
+    font-size: theme('fontSize.xl');
+    text-align: center;
+    margin-bottom: theme('spacing.4');
+    padding-bottom: theme('spacing.3');
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .world-detail__character-list {
+    gap: theme('spacing.3');
+  }
+  
+  .world-detail__character-item {
+    padding: theme('spacing.5') theme('spacing.4');
+    font-size: theme('fontSize.lg');
+    display: flex;
+    align-items: center;
+    gap: theme('spacing.3');
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+  }
+  
+  .world-detail__character-status {
+    width: 12px;
+    height: 12px;
+    box-shadow: 0 0 8px currentColor;
+  }
+  
+  /* Empty state */
+  .world-detail__empty-message {
+    padding: theme('spacing.12') theme('spacing.4');
+    text-align: center;
+    font-size: theme('fontSize.lg');
+    color: rgba(255, 255, 255, 0.5);
+  }
+}
+
+/* Desktop height constraints */
+@media (min-width: theme('screens.md')) {
+  .world-detail__characters-content {
+    max-height: 240px; /* Half the height since sharing with factions */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  }
+  
+  /* Compact character groups */
+  .world-detail__character-group {
+    margin-bottom: theme('spacing.3');
+  }
+  
+  .world-detail__character-group-title {
+    font-size: theme('fontSize.sm');
+    margin-bottom: theme('spacing.1');
+    padding: theme('spacing.1') 0;
+  }
+  
+  .world-detail__character-list {
+    gap: theme('spacing.1');
+  }
+  
+  .world-detail__character-item {
+    padding: theme('spacing.1') theme('spacing.2');
+    font-size: theme('fontSize.sm');
+    margin: 0;
+  }
+  
+  /* Custom scrollbar for webkit browsers */
+  .world-detail__characters-content::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .world-detail__characters-content::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .world-detail__characters-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+  }
+  
+  .world-detail__characters-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
 }

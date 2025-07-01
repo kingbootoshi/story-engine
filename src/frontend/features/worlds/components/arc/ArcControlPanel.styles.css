@@ -373,6 +373,135 @@
   }
 }
 
+/* Enhanced Mobile Styles */
+@media (max-width: theme('screens.sm')) {
+  .world-detail__arc-control-panel {
+    border-radius: theme('borderRadius.lg');
+    margin: theme('spacing.2');
+    padding: theme('spacing.3');
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  }
+  
+  .world-detail__arc-control-panel::before {
+    height: 2px;
+  }
+  
+  .world-detail__arc-info {
+    width: 100%;
+  }
+  
+  .world-detail__arc-title {
+    font-size: theme('fontSize.lg');
+    flex-wrap: wrap;
+  }
+  
+  .world-detail__arc-status-badge {
+    font-size: theme('fontSize.xs');
+    padding: theme('spacing.1') theme('spacing.2');
+  }
+  
+  /* Mobile button styles */
+  .world-detail__add-event-button-primary,
+  .world-detail__progress-button-primary {
+    font-size: theme('fontSize.base');
+    padding: theme('spacing.3') theme('spacing.4');
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .world-detail__add-event-button-primary .material-icons,
+  .world-detail__progress-button-primary .material-icons {
+    font-size: 20px;
+  }
+  
+  /* Mobile progress bar */
+  .world-detail__progress-fill-enhanced {
+    height: 10px;
+  }
+  
+  /* Mobile beat summary */
+  .world-detail__current-beat-summary {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  
+  .world-detail__beat-summary-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: theme('spacing.2');
+  }
+  
+  .world-detail__beat-summary-title {
+    font-size: theme('fontSize.base');
+    line-height: 1.4;
+  }
+  
+  .world-detail__expand-button {
+    align-self: flex-end;
+    margin-top: theme('spacing.2');
+  }
+  
+  .world-detail__beat-summary-description {
+    font-size: theme('fontSize.sm');
+    line-height: 1.5;
+  }
+  
+  /* Mobile beat details */
+  .world-detail__beat-expanded {
+    margin-top: theme('spacing.3');
+    padding-top: theme('spacing.3');
+  }
+  
+  .world-detail__beat-expanded h4 {
+    font-size: theme('fontSize.sm');
+    margin-bottom: theme('spacing.1');
+  }
+  
+  .world-detail__beat-expanded ul {
+    font-size: theme('fontSize.sm');
+  }
+  
+  .world-detail__beat-expanded li {
+    padding: theme('spacing.1') 0;
+  }
+  
+  /* Arc details mobile */
+  .world-detail__arc-details {
+    margin-top: theme('spacing.3');
+    padding-top: theme('spacing.3');
+  }
+  
+  .world-detail__arc-detail-section {
+    margin-bottom: theme('spacing.3');
+  }
+  
+  .world-detail__arc-detail-title {
+    font-size: theme('fontSize.sm');
+  }
+  
+  .world-detail__arc-detail-text {
+    font-size: theme('fontSize.sm');
+    padding: theme('spacing.2');
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 400px) {
+  .world-detail__arc-control-panel {
+    margin: theme('spacing.1');
+    padding: theme('spacing.2');
+  }
+  
+  .world-detail__arc-title {
+    font-size: theme('fontSize.base');
+  }
+  
+  .world-detail__add-event-button-primary,
+  .world-detail__progress-button-primary {
+    font-size: theme('fontSize.sm');
+    padding: theme('spacing.2') theme('spacing.3');
+  }
+}
+
 /* Arc Details Section */
 .world-detail__arc-details {
   margin-top: theme('spacing.4');

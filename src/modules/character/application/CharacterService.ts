@@ -35,9 +35,10 @@ export class CharacterService {
   }
 
   private setupEventHandlers(): void {
-    eventBus.on('faction.seeding.complete', async (evt: DomainEvent<FactionSeedingComplete>) => {
-      await this.seedCharacters(evt);
-    });
+    // No longer subscribing to faction.seeding.complete - seeding is now explicit via seedCharactersForWorld
+    // eventBus.on('faction.seeding.complete', async (evt: DomainEvent<FactionSeedingComplete>) => {
+    //   await this.seedCharacters(evt);
+    // });
     
     eventBus.on('world.beat.created', async (evt: DomainEvent<StoryBeatCreated>) => {
       await this.processBeatReactions(evt);
@@ -117,8 +118,27 @@ export class CharacterService {
     
     await this.repo.delete(id);
   }
+  
+  /**
+   * Seed characters for a world - callable directly without event
+   */
+  public async seedCharactersForWorld(worldId: string, userId: string): Promise<void> {
+    // Create a synthetic event to reuse the existing logic
+    const event: DomainEvent<FactionSeedingComplete> = {
+      topic: 'faction.seeding.complete',
+      ts: new Date().toISOString(),
+      user_id: userId,
+      payload: {
+        v: 1,
+        worldId,
+        factionCount: 0 // Will be determined from actual factions in the method
+      }
+    };
+    
+    await this.seedCharacters(event);
+  }
 
-  private async seedCharacters(event: DomainEvent<FactionSeedingComplete>): Promise<void> {
+  public async seedCharacters(event: DomainEvent<FactionSeedingComplete>): Promise<void> {
     const { worldId } = event.payload;
     logger.info('Seeding characters for world', { worldId });
     
@@ -143,11 +163,23 @@ export class CharacterService {
       user: { id: userId }
     };
     
+    // Emit progress event
+    const totalExpectedCharacters = (factions.length * 5) + 5; // Rough estimate
+    eventBus.emit('character.seeding.progress', {
+      v: 1,
+      worldId,
+      userId,
+      phase: 'characters',
+      status: 'started',
+      message: `Generating characters for ${factions.length} factions and independents...`
+    }, userId);
+    
     // ------------------------------------------------------------------
     // Run character generation for every faction ***and*** independents
     // concurrently so they all finish together.
     // ------------------------------------------------------------------
     const tasks: Promise<void>[] = [];
+    let totalCreatedCount = 0;
 
     // one task per faction
     for (const faction of factions) {
@@ -182,6 +214,20 @@ export class CharacterService {
         }));
 
         await this.repo.batchCreate(charactersToCreate);
+        totalCreatedCount += charactersToCreate.length;
+        
+        // Emit individual character creation events for real-time UI
+        for (const char of charactersToCreate) {
+          eventBus.emit('character.entity.created', {
+            v: 1,
+            worldId,
+            userId,
+            characterName: char.name,
+            factionId: char.faction_id,
+            current: totalCreatedCount,
+            estimated: totalExpectedCharacters
+          }, userId);
+        }
 
         eventBus.emit<Events.CharacterBatchGenerated>('character.batch_generated', {
           v: 1,
@@ -222,6 +268,20 @@ export class CharacterService {
       }));
 
       await this.repo.batchCreate(independentCharacters);
+      totalCreatedCount += independentCharacters.length;
+      
+      // Emit individual character creation events for real-time UI
+      for (const char of independentCharacters) {
+        eventBus.emit('character.entity.created', {
+          v: 1,
+          worldId,
+          userId,
+          characterName: char.name,
+          factionId: null,
+          current: totalCreatedCount,
+          estimated: totalExpectedCharacters
+        }, userId);
+      }
 
       eventBus.emit<Events.CharacterBatchGenerated>('character.batch_generated', {
         v: 1,
@@ -235,9 +295,28 @@ export class CharacterService {
     // Wait for all generation tasks to complete in parallel
     await Promise.all(tasks);
     
+    // Emit progress complete
+    eventBus.emit('character.seeding.progress', {
+      v: 1,
+      worldId,
+      userId,
+      phase: 'characters',
+      status: 'completed',
+      message: `Created ${totalCreatedCount} characters`,
+      count: totalCreatedCount
+    }, userId);
+    
+    // Emit world seeding complete event
+    eventBus.emit('world.seeding.complete', {
+      v: 1,
+      worldId,
+      userId,
+      totalCharacters: totalCreatedCount
+    }, userId);
+    
     logger.success('Character seeding complete', { 
       worldId, 
-      totalCharacters: (factions.length * 5) + independentCount 
+      totalCharacters: totalCreatedCount 
     });
   }
 

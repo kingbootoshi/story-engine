@@ -15,6 +15,33 @@
   padding-right: theme('spacing.2');
 }
 
+/* Desktop height constraints */
+@media (min-width: theme('screens.md')) {
+  .world-detail__events-list {
+    max-height: 250px; /* Reasonable height for events */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  }
+  
+  /* Custom scrollbar for webkit browsers */
+  .world-detail__events-list::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .world-detail__events-list::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .world-detail__events-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+  }
+  
+  .world-detail__events-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
+}
+
 .world-detail__events-empty {
   display: flex;
   align-items: center;

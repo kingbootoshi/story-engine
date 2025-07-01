@@ -28,12 +28,12 @@ export class WorldAIAdapter implements WorldAI {
     const promptId = 'generate_world_arc_anchors';
     const contextData = { worldName: ctx.worldName };
     
-    log.debug('AI call', { promptId, model: modelRegistry.getDefault() });
+    log.debug('AI call', { promptId, modelType: 'smart' });
     
     try {
       const completion = await retryWithBackoff(
         () => chat({
-          model: modelRegistry.getDefault(),
+          modelType: 'smart', // World operations use smart models
           messages: [
             { role: 'system', content: ANCHOR_SYSTEM_PROMPT },
             { role: 'user', content: buildAnchorUserPrompt(
@@ -79,7 +79,7 @@ export class WorldAIAdapter implements WorldAI {
       const args = validationResult.data;
       log.info('AI success', { 
         ai: { 
-          model: modelRegistry.getDefault(), 
+          model: modelRegistry.getDefaultForType('smart'), 
           prompt_id: promptId, 
           usage: completion.usage 
         } 
@@ -108,7 +108,7 @@ export class WorldAIAdapter implements WorldAI {
     const promptId = 'generate_dynamic_world_beat';
     const contextData = { worldName: ctx.worldName, beatIndex: ctx.currentBeatIndex };
     
-    log.debug('AI call', { promptId, model: modelRegistry.getDefault() });
+    log.debug('AI call', { promptId, modelType: 'smart' });
     
     try {
       // Build summaries for previous beats and next anchor
@@ -122,7 +122,7 @@ export class WorldAIAdapter implements WorldAI {
 
       const completion = await retryWithBackoff(
         () => chat({
-          model: modelRegistry.getDefault(),
+          modelType: 'smart', // World operations use smart models
           messages: [
             { role: 'system', content: DYNAMIC_BEAT_SYSTEM_PROMPT },
             { role: 'user', content: buildDynamicBeatUserPrompt(
@@ -176,7 +176,7 @@ export class WorldAIAdapter implements WorldAI {
       const args = validationResult.data;
       log.info('AI success', { 
         ai: { 
-          model: modelRegistry.getDefault(), 
+          model: modelRegistry.getDefaultForType('smart'), 
           prompt_id: promptId, 
           usage: completion.usage 
         } 
@@ -198,12 +198,12 @@ export class WorldAIAdapter implements WorldAI {
     const promptId = 'generate_arc_summary';
     const contextData = { arcName: ctx.arcName };
     
-    log.debug('AI call', { promptId, model: modelRegistry.getDefault() });
+    log.debug('AI call', { promptId, modelType: 'smart' });
     
     try {
       const completion = await retryWithBackoff(
         () => chat({
-          model: modelRegistry.getDefault(),
+          modelType: 'smart', // World operations use smart models
           messages: [
             { role: 'system', content: ARC_SUMMARY_SYSTEM_PROMPT },
             { role: 'user', content: buildArcSummaryUserPrompt(ctx.arcName, ctx.arcIdea, ctx.beatDescriptions) }
@@ -241,7 +241,7 @@ export class WorldAIAdapter implements WorldAI {
       const args = validationResult.data;
       log.info('AI success', { 
         ai: { 
-          model: modelRegistry.getDefault(), 
+          model: modelRegistry.getDefaultForType('smart'), 
           prompt_id: promptId, 
           usage: completion.usage 
         } 

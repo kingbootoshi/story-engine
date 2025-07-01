@@ -36,28 +36,10 @@ export class LocationService {
    * Subscribe to world events
    */
   private subscribeToEvents() {
-    eventBus.on('world.created', (event) => this.handleWorldCreated(event));
+    // No longer subscribing to world.created - seeding is now explicit via seedLocationsForWorld
+    // eventBus.on('world.created', (event) => this.handleWorldCreated(event));
     eventBus.on('world.beat.created', (event) => this.handleBeatCreated(event));
     logger.info('LocationService subscribed to events');
-  }
-
-  /**
-   * Handle world creation by generating initial locations
-   */
-  private async handleWorldCreated(event: DomainEvent<WorldCreatedEvent>) {
-    logger.info('Handling world.created event', { 
-      worldId: event.payload.worldId,
-      correlation: event.payload.worldId 
-    });
-    
-    try {
-      await this.seedInitialMap(event);
-    } catch (error) {
-      logger.error('Failed to handle world.created', error, { 
-        worldId: event.payload.worldId,
-        correlation: event.payload.worldId 
-      });
-    }
   }
 
   /**
@@ -84,8 +66,9 @@ export class LocationService {
 
   /**
    * Generate initial world map using individual AI agents
+   * Now public to be called directly from WorldService
    */
-  async seedInitialMap(event: DomainEvent<WorldCreatedEvent>): Promise<void> {
+  public async seedInitialMap(event: DomainEvent<WorldCreatedEvent>): Promise<void> {
     const startTime = Date.now();
     logger.info('Seeding initial map for world', { 
       worldId: event.payload.worldId,
@@ -101,12 +84,22 @@ export class LocationService {
         correlation: event.payload.worldId
       });
       
-      // Use user_id from the event
+      // Use user_id from the event (owner who triggered the action)
       const userId = event.user_id;
       if (!userId) {
         logger.error('Event missing user_id', { worldId: event.payload.worldId });
         throw new Error('Event missing user_id for world creation');
       }
+      
+      // Emit progress event **after** we have a valid userId reference
+      eventBus.emit('location.seeding.progress', {
+        v: 1,
+        worldId: event.payload.worldId,
+        userId,
+        phase: 'regions',
+        status: 'started',
+        message: 'Generating world regions...'
+      }, userId);
       
       const regionResult = await this.ai.generateRegions({
         worldName: event.payload.name,
@@ -141,6 +134,17 @@ export class LocationService {
       );
 
       totalLocationCount += savedRegions.length;
+      
+      // Emit progress event for regions complete
+      eventBus.emit('location.seeding.progress', {
+        v: 1,
+        worldId: event.payload.worldId,
+        userId: userId,
+        phase: 'regions',
+        status: 'completed',
+        message: `Created ${savedRegions.length} regions`,
+        count: savedRegions.length
+      }, userId);
 
       // Emit events for created regions
       for (const region of savedRegions) {
@@ -163,6 +167,16 @@ export class LocationService {
         userId
       };
 
+      // Emit progress for location generation start
+      eventBus.emit('location.seeding.progress', {
+        v: 1,
+        worldId: event.payload.worldId,
+        userId: userId,
+        phase: 'locations',
+        status: 'started',
+        message: `Generating locations for ${savedRegions.length} regions...`
+      }, userId);
+      
       // Process all regions in parallel
       const regionTasks = savedRegions.map(async (region) => {
         logger.info('Generating locations for region', {
@@ -342,6 +356,18 @@ export class LocationService {
       totalLocationCount = savedRegions.length + regionResults.reduce((sum, result) => 
         sum + result.cityCount + result.landmarkCount + result.wildernessCount, 0
       );
+      
+      // Emit progress for locations complete
+      const locationCount = totalLocationCount - savedRegions.length;
+      eventBus.emit('location.seeding.progress', {
+        v: 1,
+        worldId: event.payload.worldId,
+        userId: userId,
+        phase: 'locations',
+        status: 'completed',
+        message: `Created ${locationCount} locations across all regions`,
+        count: locationCount
+      }, userId);
 
       // Step 3: Emit location.world.complete event
       const completionEvent: LocationWorldCompleteEvent = {
@@ -531,6 +557,26 @@ export class LocationService {
     });
   }
 
+
+  /**
+   * Seed locations for a world - callable directly without event
+   */
+  public async seedLocationsForWorld(worldId: string, worldName: string, worldDescription: string, userId: string): Promise<void> {
+    // Create a synthetic event to reuse the existing logic
+    const event: DomainEvent<WorldCreatedEvent> = {
+      topic: 'world.created',
+      ts: new Date().toISOString(),
+      user_id: userId,
+      payload: {
+        worldId,
+        userId,
+        name: worldName,
+        description: worldDescription
+      }
+    };
+    
+    await this.seedInitialMap(event);
+  }
 
   /**
    * Public methods for direct location management

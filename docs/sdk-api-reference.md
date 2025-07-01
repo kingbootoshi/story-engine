@@ -17,7 +17,7 @@ x-api-key: YOUR_API_KEY
 All REST API endpoints are prefixed with:
 
 ```
-https://api.storyengine.dev/api
+https://playstoryengine.com/api
 ```
 
 ## Core Concepts
@@ -539,18 +539,18 @@ All examples use the `x-api-key` header for authentication and demonstrate direc
 
 ```bash
 # List all worlds
-curl -X GET "https://api.storyengine.dev/api/worlds" \
+curl -X GET "https://playstoryengine.com/api/worlds" \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json"
 
 # Create a world
-curl -X POST "https://api.storyengine.dev/api/worlds" \
+curl -X POST "https://playstoryengine.com/api/worlds" \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"name": "My World", "description": "A fantasy realm"}'
 
 # Record a world event (replace with actual world ID)
-curl -X POST "https://api.storyengine.dev/api/worlds/YOUR_WORLD_ID/events" \
+curl -X POST "https://playstoryengine.com/api/worlds/YOUR_WORLD_ID/events" \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -560,7 +560,7 @@ curl -X POST "https://api.storyengine.dev/api/worlds/YOUR_WORLD_ID/events" \
   }'
 
 # Progress the current arc (replace with actual arc ID and optional world ID)
-curl -X POST "https://api.storyengine.dev/api/worlds/arcs/YOUR_ARC_ID/progress" \
+curl -X POST "https://playstoryengine.com/api/worlds/arcs/YOUR_ARC_ID/progress" \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{

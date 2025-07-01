@@ -415,12 +415,12 @@ export function ApiKeys() {
         <h4 className="api-keys__instructions-subtitle">Example with curl</h4>
         <div className="api-keys__code">
           <pre><code>{`curl -H "x-api-key: YOUR_API_KEY" \\
-  https://api.storyengine.dev/api/worlds`}</code></pre>
+  https://playstoryengine.com/api/worlds`}</code></pre>
         </div>
         
         <h4 className="api-keys__instructions-subtitle">Example with JavaScript</h4>
         <div className="api-keys__code">
-          <pre><code>{`const response = await fetch('https://api.storyengine.dev/api/worlds', {
+          <pre><code>{`const response = await fetch('https://playstoryengine.com/api/worlds', {
   headers: {
     'x-api-key': 'YOUR_API_KEY',
     'Content-Type': 'application/json'

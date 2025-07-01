@@ -32,9 +32,10 @@ export class FactionService {
   }
 
   private setupEventHandlers(): void {
-    eventBus.on('location.world.complete', async (evt: DomainEvent<LocationWorldCompleteEvent>) => {
-      await this.seedFactions(evt);
-    });
+    // No longer subscribing to location.world.complete - seeding is now explicit via seedFactionsForWorld
+    // eventBus.on('location.world.complete', async (evt: DomainEvent<LocationWorldCompleteEvent>) => {
+    //   await this.seedFactions(evt);
+    // });
     
     eventBus.on('world.beat.created', async (evt: DomainEvent<StoryBeatCreated>) => {
       await this.reactToBeat(evt);
@@ -300,6 +301,26 @@ export class FactionService {
       .slice(-limit)
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }
+  
+  /**
+   * Seed factions for a world - callable directly without event
+   */
+  public async seedFactionsForWorld(worldId: string, userId: string): Promise<void> {
+    // Create a synthetic event to reuse the existing logic
+    const event: DomainEvent<LocationWorldCompleteEvent> = {
+      topic: 'location.world.complete',
+      ts: new Date().toISOString(),
+      user_id: userId,
+      payload: {
+        v: 1,
+        worldId,
+        regionCount: 0, // Not used in faction seeding
+        totalLocationCount: 0 // Not used in faction seeding
+      }
+    };
+    
+    await this.seedFactions(event);
+  }
 
   async generateDoctrine(id: string): Promise<Faction> {
     const faction = await this.repo.findById(id);
@@ -382,7 +403,7 @@ export class FactionService {
     }
   }
 
-  private async seedFactions(event: DomainEvent<LocationWorldCompleteEvent>): Promise<void> {
+  public async seedFactions(event: DomainEvent<LocationWorldCompleteEvent>): Promise<void> {
     const { worldId } = event.payload;
     logger.info('Seeding initial factions for world', { worldId });
     
@@ -399,6 +420,16 @@ export class FactionService {
     
     const initialFactionCount = 2 + Math.floor(Math.random() * 2);
     
+    // Emit progress event
+    eventBus.emit('faction.seeding.progress', {
+      v: 1,
+      worldId,
+      userId,
+      phase: 'factions',
+      status: 'started',
+      message: `Generating ${initialFactionCount} factions...`
+    }, userId);
+    
     for (let i = 0; i < initialFactionCount; i++) {
       const existingFactions = await this.repo.findByWorldId(worldId);
       const existingNames = existingFactions.map(f => `${f.name}: ${f.ideology}`);
@@ -410,9 +441,31 @@ export class FactionService {
         userId
       });
       
-      await this.create(factionData);
+      const faction = await this.create(factionData);
+      
+      // Emit individual faction created event for real-time UI updates
+      eventBus.emit('faction.entity.created', {
+        v: 1,
+        worldId,
+        userId,
+        factionId: faction.id,
+        factionName: faction.name,
+        current: i + 1,
+        total: initialFactionCount
+      }, userId);
     }
 
+    // Emit progress complete
+    eventBus.emit('faction.seeding.progress', {
+      v: 1,
+      worldId,
+      userId,
+      phase: 'factions',
+      status: 'completed',
+      message: `Created ${initialFactionCount} factions`,
+      count: initialFactionCount
+    }, userId);
+    
     // Emit a single event after all initial factions are seeded so that other
     // modules (e.g. Characters) can safely begin their own seeding logic.
     eventBus.emit<Events.FactionSeedingComplete>('faction.seeding.complete', {

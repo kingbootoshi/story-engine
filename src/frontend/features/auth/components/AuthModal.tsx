@@ -147,7 +147,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         console.debug('[AuthModal] Sign in successful, redirecting to dashboard');
         // Close modal and redirect
         onClose();
-        window.location.href = '/app/worlds';
+        window.location.href = '/app';
       } else {
         // Signup flow
         if (password !== confirmPassword) {
@@ -157,7 +157,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         console.debug('[AuthModal] Sign up successful, redirecting to dashboard');
         // Close modal and redirect
         onClose();
-        window.location.href = '/app/worlds';
+        window.location.href = '/app';
       }
     } catch (err) {
       console.error('[AuthModal] Auth error:', err);

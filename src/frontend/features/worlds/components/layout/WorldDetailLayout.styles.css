@@ -61,6 +61,14 @@
   margin-bottom: theme('spacing.6');
 }
 
+/* Desktop-only height constraints to prevent excessive scrolling */
+@media (min-width: theme('screens.md')) {
+  .world-detail__unified-panel {
+    max-height: calc(100vh - 200px); /* Account for header and arc controls */
+    height: 600px; /* Fixed height for consistency */
+  }
+}
+
 .world-detail__section {
   background: rgba(30, 41, 59, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -72,6 +80,7 @@
   flex-direction: column;
   height: 100%;
   min-height: 400px;
+  overflow: hidden; /* Prevent content from breaking out */
 }
 
 /* Legacy panel styles for compatibility */
@@ -189,14 +198,328 @@
   }
 }
 
+/* ========================================
+   ENHANCED MOBILE STYLES 
+   ======================================== */
+
+/* Mobile Tab Navigation */
+.world-detail__mobile-tabs {
+  display: none;
+  position: sticky;
+  top: 64px; /* Account for app header */
+  left: 0;
+  right: 0;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  z-index: 100;
+  padding: theme('spacing.2') 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.world-detail__mobile-tabs-list {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 theme('spacing.2');
+  gap: theme('spacing.1');
+}
+
+.world-detail__mobile-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: theme('spacing.1');
+  padding: theme('spacing.2') theme('spacing.1');
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: theme('borderRadius.md');
+}
+
+.world-detail__mobile-tab--active {
+  color: white;
+  background: rgba(59, 130, 246, 0.2);
+}
+
+.world-detail__mobile-tab-icon {
+  font-size: 22px;
+}
+
+.world-detail__mobile-tab-label {
+  font-size: theme('fontSize.xs');
+  font-family: 'Cinzel', serif;
+}
+
+/* Mobile Content Container */
+.world-detail__mobile-content {
+  display: none;
+  padding-top: 0; /* Remove padding as tabs handle their own positioning */
+}
+
+/* Mobile Section Styles */
 @media (max-width: theme('screens.sm')) {
-  .world-detail__dashboard {
-    padding-left: theme('spacing.2');
-    padding-right: theme('spacing.2');
+  /* Hide desktop layout */
+  .world-detail__unified-panel {
+    display: none;
   }
   
-  .world-detail__panel {
+  /* Hide desktop arc sections on mobile */
+  .world-detail__dashboard > .world-detail__arc-control-panel,
+  .world-detail__dashboard > .world-detail__arc-progress,
+  .world-detail__dashboard > .world-detail__current-beat-summary,
+  .world-detail__dashboard > .world-detail__no-arc-panel,
+  .world-detail__dashboard > .world-seeding-panel {
+    display: none;
+  }
+  
+  /* Show mobile navigation */
+  .world-detail__mobile-tabs {
+    display: block;
+  }
+  
+  .world-detail__mobile-content {
+    display: block;
+  }
+  
+  /* Mobile dashboard spacing */
+  .world-detail__dashboard {
+    padding: 0;
+    padding-bottom: theme('spacing.4');
+  }
+  
+  /* Mobile sections full width */
+  .world-detail__section {
+    border-radius: 0;
+    margin: 0;
     padding: theme('spacing.4');
+    min-height: calc(100vh - 120px);
+    box-shadow: none;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Hide inactive sections */
+  .world-detail__section:not(.world-detail__section--active) {
+    display: none;
+  }
+  
+  /* Mobile world info adjustments */
+  .world-detail__world-info {
+    padding: theme('spacing.3');
+    margin-bottom: theme('spacing.3');
+  }
+  
+  .world-detail__title {
+    font-size: theme('fontSize.2xl');
+    text-align: left;
+  }
+  
+  .world-detail__description {
+    font-size: theme('fontSize.base');
+    text-align: left;
+  }
+  
+  .world-detail__sphere-container {
+    margin: theme('spacing.3') 0;
+  }
+  
+  .world-detail__sphere {
+    width: 120px !important;
+    height: 120px !important;
+  }
+  
+  /* Mobile Arc Control Panel */
+  .world-detail__arc-control-panel {
+    padding: theme('spacing.3');
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  
+  .world-detail__arc-header {
+    flex-direction: column;
+    gap: theme('spacing.3');
+    align-items: stretch;
+  }
+  
+  .world-detail__arc-title {
+    font-size: theme('fontSize.lg');
+  }
+  
+  .world-detail__arc-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: theme('spacing.2');
+  }
+  
+  .world-detail__add-event-button-primary,
+  .world-detail__progress-button-primary {
+    width: 100%;
+    font-size: theme('fontSize.base');
+    padding: theme('spacing.3') theme('spacing.4');
+  }
+  
+  /* Mobile Beat Timeline */
+  .world-detail__arc-progress {
+    margin: theme('spacing.3') 0;
+  }
+  
+  .world-detail__progress-bar-enhanced {
+    height: 8px;
+  }
+  
+  .world-detail__beat-marker {
+    width: 24px;
+    height: 24px;
+  }
+  
+  /* Mobile Beat Details */
+  .world-detail__current-beat-summary {
+    margin: theme('spacing.2') 0;
+    padding: theme('spacing.3');
+  }
+  
+  .world-detail__beat-summary-title {
+    font-size: theme('fontSize.base');
+  }
+  
+  .world-detail__beat-expanded {
+    margin-top: theme('spacing.3');
+    padding-top: theme('spacing.3');
+  }
+  
+  .world-detail__beat-details-grid {
+    grid-template-columns: 1fr;
+    gap: theme('spacing.3');
+  }
+  
+  /* Mobile Section Headers */
+  .world-detail__section-header {
+    margin-bottom: theme('spacing.3');
+    padding-bottom: theme('spacing.2');
+  }
+  
+  .world-detail__section-title {
+    font-size: theme('fontSize.lg');
+  }
+  
+  /* Mobile Lists */
+  .world-detail__location-list,
+  .world-detail__character-list,
+  .world-detail__faction-list {
+    max-height: none;
+    padding-bottom: theme('spacing.2');
+  }
+  
+  .world-detail__location-item,
+  .world-detail__character-item,
+  .world-detail__faction-item {
+    padding: theme('spacing.3');
+    font-size: theme('fontSize.base');
+    margin: theme('spacing.2') 0;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Mobile Events */
+  .world-detail__events-list {
+    padding: 0 theme('spacing.2');
+  }
+  
+  .world-detail__event-item {
+    margin-bottom: theme('spacing.2');
+    padding: theme('spacing.3');
+  }
+  
+  /* Mobile error and loading states */
+  .world-detail__error {
+    margin: theme('spacing.3');
+    font-size: theme('fontSize.sm');
+  }
+  
+  /* No Arc Panel Mobile */
+  .world-detail__no-arc-panel {
+    padding: theme('spacing.6') theme('spacing.4');
+    margin: theme('spacing.3');
+  }
+  
+  .world-detail__no-arc-icon {
+    font-size: theme('fontSize.5xl');
+  }
+  
+  .world-detail__create-arc-button-hero {
+    font-size: theme('fontSize.base');
+    padding: theme('spacing.3') theme('spacing.4');
+  }
+  
+  /* Mobile Header */
+  .world-detail__header {
+    padding: theme('spacing.3');
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .world-detail__back-link {
+    font-size: theme('fontSize.sm');
+  }
+  
+  /* Touch-friendly scrolling */
+  .world-detail__locations-content,
+  .world-detail__characters-content,
+  .world-detail__factions-content,
+  .world-detail__events-section {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
+    flex: 1;
+  }
+  
+  /* Mobile form adjustments */
+  .world-detail__form-group textarea {
+    min-height: 80px;
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+  
+  .world-detail__form-group select {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+  
+  /* Arc section container for mobile */
+  .world-detail__arc-section-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: theme('spacing.4');
+  }
+}
+
+/* Extra small mobile adjustments */
+@media (max-width: 400px) {
+  .world-detail__mobile-tab-label {
+    display: none;
+  }
+  
+  .world-detail__mobile-tabs {
+    padding: theme('spacing.1') 0;
+  }
+  
+  .world-detail__mobile-tab {
+    padding: theme('spacing.2') theme('spacing.1');
+  }
+  
+  .world-detail__mobile-tab-icon {
+    font-size: 20px;
+  }
+  
+  .world-detail__title {
+    font-size: theme('fontSize.xl');
+  }
+  
+  .world-detail__arc-title {
+    font-size: theme('fontSize.base');
   }
 }
 
@@ -222,5 +545,102 @@
   
   .world-detail__unified-panel {
     gap: theme('spacing.8');
+  }
+}
+
+/* Desktop-specific enhancements for content organization */
+@media (min-width: theme('screens.md')) {
+  /* Scroll shadow indicators */
+  .world-detail__locations-content,
+  .world-detail__characters-content,
+  .world-detail__factions-content,
+  .world-detail__events-list {
+    position: relative;
+    /* Add subtle shadows at top/bottom when scrollable */
+    background:
+      linear-gradient(rgba(30, 41, 59, 0.5) 30%, transparent),
+      linear-gradient(transparent, rgba(30, 41, 59, 0.5) 70%) 0 100%,
+      radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, 0.2), transparent),
+      radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, 0.2), transparent) 0 100%;
+    background-repeat: no-repeat;
+    background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px;
+    background-attachment: local, local, scroll, scroll;
+  }
+  
+  /* Ensure entity sections properly share space */
+  .world-detail__entity-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* Important for nested flexbox */
+  }
+  
+  .world-detail__entity-section + .world-detail__entity-section {
+    margin-top: theme('spacing.4');
+    padding-top: theme('spacing.4');
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Adjust section headers for compactness */
+  .world-detail__section-header {
+    flex-shrink: 0;
+    margin-bottom: theme('spacing.3');
+    padding-bottom: theme('spacing.2');
+  }
+  
+  .world-detail__section-title {
+    font-size: theme('fontSize.lg');
+  }
+  
+  /* Scroll hint indicator */
+  .world-detail__scroll-hint {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: theme('fontSize.sm');
+    display: flex;
+    align-items: center;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
+  
+  /* Visual hint for scrollable areas */
+  .world-detail__locations-content:hover,
+  .world-detail__characters-content:hover,
+  .world-detail__factions-content:hover,
+  .world-detail__events-list:hover {
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    border-radius: theme('borderRadius.md');
+  }
+  
+  /* Ensure center column uses space efficiently */
+  .world-detail__section--center {
+    display: flex;
+    flex-direction: column;
+    gap: theme('spacing.4');
+  }
+  
+  /* Compact padding for all sections on desktop */
+  .world-detail__section {
+    padding: theme('spacing.4');
+  }
+  
+  /* Add subtle "more content" indicator when scrollable */
+  [data-scrollable="true"]::after {
+    content: "Scroll for more";
+    position: absolute;
+    bottom: theme('spacing.2');
+    right: theme('spacing.2');
+    font-size: theme('fontSize.xs');
+    color: rgba(255, 255, 255, 0.4);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  [data-scrollable="true"]:hover::after {
+    opacity: 1;
   }
 }

@@ -14,7 +14,7 @@ export function Login() {
   // Redirect to dashboard if already logged in
   useEffect(() => {
     if (user) {
-      navigate('/app/worlds');
+      navigate('/app');
     }
   }, [user, navigate]);
 

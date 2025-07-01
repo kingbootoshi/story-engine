@@ -38,6 +38,7 @@ export class FactionAIAdapter implements IFactionAI {
     try {
       const completion = await retryWithBackoff(
         () => chat({
+          modelType: 'smart', // Faction generation uses smart models
           messages: [
             { role: 'system', content: GENERATE_FACTION_SYSTEM_PROMPT },
             { role: 'user', content: buildGenerateFactionUserPrompt(
@@ -124,6 +125,7 @@ export class FactionAIAdapter implements IFactionAI {
     try {
       const completion = await retryWithBackoff(
         () => chat({
+          modelType: 'smart', // Doctrine evolution uses smart models
           messages: [
             { role: 'system', content: UPDATE_DOCTRINE_SYSTEM_PROMPT },
             { role: 'user', content: buildDoctrineUpdateUserPrompt(
@@ -221,6 +223,7 @@ export class FactionAIAdapter implements IFactionAI {
       
       const completion = await retryWithBackoff(
         () => chat({
+          modelType: 'smart', // Diplomatic relations use smart models
           messages: [
             { role: 'system', content: EVALUATE_RELATIONS_SYSTEM_PROMPT },
             { role: 'user', content: buildEvaluateRelationsUserPrompt(
@@ -299,6 +302,7 @@ export class FactionAIAdapter implements IFactionAI {
     try {
       const completion = await retryWithBackoff(
         () => chat({
+          modelType: 'small', // Simple propaganda generation uses small models
           messages: [
             { 
               role: 'system', 
