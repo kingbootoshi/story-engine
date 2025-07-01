@@ -66,6 +66,7 @@ export class CharacterAIAdapter implements ICharacterAI {
 
       const completion = await retryWithBackoff(
         () => chat({
+          modelType: 'smart', // Character batch generation uses smart models for seeding
           messages: [
             { role: 'system', content: GENERATE_CHARACTERS_SYSTEM_PROMPT },
             { role: 'user', content: userPrompt }
@@ -149,6 +150,7 @@ export class CharacterAIAdapter implements ICharacterAI {
 
       const completion = await retryWithBackoff(
         () => chat({
+          modelType: 'small', // Character reactions use small models
           messages: [
             { role: 'system', content: EVALUATE_BEAT_SYSTEM_PROMPT },
             { role: 'user', content: userPrompt }
@@ -251,6 +253,7 @@ export class CharacterAIAdapter implements ICharacterAI {
 
       const completion = await retryWithBackoff(
         () => chat({
+          modelType: 'small', // Spawn analysis uses small models
           messages: [
             { role: 'system', content: SPAWN_CHARACTERS_SYSTEM_PROMPT },
             { role: 'user', content: userPrompt }

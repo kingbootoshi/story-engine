@@ -76,3 +76,94 @@
   margin-bottom: theme('spacing.4');
   text-align: center;
 }
+
+.world-detail__form-group {
+  margin-bottom: theme('spacing.4');
+}
+
+.world-detail__form-group label {
+  display: block;
+  margin-bottom: theme('spacing.2');
+  color: rgba(255, 255, 255, 0.8);
+  font-family: 'Cinzel', serif;
+}
+
+.world-detail__form-group textarea {
+  width: 100%;
+  padding: theme('spacing.3');
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: theme('borderRadius.md');
+  color: white;
+  resize: vertical;
+  min-height: 100px;
+}
+
+.world-detail__form-group textarea:focus {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.5);
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.world-detail__form-actions {
+  display: flex;
+  gap: theme('spacing.3');
+  margin-top: theme('spacing.4');
+}
+
+.world-detail__submit-button {
+  display: flex;
+  align-items: center;
+  gap: theme('spacing.2');
+  padding: theme('spacing.3') theme('spacing.5');
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: white;
+  border: none;
+  border-radius: theme('borderRadius.md');
+  font-family: 'Cinzel', serif;
+  font-weight: theme('fontWeight.medium');
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.world-detail__submit-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+}
+
+.world-detail__submit-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.world-detail__button-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.world-detail__cancel-button {
+  padding: theme('spacing.3') theme('spacing.5');
+  background-color: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: theme('borderRadius.md');
+  font-family: 'Cinzel', serif;
+  font-weight: theme('fontWeight.medium');
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.world-detail__cancel-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.4);
+}

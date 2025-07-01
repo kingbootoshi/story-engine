@@ -87,6 +87,7 @@ export class LocationAIAdapter implements LocationAI {
       
       const completion = await retryWithBackoff(
         () => chat({
+          modelType: 'smart', // World map generation uses smart models
           messages,
           tools: [{ type: 'function', function: WORLD_MAP_GENERATION_SCHEMA }],
           tool_choice: { type: 'function', function: { name: 'generate_world_map' } },
@@ -161,6 +162,7 @@ export class LocationAIAdapter implements LocationAI {
       
       const completion = await retryWithBackoff(
         () => chat({
+          modelType: 'smart', // Region generation uses smart models
           messages,
           tools: [{ type: 'function', function: REGION_GENERATION_SCHEMA }],
           tool_choice: { type: 'function', function: { name: 'generate_regions' } },
@@ -243,6 +245,7 @@ export class LocationAIAdapter implements LocationAI {
       
       const completion = await retryWithBackoff(
         () => chat({
+          modelType: 'smart', // City generation uses smart models
           messages,
           tools: [{ type: 'function', function: CITY_GENERATION_SCHEMA }],
           tool_choice: { type: 'function', function: { name: 'generate_cities' } },
@@ -329,6 +332,7 @@ export class LocationAIAdapter implements LocationAI {
       
       const completion = await retryWithBackoff(
         () => chat({
+          modelType: 'smart', // Landmark generation uses smart models
           messages,
           tools: [{ type: 'function', function: LANDMARK_GENERATION_SCHEMA }],
           tool_choice: { type: 'function', function: { name: 'generate_landmarks' } },
@@ -415,6 +419,7 @@ export class LocationAIAdapter implements LocationAI {
       
       const completion = await retryWithBackoff(
         () => chat({
+          modelType: 'smart', // Wilderness generation uses smart models
           messages,
           tools: [{ type: 'function', function: WILDERNESS_GENERATION_SCHEMA }],
           tool_choice: { type: 'function', function: { name: 'generate_wilderness' } },
@@ -501,6 +506,7 @@ export class LocationAIAdapter implements LocationAI {
       
       const completion = await retryWithBackoff(
         () => chat({
+          modelType: 'smart', // Location mutations use smart models
           messages,
           tools: [{ type: 'function', function: LOCATION_MUTATION_SCHEMA }],
           tool_choice: { type: 'function', function: { name: 'mutate_locations' } },
@@ -574,6 +580,7 @@ export class LocationAIAdapter implements LocationAI {
       
       const completion = await retryWithBackoff(
         () => chat({
+          modelType: 'small', // Mutation checks use small models
           messages,
           tools: [{ type: 'function', function: MUTATION_DECISION_SCHEMA }],
           tool_choice: { type: 'function', function: { name: 'decide_mutation' } },
@@ -678,6 +685,7 @@ Provide an enriched description that:
       ];
 
       const completion = await chat({
+        modelType: 'small', // Description enrichment uses small models
         messages,
         temperature: 0.8,
         max_tokens: 800,

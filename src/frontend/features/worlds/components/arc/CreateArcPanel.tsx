@@ -1,6 +1,7 @@
 interface CreateArcPanelProps {
   showCreateArc: boolean;
   storyIdea: string;
+  isCreating: boolean;
   onStoryIdeaChange: (value: string) => void;
   onToggleForm: () => void;
   onSubmit: (e: React.FormEvent) => void;
@@ -9,6 +10,7 @@ interface CreateArcPanelProps {
 export function CreateArcPanel({ 
   showCreateArc, 
   storyIdea, 
+  isCreating,
   onStoryIdeaChange, 
   onToggleForm, 
   onSubmit 
@@ -42,17 +44,32 @@ export function CreateArcPanel({
                 onChange={(e) => onStoryIdeaChange(e.target.value)}
                 placeholder="Describe your story idea, or leave blank for a random arc..."
                 rows={4}
+                disabled={isCreating}
               />
             </div>
             <div className="world-detail__form-actions">
-              <button type="submit" className="world-detail__submit-button">
-                <span className="material-icons">auto_stories</span>
-                Create Arc
+              <button 
+                type="submit" 
+                className="world-detail__submit-button"
+                disabled={isCreating}
+              >
+                {isCreating ? (
+                  <>
+                    <div className="world-detail__button-spinner"></div>
+                    <span>Creating Arc...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-icons">auto_stories</span>
+                    <span>Create Arc</span>
+                  </>
+                )}
               </button>
               <button 
                 type="button" 
                 onClick={onToggleForm}
                 className="world-detail__cancel-button"
+                disabled={isCreating}
               >
                 Cancel
               </button>

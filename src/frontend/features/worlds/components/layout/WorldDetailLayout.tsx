@@ -47,6 +47,7 @@ export function WorldDetailLayout() {
 
   const {
     isProgressing,
+    isCreatingArc,
     showCreateArc,
     storyIdea,
     setShowCreateArc,
@@ -304,6 +305,7 @@ export function WorldDetailLayout() {
           <CreateArcPanel
             showCreateArc={showCreateArc}
             storyIdea={storyIdea}
+            isCreating={isCreatingArc}
             onStoryIdeaChange={setStoryIdea}
             onToggleForm={() => setShowCreateArc(!showCreateArc)}
             onSubmit={handleCreateArc}
@@ -447,6 +449,7 @@ export function WorldDetailLayout() {
                   <CreateArcPanel
                     showCreateArc={showCreateArc}
                     storyIdea={storyIdea}
+                    isCreating={isCreatingArc}
                     onStoryIdeaChange={setStoryIdea}
                     onToggleForm={() => setShowCreateArc(!showCreateArc)}
                     onSubmit={handleCreateArc}
