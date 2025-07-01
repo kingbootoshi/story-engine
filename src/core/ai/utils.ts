@@ -109,11 +109,11 @@ export async function retryWithBackoff<T>(
     } catch (error) {
       lastError = error as Error;
       
-      // Don't retry validation errors - they won't succeed on retry
+      // Don't retry parsing errors or response errors
+      // But DO retry validation errors - the AI might generate correct schema on retry
       if (
         error instanceof AIParsingError ||
-        error instanceof AIResponseError ||
-        (error as any).name === 'AIValidationError'
+        error instanceof AIResponseError
       ) {
         throw error;
       }

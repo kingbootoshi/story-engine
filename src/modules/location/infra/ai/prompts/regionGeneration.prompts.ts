@@ -63,52 +63,55 @@ export function buildRegionGenerationPrompt(context: RegionGenerationContext) {
   return [
     {
       role: 'system' as const,
-      content: `You are a world-building expert creating the major geographical regions for a new world. Your task is to generate 2-4 regions that define the world's geography and set the stage for diverse locations and stories.
+      content: `You are a world-building expert creating the major geographical regions for a new world.
+
+CRITICAL: You MUST generate regions with this EXACT JSON structure:
+
+EXAMPLE OUTPUT (this is what your response should look like):
+{
+  "regions": [
+    {
+      "name": "The Shattered Coast",
+      "description": "A treacherous coastline where ancient cliffs meet turbulent seas. The region is dotted with fishing villages clinging to rocky outcrops, their inhabitants hardy folk who brave the dangerous waters for the abundant catch. Strange rock formations jut from the waves, remnants of a cataclysm that reshaped the land centuries ago. The constant storms and unpredictable tides make navigation perilous, but also hide numerous sea caves rumored to contain lost treasures.",
+      "tags": ["coastal", "stormy", "fishing", "treacherous", "mysterious"],
+      "relative_position": { "x": 15, "y": 40 }
+    },
+    {
+      "name": "The Verdant Heartlands", 
+      "description": "Rolling hills and fertile valleys stretch as far as the eye can see, crisscrossed by gentle rivers and dotted with prosperous farming communities. This is the breadbasket of the realm, where golden wheat fields wave in the warm breeze and orchards heavy with fruit line the well-maintained roads. Ancient oak groves mark the boundaries between settlements, their depths holding druidic circles and forgotten shrines. The region's prosperity makes it both a target for raiders and a center of political power.",
+      "tags": ["fertile", "agricultural", "prosperous", "peaceful", "central"],
+      "relative_position": { "x": 50, "y": 55 }
+    }
+  ]
+}
+
+FORMAT REQUIREMENTS:
+✓ Generate 2-4 regions total
+✓ Each region MUST have: name, description, tags (array), relative_position (with x,y)
+✓ Description: 100-200 words of narrative detail (no bullet points)
+✓ Tags: Array of 3-6 descriptive strings
+✓ Coordinates: Numbers between 0-100 (spread regions across the map)
+
+COMMON MISTAKES TO AVOID:
+✗ Don't put tags inside the description text
+✗ Don't use strings for coordinates (use numbers: 50 not "50")
+✗ Don't make all regions clustered together
+✗ Don't exceed 4 regions or generate less than 2`
+    },
+    {
+      role: 'user' as const,
+      content: `Generate the major regions for this world:
 
 World Name: ${context.worldName}
 World Description: ${context.worldDescription}
 
-IMPORTANT: You must return a JSON object with the following exact structure for each region:
+Create 2-4 distinct regions that:
+- Represent different geographical areas (coast, mountains, plains, forests, deserts, etc.)
+- Are spread across the map (use the full 0-100 coordinate range)
+- Have unique characteristics that create natural story potential
+- Feel cohesive with the world's theme
 
-{
-  "name": "Region Name",
-  "description": "A rich description of 100-200 words (NO tags in the description text)",
-  "tags": ["tag1", "tag2", "tag3"],  // Array of descriptive string tags
-  "relative_position": {
-    "x": 50,  // Number between 0-100
-    "y": 50   // Number between 0-100
-  }
-}
-
-Guidelines:
-1. Create 2-4 major regions that represent distinct geographical areas
-2. Each region should have unique characteristics that differentiate it from others
-3. Consider natural boundaries (mountains, rivers, seas) between regions
-4. Ensure regions are spread across the world map (use full 0-100 coordinate range)
-5. Create evocative names that fit the world's theme
-6. Write rich descriptions (100-200 words) that establish:
-   - Physical geography and climate
-   - Natural resources or notable features
-   - General atmosphere and character
-   - Hints at potential stories or conflicts
-7. For the 'tags' field: Create an ARRAY of descriptive strings (e.g., ["coastal", "mountainous", "fertile"])
-   - DO NOT include tags in the description text
-   - Each region needs 3-6 relevant tags
-8. For the 'relative_position' field: Provide x,y coordinates (0-100 scale)
-   - x=0 is far west, x=100 is far east
-   - y=0 is far north, y=100 is far south
-   - Spread regions across the map
-9. Consider how regions might interact (trade, conflict, isolation)
-
-CRITICAL Requirements:
-- Every region MUST have ALL four fields: name, description, tags (as array), relative_position (with x,y)
-- Tags must be a separate array field, NOT text within the description
-- Description should focus on narrative details, not list tags
-- All coordinates must be numbers between 0 and 100`
-    },
-    {
-      role: 'user' as const,
-      content: 'Generate the major regions for this world. Remember to include all required fields (name, description, tags array, and relative_position with x,y coordinates) for each region.'
+Remember to follow the exact JSON structure shown in the example above.`
     }
   ];
 }

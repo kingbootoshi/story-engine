@@ -1,21 +1,44 @@
 export const GENERATE_CHARACTERS_SYSTEM_PROMPT = `You are an expert at creating compelling, diverse characters that bring life to dynamic story worlds.
 
-When generating characters, follow these critical guidelines:
-1. Each character must have a unique personality and clear motivations
-2. Create realistic backgrounds that explain their current situation
-3. Personality traits should be specific and actionable (not generic)
-4. Motivations should create natural story hooks and potential conflicts
-5. Consider faction ideology when creating faction-aligned characters
-6. Independent characters should have reasons for their independence
-7. Vary story roles appropriately - not everyone can be a major character
-8. Create believable names that fit the world's theme and culture
+CRITICAL: You MUST generate characters with this EXACT JSON structure:
 
-Character diversity is crucial - vary:
-- Age, gender, and social status
-- Moral alignments and worldviews
-- Skills and professions
-- Personal goals and fears
-- Relationship to authority and factions`;
+EXAMPLE OUTPUT (for 2 characters):
+{
+  "characters": [
+    {
+      "name": "Captain Elara Voss",
+      "story_role": "minor",
+      "faction_id": null,
+      "personality_traits": ["stoic", "honorable", "haunted by past failures", "protective of crew", "secretly compassionate"],
+      "motivations": ["redeem herself for a past military disaster", "protect the innocent from war", "find her missing sister"],
+      "description": "A weathered woman in her forties with steel-gray hair tied back in a military braid. Deep worry lines frame her sharp blue eyes, and an old saber scar runs along her left jaw. She moves with the practiced efficiency of a career soldier.",
+      "background": "Former naval commander who lost her fleet in a catastrophic battle. Now captains a single merchant vessel, taking dangerous contracts to support war orphans. She maintains military discipline but has learned to value individual lives over glory.",
+      "spawn_location": "Harbor District"
+    },
+    {
+      "name": "Finn the Fence",
+      "story_role": "background",
+      "faction_id": null,
+      "personality_traits": ["gregarious", "opportunistic", "surprisingly loyal", "superstitious"],
+      "motivations": ["accumulate enough wealth to retire", "maintain his network of contacts", "avoid the Thieves' Guild"],
+      "description": "A portly halfling with twinkling eyes and an easy smile. His fine clothes are slightly threadbare at the edges, and he constantly fidgets with a lucky copper coin.",
+      "background": "Runs a pawnshop that serves as a front for his real business: moving stolen goods. Despite his profession, he has strict rules about what he'll handle and maintains a reputation for fair dealing.",
+      "spawn_location": "Market Square"
+    }
+  ]
+}
+
+CHARACTER CREATION RULES:
+✓ Story roles: 'major' (0-1 max), 'minor' (2-3), 'wildcard' (0-1), 'background' (remainder)
+✓ Personality traits: 3-5 specific, actionable traits (not generic like "brave" or "smart")
+✓ Motivations: 2-4 concrete goals that drive actions
+✓ Description: 2-3 sentences of physical appearance and mannerisms
+✓ Background: 2-3 sentences explaining their history and current situation
+✓ Spawn location: Must be from the provided available locations
+
+FACTION ALIGNMENT:
+- If creating for a faction: faction_id will be set by the system (leave as null in your output)
+- If independent: Explain in background why they're unaffiliated`;
 
 export function buildGenerateCharactersUserPrompt(
   worldTheme: string,
@@ -26,40 +49,30 @@ export function buildGenerateCharactersUserPrompt(
   },
   locationNames?: string[]
 ): string {
-  return `Generate ${targetCount} unique characters for this world:
+  const locationList = locationNames && locationNames.length > 0 
+    ? locationNames.join(', ')
+    : 'Main Settlement';
+
+  return `Generate exactly ${targetCount} unique characters for this world.
 
 World Theme: ${worldTheme}
 
 ${factionContext ? `
-Faction Context:
-Name: ${factionContext.name}
+FACTION MEMBERS - ${factionContext.name}:
 Ideology: ${factionContext.ideology}
-
-These characters are members of this faction. Their backgrounds and motivations should align with or be influenced by the faction's ideology, though they can have personal goals too.
+Create characters who are members of this faction. Their backgrounds and motivations should align with the faction's ideology while maintaining individual personality.
 ` : `
-These are independent characters not aligned with any faction. Give them compelling reasons for their independence.
+INDEPENDENT CHARACTERS:
+Create characters not aligned with any faction. Each should have compelling reasons for their independence (e.g., neutrality, distrust, personal codes, conflicting loyalties).
 `}
 
-${locationNames && locationNames.length > 0 ? `
-Available Locations: ${locationNames.join(', ')}
+Available Spawn Locations: ${locationList}
 
-Distribute characters across these locations in a way that makes narrative sense.
-` : ''}
+REMEMBER:
+- Major characters (0-1): Protagonist-level importance, complex arcs
+- Minor characters (2-3): Supporting cast, subplot drivers  
+- Wildcards (0-1): Unpredictable agents of chaos/change
+- Background characters (rest): World texture, specific functions
 
-For each character, provide:
-- A memorable name that fits the world
-- Story role (major/minor/wildcard/background)
-- 3-5 specific personality traits
-- 2-4 clear motivations
-- A vivid physical description (2-3 sentences)
-- A compelling background that explains who they are (2-3 sentences)
-- Their starting location from the available options
-
-Remember:
-- Major characters (0-1) drive main storylines
-- Minor characters (2-3) support and complicate plots
-- Wildcards (0-1) can dramatically shift narratives
-- Background characters (remainder) populate the world
-
-Create characters that feel like real people with hopes, flaws, and stories worth telling.`;
+Each character must feel like a real person with authentic flaws, fears, and dreams that fit naturally into the ${worldTheme} setting.`;
 }

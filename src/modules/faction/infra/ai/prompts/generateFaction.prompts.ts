@@ -1,43 +1,73 @@
 export const GENERATE_FACTION_SYSTEM_PROMPT = `You are an expert at creating compelling factions that drive narrative conflict and political intrigue in dynamic worlds.
 
-When creating factions, follow these critical guidelines:
-1. Each faction must have a distinct ideology that drives their actions and decisions
-2. Factions should have clear territorial, ideological, or resource-based motivations
-3. Create believable power structures and membership numbers based on world context
-4. Ensure faction goals create natural tension with other existing factions
-5. Tags should reflect faction nature: 'militaristic', 'mercantile', 'theocratic', 'technological', 'tribal', etc.
-6. Consider the world's current state and how this faction emerged from it
+CRITICAL: You MUST generate factions with this EXACT JSON structure:
 
-The faction should feel like a natural product of the world's history and current conditions.`;
+EXAMPLE OUTPUT:
+{
+  "name": "The Ashen Brotherhood",
+  "ideology": "The world's suffering can only end through controlled destruction and rebirth. They believe that by burning away the corrupt institutions and weak-willed masses, a stronger civilization will rise from the ashes. Only those who prove their worth through trials by fire deserve to shape the new world.",
+  "status": "rising",
+  "members_estimate": 1000,
+  "tags": ["militaristic", "zealous", "secretive", "pyromaniac", "revolutionary"],
+  "banner_color": "#8B0000"
+}
+
+FACTION CREATION RULES:
+✓ Name: Evocative and memorable, reflecting their nature
+✓ Ideology: 2-3 sentences explaining core beliefs and goals
+✓ Status: 'rising', 'stable', or 'declining' based on world context
+✓ Members: Use powers of 10 (100, 1000, 10000, etc.)
+✓ Tags: 3-6 descriptive tags from this list (or similar):
+  - Political: 'democratic', 'autocratic', 'oligarchic', 'anarchist'
+  - Economic: 'mercantile', 'agrarian', 'industrial', 'socialist'
+  - Military: 'militaristic', 'pacifist', 'defensive', 'expansionist'
+  - Religious: 'theocratic', 'secular', 'zealous', 'tolerant'
+  - Social: 'egalitarian', 'hierarchical', 'xenophobic', 'cosmopolitan'
+  - Other: 'technological', 'magical', 'tribal', 'nomadic', 'secretive'
+✓ Banner color: Hex color code (optional, but adds flavor)
+
+COMMON MISTAKES TO AVOID:
+✗ Don't create generic "evil cult" or "good kingdom" factions
+✗ Don't make ideology too vague or too specific
+✗ Ensure member count makes sense for the faction type
+✗ Tags should reflect actual faction behavior, not aspirations`;
 
 export function buildGenerateFactionUserPrompt(
   worldTheme: string,
   existingFactions: string[],
   locationContext?: string
 ): string {
-  return `Generate a new faction for this world:
+  return `Generate a new faction for this world.
 
 World Theme: ${worldTheme}
 
 ${existingFactions.length > 0 ? `
-Existing Factions:
+EXISTING FACTIONS:
 ${existingFactions.map((f, i) => `${i + 1}. ${f}`).join('\n')}
 
-The new faction should complement or contrast with existing factions to create interesting dynamics.
-` : 'This will be the first faction in this world. Create a foundational power structure.'}
+Create a faction that:
+- Complements OR conflicts with existing factions
+- Fills a different niche or represents opposing values
+- Creates interesting diplomatic dynamics
+` : `
+FIRST FACTION:
+This will be the first faction in this world. Create a foundational power structure that:
+- Reflects the world's current state
+- Has clear territorial or ideological claims
+- Sets the stage for future conflicts
+`}
 
 ${locationContext ? `
-Location Context:
+LOCATION CONTEXT:
 ${locationContext}
-
-Consider how this faction might relate to or control these locations.
+Consider how this faction might control, influence, or relate to these locations.
 ` : ''}
 
-Create a faction with:
-- A compelling name that reflects their nature
-- An ideology that drives their actions (2-3 sentences)
-- Appropriate member count (use powers of 10: 100, 1000, 10000, etc.)
-- 3-5 descriptive tags
-- Initial status (rising/stable/declining)
-- Optional: banner color (hex) and home location if applicable`;
+REMEMBER:
+- The faction should feel like a natural product of this world's conditions
+- Their goals should create story potential and conflicts
+- They need both strengths and vulnerabilities
+- Member count should match their influence and reach
+
+Follow the EXACT JSON structure shown in the system prompt example.`;
 }

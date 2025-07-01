@@ -548,34 +548,123 @@ export class WorldService {
       phases: ['locations', 'factions', 'characters']
     }, userId);
     
+    // Track errors for each phase
+    const errors: Array<{ phase: string; error: Error }> = [];
+    let successfulPhases: string[] = [];
+    
+    // Step 1: Seed locations (continue on failure)
     try {
-      // Step 1: Seed locations
       logger.info('Seeding locations', { worldId });
       const locationService = container.resolve(LocationService);
       await locationService.seedLocationsForWorld(worldId, world.name, world.description, userId);
+      successfulPhases.push('locations');
+      logger.info('Location seeding completed', { worldId });
+    } catch (error) {
+      logger.error('Location seeding failed but continuing', error, { worldId });
+      errors.push({ phase: 'locations', error: error as Error });
       
-      // Step 2: Seed factions
+      // Emit progress event indicating locations failed
+      eventBus.emit('location.seeding.progress', {
+        v: 1,
+        worldId,
+        userId,
+        phase: 'locations',
+        status: 'failed',
+        message: `Location seeding failed: ${(error as Error).message}`
+      }, userId);
+    }
+    
+    // Step 2: Seed factions (continue on failure)
+    try {
       logger.info('Seeding factions', { worldId });
       const factionService = container.resolve(FactionService);
       await factionService.seedFactionsForWorld(worldId, userId);
+      successfulPhases.push('factions');
+      logger.info('Faction seeding completed', { worldId });
+    } catch (error) {
+      logger.error('Faction seeding failed but continuing', error, { worldId });
+      errors.push({ phase: 'factions', error: error as Error });
       
-      // Step 3: Seed characters
+      // Emit progress event indicating factions failed
+      eventBus.emit('faction.seeding.progress', {
+        v: 1,
+        worldId,
+        userId,
+        phase: 'factions',
+        status: 'failed',
+        message: `Faction seeding failed: ${(error as Error).message}`
+      }, userId);
+    }
+    
+    // Step 3: Seed characters (continue on failure)
+    try {
       logger.info('Seeding characters', { worldId });
       const characterService = container.resolve(CharacterService);
       await characterService.seedCharactersForWorld(worldId, userId);
-      
-      logger.info('World seeding completed successfully', { worldId });
+      successfulPhases.push('characters');
+      logger.info('Character seeding completed', { worldId });
     } catch (error) {
-      logger.error('World seeding failed', error, { worldId });
+      logger.error('Character seeding failed', error, { worldId });
+      errors.push({ phase: 'characters', error: error as Error });
+      
+      // Emit progress event indicating characters failed
+      eventBus.emit('character.seeding.progress', {
+        v: 1,
+        worldId,
+        userId,
+        phase: 'characters',
+        status: 'failed',
+        message: `Character seeding failed: ${(error as Error).message}`
+      }, userId);
+    }
+    
+    // Determine overall status
+    if (errors.length === 0) {
+      // All phases succeeded
+      logger.info('World seeding completed successfully', { worldId, successfulPhases });
+      
+      eventBus.emit('world.seeding.completed', {
+        v: 1,
+        worldId,
+        userId,
+        successfulPhases
+      }, userId);
+    } else if (successfulPhases.length > 0) {
+      // Partial success
+      logger.warn('World seeding partially completed', { 
+        worldId, 
+        successfulPhases,
+        failedPhases: errors.map(e => e.phase),
+        errorCount: errors.length 
+      });
+      
+      eventBus.emit('world.seeding.partial', {
+        v: 1,
+        worldId,
+        userId,
+        successfulPhases,
+        errors: errors.map(e => ({ 
+          phase: e.phase, 
+          message: e.error.message 
+        }))
+      }, userId);
+    } else {
+      // Complete failure
+      logger.error('World seeding completely failed', { 
+        worldId,
+        errorCount: errors.length 
+      });
       
       eventBus.emit('world.seeding.failed', {
         v: 1,
         worldId,
         userId,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: 'All seeding phases failed',
+        errors: errors.map(e => ({ 
+          phase: e.phase, 
+          message: e.error.message 
+        }))
       }, userId);
-      
-      throw error;
     }
   }
 }

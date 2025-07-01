@@ -51,34 +51,55 @@ export function buildLocationMutationPrompt(context: LocationMutationContext) {
   return [
     {
       role: 'system' as const,
-      content: `You are mutating locations based on story events. Focus only on updating existing locations that are directly affected by the narrative.
+      content: `You are mutating locations based on story events. Only update locations DIRECTLY affected by the narrative.
+
+EXAMPLE OUTPUT:
+{
+  "updates": [
+    {
+      "locationId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "newStatus": "ruined",
+      "descriptionAppend": "The once-proud towers now lie in smoking rubble, victims of the dragon's wrath.",
+      "reason": "Dragon attack destroyed the city's defenses"
+    },
+    {
+      "locationId": "x9y8z7w6-v5u4-3210-zyxw-vu9876543210",
+      "newStatus": "declining",
+      "reason": "Trade routes disrupted by the conflict, causing economic hardship"
+    }
+  ]
+}
+
+STATUS PROGRESSION RULES:
+✓ thriving → stable → declining → ruined → abandoned → lost
+✓ Status can skip steps for dramatic events (thriving → ruined)
+✓ Status rarely improves without explicit positive events
+✓ "lost" locations cannot be updated (they're forgotten by the world)
+
+UPDATE GUIDELINES:
+✓ Use the exact UUID from the location list (in square brackets)
+✓ Only update locations mentioned in or affected by the beat
+✓ newStatus is optional - only include if status changes
+✓ descriptionAppend is optional - only for significant new details (1-2 sentences max)
+✓ reason is REQUIRED - explain the narrative cause
 
 Current Locations (format: [UUID] Name (status): description):
-${locationsList}
-
-Status Progression Rules:
-- thriving → stable → declining → ruined → abandoned → lost
-- Status can skip steps for dramatic events
-- Status rarely improves without explicit positive events
-- "lost" locations cannot be updated (they're forgotten)
-
-Update Guidelines:
-- Only update locations directly affected by the beat
-- Use the location's UUID or exact name in the locationId field
-- Provide clear narrative reasons for changes
-- Status changes should feel earned by the story
-- Description appends should be 1-2 sentences max
-- Be specific about which locations are affected and why`
+${locationsList}`
     },
     {
       role: 'user' as const,
-      content: `Based on these story events, which locations need to be updated?
+      content: `Based on these story events, which locations need updates?
 
 Beat Directives: ${context.beatDirectives}
-
 Emergent Storylines: ${context.emergentStorylines.join(', ')}
 
-Identify specific locations from the list above that are affected and how they should change. You can use either the UUID (preferred) or the exact location name for the locationId field.`
+Analyze the beat and identify ONLY locations that are directly affected. For each affected location:
+1. Copy the exact UUID from the square brackets above
+2. Determine if the status should change
+3. Add description details only if something significant happened
+4. Provide a clear narrative reason
+
+Return an empty updates array if no locations are affected.`
     }
   ];
 }
