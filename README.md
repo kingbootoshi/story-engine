@@ -2,22 +2,6 @@
 
 > **Transform static game worlds into living, breathing narratives that evolve with every player action.**
 
-<p align="center">
-  <img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" />
-  <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" />
-  <img src="https://img.shields.io/badge/tRPC-2596BE?style=for-the-badge&logo=trpc&logoColor=white" />
-  <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" />
-  <img src="https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white" />
-</p>
-
-<p align="center">
-  <strong>🎮 <a href="#quick-start">Quick Start</a> • 
-  🚀 <a href="#features">Features</a> • 
-  📖 <a href="#the-golden-rule">Architecture</a> • 
-  🛠️ <a href="#for-developers">For Developers</a> • 
-  📚 <a href="./docs/">Full Docs</a></strong>
-</p>
-
 ---
 
 ## 🎯 What is Story Engine?
@@ -47,8 +31,8 @@ When you create a world, Story Engine automatically populates it with:
 - **20-30 reactive characters** with personalities and motivations
 
 ### 📖 **Dynamic Story Arcs**
-- 15-beat narrative structure based on Save the Cat
-- Only 3 anchor points pre-generated for maximum flexibility
+- 15-beat narrative structure based on the *Save the Cat* framework
+- Only 3 anchor points are pre-generated for maximum flexibility
 - Story beats adapt to player actions and world events
 - Each arc transforms your world permanently
 
@@ -92,100 +76,95 @@ Factions provide dynamic conflict:
 - OpenRouter API key
 
 ### 1. Clone & Install
-
 ```bash
-git clone https://github.com/yourusername/story-engine.git
+git clone https://github.com/kingbootoshi/story-engine.git
 cd story-engine
 npm install
 ```
 
 ### 2. Configure Environment
-
+Create a `.env` file by copying the example:
 ```bash
 cp .env.example .env
 ```
-
-Required variables:
+Then, fill in your credentials. You can find these in your Supabase project settings and on OpenRouter.
 ```env
 # API Keys
 OPENROUTER_API_KEY=your_key_here
 SUPABASE_URL=your_project_url
 SUPABASE_ANON_KEY=your_anon_key
 
-# Optional but recommended
-OPENPIPE_API_KEY=for_ai_observability
+# Optional but recommended for AI observability
+OPENPIPE_API_KEY=your_openpipe_key_here
 ```
 
 ### 3. Set Up Database
-
-Run the migrations in your Supabase project:
-```bash
-# Copy migrations from supabase/migrations/* to your Supabase SQL editor
-```
+Go to your Supabase project's SQL Editor and run the migrations found in `supabase/migrations/*`.
 
 ### 4. Launch the Engine
-
 ```bash
 npm run dev:all
 ```
+- 🎨 **Frontend**: `http://localhost:5173`
+- 🔧 **API**: `http://localhost:3001`
+- 🎮 **Playground**: `http://localhost:3001/playground`
 
-- 🎨 **Frontend**: http://localhost:5173
-- 🔧 **API**: http://localhost:3001
-- 🎮 **Playground**: http://localhost:3001/playground
-
-## 🎮 Using Story Engine
+## 🎮 Using the Engine
 
 ### Creating Your First World
+This single API call generates a complete world with locations, factions, and characters.
 
 ```typescript
-// Via SDK
+// Via SDK (or any tRPC client)
 const world = await storyEngine.worlds.create({
   name: "The Shattered Realms",
   description: "A world where magic is dying and technology rises"
 });
-
-// Via REST API
-POST /api/worlds
-{
-  "name": "The Shattered Realms",
-  "description": "A world where magic is dying and technology rises"
-}
+```
+```bash
+# Via REST API
+curl -X POST http://localhost:3001/api/worlds \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_API_KEY" \
+  -d '{
+    "name": "The Shattered Realms",
+    "description": "A world where magic is dying and technology rises"
+  }'
 ```
 
-This automatically generates:
-- Major regions with distinct characteristics
-- Cities, landmarks, and wilderness areas
-- Competing factions with ideologies
-- Characters with roles and motivations
-
 ### Recording Events (The Heart of the System)
+Record a player action that will ripple through the world.
 
 ```typescript
-// A player action that will ripple through the world
-await storyEngine.worlds.recordEvent(worldId, {
+await storyEngine.worlds.recordEvent({
+  world_id: world.id,
   event_type: "player_action",
   impact_level: "major",
-  description: "The ancient seal on the Shadowgate has been broken"
+  description: "The ancient seal on the Shadowgate has been broken by a hero."
 });
 ```
 
 ### Progressing the Story
+Generate the next story beat based on accumulated events.
 
 ```typescript
-// Generate the next story beat based on accumulated events
-const nextBeat = await storyEngine.worlds.progressArc(arcId, { worldId });
+const nextBeat = await storyEngine.worlds.progressArc({
+  arcId: world.current_arc_id,
+  worldId: world.id
+});
 
-// Returns something like:
+// Returns a rich object describing the world's evolution:
 {
   beat_name: "The Shadow Awakens",
+  description: "With the Shadowgate seal broken, a palpable darkness seeps from the gate...",
   world_directives: [
-    "Dark creatures begin emerging near the Shadowgate",
-    "The Mage Guild mobilizes to investigate",
-    "Common folk flee the northern territories"
+    "Dark creatures begin emerging near the Shadowgate.",
+    "The Mage Guild mobilizes to investigate.",
+    "Common folk flee the northern territories, creating a refugee crisis."
   ],
   emergent_storylines: [
-    "A cult devoted to the shadow forms",
-    "Ancient prophecies surface about a chosen one"
+    "A cult devoted to the shadow forms in the capital city.",
+    "Ancient prophecies surface about a chosen one destined to face the darkness."
   ]
 }
 ```
@@ -200,134 +179,123 @@ Every Action → Event → Beat → Reactions → More Events
 
 ### Example Flow
 
-1. **Player Action**: "Assassinate the Duke of Westford"
-2. **Event Logged**: `{ impact: "catastrophic", description: "Duke assassinated" }`
-3. **Story Beat Generated**: "The Succession Crisis"
-   - Directives: ["Nobles choose sides", "Trade routes disrupted"]
-   - Emergent: ["Duke's bastard son appears", "Ancient law discovered"]
-4. **Automatic Reactions**:
-   - Factions split into rival camps
-   - Characters form memories and change loyalties
-   - Locations change status (castle → contested)
-   - New events generated → cycle continues
+1.  **Player Action**: "Assassinate the Duke of Westford"
+2.  **Event Logged**: `{ impact: "major", description: "Duke assassinated" }`
+3.  **Story Beat Generated**: "The Succession Crisis"
+    -   *Directives*: ["Nobles choose sides", "Trade routes disrupted"]
+    -   *Emergent*: ["Duke's bastard son appears", "Ancient law discovered"]
+4.  **Automatic Reactions**:
+    -   Factions split into rival camps.
+    -   Characters form memories and change loyalties.
+    -   Locations change status (e.g., castle → contested).
+    -   New events are generated by NPCs, continuing the cycle.
 
 ## 🛠️ For Developers
 
 ### Architecture Highlights
+-   **Modular Design**: Each feature (worlds, characters, factions) is a self-contained module in `src/modules`.
+-   **Event-Driven**: Modules communicate only through an event bus, ensuring perfect decoupling.
+-   **Type-Safe API**: Full end-to-end type safety with tRPC, from database to frontend.
+-   **Dual API**: REST endpoints are **automatically generated** from your tRPC routers for maximum compatibility.
+-   **AI-Powered**: Each module has specialized AI agents for intelligent content generation.
 
-- **Modular Design**: Each feature (worlds, characters, locations, factions) is a self-contained module
-- **Event-Driven**: Modules communicate only through events, ensuring perfect decoupling
-- **Type-Safe**: Full TypeScript with tRPC for end-to-end type safety
-- **AI-Powered**: Each module has specialized AI agents for content generation
-- **Dual API**: Automatic REST endpoints alongside tRPC for maximum compatibility
+### Creating a New Module in Minutes
 
-### Creating a New Module
+1.  **Define your domain** with Zod schemas (`src/modules/dragon/domain/schema.ts`):
+    ```typescript
+    export const Dragon = z.object({
+      id: UUIDString,
+      world_id: UUIDString,
+      name: NonEmptyString,
+      lair_location_id: UUIDString.nullable(),
+      temperament: z.enum(['hostile', 'neutral', 'friendly']),
+    });
+    ```
 
-```typescript
-// 1. Define your domain with Zod
-export const Dragon = z.object({
-  id: UUIDString,
-  world_id: UUIDString,
-  name: NonEmptyString,
-  lair_location_id: UUIDString,
-  hoard_value: PositiveInt,
-  temperament: z.enum(['hostile', 'neutral', 'friendly']),
-  age: z.enum(['wyrmling', 'young', 'adult', 'ancient'])
-});
+2.  **Create your service** with dependency injection (`src/modules/dragon/application/DragonService.ts`):
+    ```typescript
+    @injectable()
+    export class DragonService {
+      constructor(
+        @inject('IDragonRepository') private repo: IDragonRepository,
+        @inject('EventBus') private eventBus: IEventBus
+      ) {}
 
-// 2. Create your service
-@injectable()
-export class DragonService {
-  async create(input: CreateDragon) {
-    const dragon = await this.repo.create(input);
-    eventBus.emit('dragon.awakened', { worldId: dragon.world_id });
-    return dragon;
-  }
-}
+      async create(input: CreateDragon) {
+        const dragon = await this.repo.create(input);
+        this.eventBus.emit('dragon.awakened', { dragonId: dragon.id });
+        return dragon;
+      }
+    }
+    ```
 
-// 3. Define tRPC router (auto-generates REST endpoints!)
-export const dragonRouter = router({
-  list: publicProcedure
-    .input(z.object({ worldId: z.string() }))
-    .query(({ input }) => dragonService().list(input.worldId)),
-    
-  create: authedProcedure
-    .input(CreateDragon)
-    .mutation(({ input }) => dragonService().create(input))
-});
-```
+3.  **Expose it via a tRPC router** (`src/modules/dragon/delivery/trpc/router.ts`):
+    ```typescript
+    export const dragonRouter = router({
+      list: publicProcedure
+        .input(z.object({ worldId: UUIDString }))
+        .query(({ input }) => dragonService.listByWorld(input.worldId)),
 
-### Frontend Type Safety (Zero Duplication)
+      create: authedProcedure
+        .input(CreateDragonSchema)
+        .mutation(({ input, ctx }) => dragonService.create(input, ctx)),
+    });
+    ```
+    Your REST endpoints (`GET /api/dragons?worldId=...` and `POST /api/dragons`) are now live!
 
-```typescript
-// Types are automatically inferred from backend!
-import type { RouterOutputs } from '@/lib/trpc';
+4.  **Use it on the frontend with 100% type safety**:
+    ```typescript
+    // Types are automatically inferred from the backend!
+    import { trpc, type AppRouter } from '@/shared/lib/trpcClient';
 
-type Dragon = RouterOutputs['dragon']['list'][number];
-// Full type safety, no manual type definitions needed!
-```
+    type Dragon = AppRouter['dragon']['list']['_def']['_output_out'][number];
+
+    function DragonComponent() {
+      const { data: dragons } = trpc.dragon.list.useQuery({ worldId });
+      // `dragons` is fully typed as `Dragon[] | undefined`
+    }
+    ```
 
 ## 📊 Production Ready
 
-- **Scalable**: Designed for horizontal scaling
-- **Observable**: Built-in AI usage tracking and cost monitoring
-- **Reliable**: Comprehensive error handling and retry logic
-- **Performant**: Optimized queries and caching strategies
-- **Secure**: API key authentication and row-level security
+-   **Scalable**: Designed for horizontal scaling with a stateless architecture.
+-   **Observable**: Built-in AI usage tracking, cost monitoring, and structured logging.
+-   **Reliable**: Comprehensive error handling and automatic retry logic for AI calls.
+-   **Performant**: Optimized queries and caching strategies via React Query.
+-   **Secure**: API key authentication and row-level security in Supabase.
 
 ## 🌟 Why Story Engine?
 
-### For Game Developers
-- Stop writing static quest lines that players speedrun through
-- Create worlds that surprise even you, the creator
-- Let player actions have meaningful, lasting consequences
-- Build narratives that emerge from gameplay, not scripts
-
-### For Players
-- Every playthrough is unique
-- Actions have real consequences
-- The world remembers and reacts
-- Stories that feel alive and responsive
-
-### For AI Enthusiasts
-- See practical AI application beyond chatbots
-- Multiple specialized agents working in harmony
-- Structured generation with narrative coherence
-- Open source implementation to learn from
+| For Game Developers                                          | For Players                                          | For AI Enthusiasts                                     |
+| ------------------------------------------------------------ | ---------------------------------------------------- | ------------------------------------------------------ |
+| Stop writing static quest lines that players speedrun through. | Every playthrough is unique.                         | See practical AI application beyond chatbots.          |
+| Create worlds that surprise even you, the creator.           | Actions have real, lasting consequences.             | Witness multiple specialized agents working in harmony. |
+| Let player actions have meaningful, permanent consequences.  | The world remembers and reacts.                      | Explore structured generation with narrative coherence. |
+| Build narratives that emerge from gameplay, not scripts.     | Stories feel alive and responsive.                   | Learn from an open-source, modular AI implementation. |
 
 ## 📚 Documentation
 
-- 📖 [System Overview](./docs/modules/worlds/system-overview.md) - Core concepts and philosophy
-- 🎭 [Narrative Design](./docs/modules/worlds/narrative-design.md) - How stories evolve
-- 🏗️ [Architecture](./docs/golden-rule-architecture.md) - The Golden Rule explained
-- 🔧 [Module Creation](./docs/creating_modules.md) - Build your own features
-- 🌐 [API Reference](./docs/sdk-api-reference.md) - Complete API documentation
-- 🎮 [Frontend Guide](./docs/frontend_guide.md) - Building UIs with Story Engine
-
-## 🤝 Contributing
-
-We love contributions! Whether it's:
-- 🐛 Bug fixes
-- ✨ New features
-- 📚 Documentation improvements
-- 🎨 UI enhancements
-- 🧪 Test coverage
-
-Check out our [Contributing Guide](./docs/contributing.md) to get started.
+-   📖 **[System Overview](./docs/system-overview.md)** - Core concepts and philosophy.
+-   🎭 **[Narrative Design](./docs/narrative-design.md)** - How stories evolve.
+-   🏗️ **[Architecture](./docs/architecture.md)** - The Golden Rule explained.
+-   🔧 **[Module Creation](./docs/creating-modules.md)** - Build your own features.
+-   🌐 **[API Reference](./docs/api-reference.md)** - Complete API documentation.
+-   🎮 **[Frontend Guide](./docs/frontend-guide.md)** - Building UIs with Story Engine.
 
 ## 📜 License
 
-MIT - Build amazing narrative experiences!
+This project is licensed under the **MIT License**.
 
 ---
 
 <p align="center">
   <strong>Ready to create living worlds?</strong><br>
-  <a href="#quick-start">Get Started</a> • 
-  <a href="https://github.com/yourusername/story-engine/issues">Report Bug</a> • 
-  <a href="https://github.com/yourusername/story-engine/discussions">Join Discussion</a>
+  <a href="#-quick-start">Get Started</a> • 
+  <a href="https://github.com/yourusername/story-engine/issues">Report a Bug</a> • 
+  <a href="https://github.com/yourusername/story-engine/discussions">Join the Discussion</a>
 </p>
 
 <p align="center">
   <i>Built with ❤️ by a fucken D&D nerd</i>
 </p>
+```
