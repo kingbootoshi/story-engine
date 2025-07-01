@@ -4,6 +4,9 @@
 
 ---
 
+<img width="1728" alt="boltimage1-min" src="https://github.com/user-attachments/assets/6d73909b-5520-4ae5-8998-d7e385815485" />
+
+
 ## 🎯 What is Story Engine?
 
 Story Engine is an **event-driven narrative system** that creates dynamic, evolving stories for game worlds. Unlike traditional static narratives or branching storylines, Story Engine creates **living narratives** that adapt to player actions in real-time.
