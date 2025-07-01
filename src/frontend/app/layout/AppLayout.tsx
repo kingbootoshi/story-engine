@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { DesktopHeader } from './DesktopHeader';
 import { MobileHeader } from './MobileHeader';
 import { MobileNavigation } from './MobileNavigation';
+import { MusicControls } from '@/features/audio';
 import './AppLayout.styles.css';
 
 /**
@@ -126,6 +127,9 @@ export function AppLayout() {
         <main className={`app-layout__main ${isTransitioning ? 'app-layout__main--transitioning' : ''}`}>
           <Outlet />
         </main>
+        
+        {/* Music Controls */}
+        <MusicControls />
       </div>
     </div>
   );

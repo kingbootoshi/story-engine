@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useSound } from '@/features/audio';
 import './EntityModal.styles.css';
 
 interface EntityModalProps {
@@ -7,11 +8,19 @@ interface EntityModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  playSound?: boolean; // Optional prop to control sound playback
 }
 
-export function EntityModal({ isOpen, onClose, title, children }: EntityModalProps) {
+export function EntityModal({ isOpen, onClose, title, children, playSound = false }: EntityModalProps) {
+  const { play } = useSound();
+
   useEffect(() => {
     if (isOpen) {
+      // Play sound if enabled
+      if (playSound) {
+        play('click_entities');
+      }
+      
       // Save current scroll position
       const scrollY = window.scrollY;
       document.body.style.top = `-${scrollY}px`;
@@ -25,7 +34,7 @@ export function EntityModal({ isOpen, onClose, title, children }: EntityModalPro
         window.scrollTo(0, parseInt(savedScrollY || '0') * -1);
       };
     }
-  }, [isOpen]);
+  }, [isOpen, playSound, play]);
 
   if (!isOpen) return null;
 
@@ -93,7 +102,7 @@ export function LocationModal({ location, isOpen, onClose }: LocationModalProps)
   if (!location) return null;
 
   return (
-    <EntityModal isOpen={isOpen} onClose={onClose} title={location.name}>
+    <EntityModal isOpen={isOpen} onClose={onClose} title={location.name} playSound={true}>
       <div className="entity-modal__section">
         <h3 className="entity-modal__section-title">Basic Information</h3>
         <div className="entity-modal__info-grid">
@@ -193,7 +202,7 @@ export function CharacterModal({ character, isOpen, onClose }: CharacterModalPro
   if (!character) return null;
 
   return (
-    <EntityModal isOpen={isOpen} onClose={onClose} title={character.name}>
+    <EntityModal isOpen={isOpen} onClose={onClose} title={character.name} playSound={true}>
       <div className="entity-modal__section">
         <h3 className="entity-modal__section-title">Basic Information</h3>
         <div className="entity-modal__info-grid">
@@ -309,7 +318,7 @@ export function FactionModal({ faction, isOpen, onClose }: FactionModalProps) {
   if (!faction) return null;
 
   return (
-    <EntityModal isOpen={isOpen} onClose={onClose} title={faction.name}>
+    <EntityModal isOpen={isOpen} onClose={onClose} title={faction.name} playSound={true}>
       <div className="entity-modal__section">
         <h3 className="entity-modal__section-title">Basic Information</h3>
         <div className="entity-modal__info-grid">

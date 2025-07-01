@@ -1,3 +1,4 @@
+import { useSound } from '@/features/audio';
 import type { NewEventForm } from '../../types';
 
 interface EventFormProps {
@@ -8,8 +9,16 @@ interface EventFormProps {
 }
 
 export function EventForm({ newEvent, onEventChange, onSubmit, onCancel }: EventFormProps) {
+  const { play } = useSound();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    play('add_event');
+    onSubmit(e);
+  };
+
   return (
-    <form onSubmit={onSubmit}>
+    <form onSubmit={handleSubmit}>
       <div className="world-detail__form-group">
         <label htmlFor="eventType">
           Event Type

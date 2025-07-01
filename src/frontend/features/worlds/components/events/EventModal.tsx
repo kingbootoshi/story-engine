@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { useSound } from '@/features/audio';
 import { EntityModal } from '../modals/EntityModal';
 import { EventForm } from './EventForm';
 import type { NewEventForm } from '../../types';
@@ -21,6 +23,15 @@ export function EventModal({
   onEventChange, 
   onSubmit 
 }: EventModalProps) {
+  const { play } = useSound();
+
+  // Play sound when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      play('click_menu_button');
+    }
+  }, [isOpen, play]);
+
   const handleSubmit = (e: React.FormEvent) => {
     onSubmit(e);
     // The parent component will handle closing the modal after successful submission

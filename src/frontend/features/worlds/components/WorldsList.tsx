@@ -4,6 +4,7 @@ import { trpc } from '@/shared/lib/trpcClient';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@/shared/lib/trpcClient';
 import { WorldSphere } from './WorldSphere';
+import { useSound } from '@/features/audio';
 import './WorldsList.styles.css';
 
 /**
@@ -28,6 +29,7 @@ export function WorldsList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const navigate = useNavigate();
+  const { play } = useSound();
 
   // Form state for new world
   const [newWorld, setNewWorld] = useState({
@@ -73,6 +75,10 @@ export function WorldsList() {
       setError('');
       const created = await trpc.world.create.mutate(newWorld);
       console.debug('[WorldsList] Created world:', created);
+      
+      // Play world creation sound
+      play('create_new_world');
+      
       setShowCreateForm(false);
       setNewWorld({ name: '', description: '' });
       await fetchWorlds();
@@ -83,6 +89,25 @@ export function WorldsList() {
       console.error('[WorldsList] Failed to create world:', err);
       setError('Failed to create world');
     }
+  };
+
+  /**
+   * Handle creating new world button click
+   */
+  const handleCreateButtonClick = () => {
+    const newState = !showCreateForm;
+    setShowCreateForm(newState);
+    // Play sound when opening create form
+    if (newState) {
+      play('click_menu_button');
+    }
+  };
+
+  /**
+   * Handle world card click
+   */
+  const handleWorldClick = () => {
+    play('enter_world');
   };
 
   /**
@@ -116,7 +141,7 @@ export function WorldsList() {
           <p className="worlds-list__subtitle">Create and manage dynamic narrative universes</p>
         </div>
         <button
-          onClick={() => setShowCreateForm(!showCreateForm)}
+          onClick={handleCreateButtonClick}
           className="worlds-list__create-button"
         >
           {showCreateForm ? (
@@ -234,7 +259,10 @@ export function WorldsList() {
               <span className="material-icons worlds-list__empty-icon">public_off</span>
               <p>You haven't created any worlds yet</p>
               <button 
-                onClick={() => setShowCreateForm(true)}
+                onClick={() => {
+                  setShowCreateForm(true);
+                  play('click_menu_button');
+                }}
                 className="worlds-list__empty-button"
               >
                 Create Your First World
@@ -250,6 +278,7 @@ export function WorldsList() {
                 key={world.id} 
                 to={`/app/worlds/${world.id}`}
                 className="worlds-list__card"
+                onClick={handleWorldClick}
               >
                 <div className="worlds-list__card-sphere">
                   <WorldSphere seed={world.id} />

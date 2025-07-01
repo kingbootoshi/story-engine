@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useSound } from '@/features/audio';
 import './WorldSeedingPanel.styles.css';
 
 interface WorldSeedingPanelProps {
@@ -21,12 +22,15 @@ export function WorldSeedingPanel({
   seedingProgress 
 }: WorldSeedingPanelProps) {
   const [showConfirm, setShowConfirm] = useState(false);
+  const { play } = useSound();
 
   const handleSeedClick = () => {
+    play('click_menu_button');
     setShowConfirm(true);
   };
 
   const handleConfirm = () => {
+    play('start_seed');
     setShowConfirm(false);
     onSeedWorld();
   };

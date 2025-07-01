@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth';
+import { useSound } from '@/features/audio';
 import type { NavItem } from './AppLayout';
 import './DesktopHeader.styles.css';
 
@@ -18,6 +19,7 @@ export function DesktopHeader({ navItems, isScrolled }: DesktopHeaderProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const { play } = useSound();
 
   /**
    * Close user menu when clicking outside
@@ -50,9 +52,25 @@ export function DesktopHeader({ navItems, isScrolled }: DesktopHeaderProps) {
   };
 
   /**
+   * Handle nav link click with sound
+   */
+  const handleNavClick = () => {
+    play('click_menu_button');
+  };
+
+  /**
+   * Handle user menu click with sound
+   */
+  const handleUserMenuClick = () => {
+    play('click_menu_button');
+    setIsUserMenuOpen(!isUserMenuOpen);
+  };
+
+  /**
    * Handle user sign out
    */
   const handleSignOut = async () => {
+    play('click_menu_button');
     try {
       await signOut();
       navigate('/');
@@ -66,7 +84,7 @@ export function DesktopHeader({ navItems, isScrolled }: DesktopHeaderProps) {
       <div className="desktop-header__container">
         {/* Logo */}
         <div className="desktop-header__logo-section">
-          <Link to="/app" className="desktop-header__logo-link">
+          <Link to="/app" className="desktop-header__logo-link" onClick={handleNavClick}>
             <span className="desktop-header__logo-icon">
               <span className="material-icons">auto_stories</span>
             </span>
@@ -82,6 +100,7 @@ export function DesktopHeader({ navItems, isScrolled }: DesktopHeaderProps) {
                 key={item.path}
                 to={item.path}
                 className={`desktop-header__nav-link ${isActive(item) ? 'desktop-header__nav-link--active' : ''}`}
+                onClick={handleNavClick}
               >
                 <span className="material-icons">{item.icon}</span>
                 <span className="desktop-header__nav-label">{item.label}</span>
@@ -94,7 +113,7 @@ export function DesktopHeader({ navItems, isScrolled }: DesktopHeaderProps) {
         <div className="desktop-header__user-menu-container">
           <button
             className="desktop-header__user-button"
-            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+            onClick={handleUserMenuClick}
             aria-label="User menu"
           >
             <span className="material-icons">account_circle</span>

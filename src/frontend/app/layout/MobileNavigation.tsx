@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth';
+import { MusicControls } from '@/features/audio';
 import type { NavItem } from './AppLayout';
 import './MobileNavigation.styles.css';
 
@@ -11,7 +12,7 @@ interface MobileNavigationProps {
 
 /**
  * Mobile navigation sidebar component
- * Slides in from left with navigation items and user info
+ * Slides in from left with navigation items, music controls, and user info
  */
 export function MobileNavigation({ navItems, isOpen, onClose }: MobileNavigationProps) {
   const { user, signOut } = useAuth();
@@ -79,6 +80,11 @@ export function MobileNavigation({ navItems, isOpen, onClose }: MobileNavigation
         </div>
         
         <div className="mobile-nav__footer">
+          {/* Music Controls */}
+          <div className="mobile-nav__music">
+            <MusicControls variant="mobile" />
+          </div>
+          
           <div className="mobile-nav__user">
             <span className="material-icons">account_circle</span>
             <span>{user?.email}</span>

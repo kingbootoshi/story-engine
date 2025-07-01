@@ -23,6 +23,7 @@ import {
   useEntityModals,
   useUIState
 } from '../../hooks';
+import { useSound } from '@/features/audio';
 import '../../styles/index.css';
 
 type MobileTab = 'world' | 'arc' | 'locations' | 'characters';
@@ -30,6 +31,7 @@ type MobileTab = 'world' | 'arc' | 'locations' | 'characters';
 export function WorldDetailLayout() {
   const { worldId } = useParams<{ worldId: string }>();
   const [activeMobileTab, setActiveMobileTab] = useState<MobileTab>('world');
+  const { play } = useSound();
   
   // Custom hooks
   const {
@@ -138,6 +140,8 @@ export function WorldDetailLayout() {
       async () => {
         await fetchWorldDetails();
         await fetchAllWorldData();
+        // Play arc completion sound
+        play('arc_done');
       },
       setError
     );
@@ -197,6 +201,8 @@ export function WorldDetailLayout() {
           clearInterval(pollInterval);
           setIsSeeding(false);
           setSeedingProgress(undefined);
+          // Play generation complete sound
+          play('gen_done');
         }
       }, 2000); // Poll every 2 seconds
       

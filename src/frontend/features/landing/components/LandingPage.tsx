@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthForm } from '@/features/auth/components/AuthForm';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { MusicControls, useSound } from '@/features/audio';
 import './LandingPage.styles.css';
 
 /**
@@ -22,12 +23,18 @@ export function LandingPage() {
   
   // Check if user is already authenticated
   const { user } = useAuth();
+  
+  // Sound hook
+  const { play } = useSound();
 
   /**
    * Handles the transition to show the auth form or navigate to app
    * First fades out the content, then shows auth or navigates
    */
   const handleBeginJourney = () => {
+    // Play the epic begin journey sound
+    play('begin_journey');
+    
     setIsContentExiting(true);
     
     if (user) {
@@ -111,6 +118,9 @@ export function LandingPage() {
           className="bolt-badge__image"
         />
       </a>
+      
+      {/* Music Controls */}
+      <MusicControls />
     </div>
   );
 }
