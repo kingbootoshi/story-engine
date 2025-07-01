@@ -608,6 +608,65 @@
   }
 }
 
+/* Mobile-specific styles when in World tab */
+@media (max-width: theme('screens.sm')) {
+  /* When inside mobile World tab */
+  .world-detail__section--active .world-seeding-panel {
+    background: transparent;
+    border: none;
+    padding: theme('spacing.4') theme('spacing.2');
+    margin: 0 0 theme('spacing.4') 0;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+  
+  .world-detail__section--active .world-seeding-panel__header {
+    margin-bottom: theme('spacing.4');
+  }
+  
+  .world-detail__section--active .world-seeding-panel__title {
+    font-size: theme('fontSize.2xl');
+    text-align: center;
+  }
+  
+  .world-detail__section--active .world-seeding-panel__options {
+    gap: theme('spacing.4');
+  }
+  
+  .world-detail__section--active .world-seeding-panel__option {
+    padding: theme('spacing.6');
+    border-radius: theme('borderRadius.lg');
+  }
+  
+  .world-detail__section--active .world-seeding-panel__option-icon {
+    font-size: 48px;
+    margin-bottom: theme('spacing.3');
+  }
+  
+  .world-detail__section--active .world-seeding-panel__option-title {
+    font-size: theme('fontSize.xl');
+  }
+  
+  .world-detail__section--active .world-seeding-panel__option-description {
+    font-size: theme('fontSize.sm');
+    margin-bottom: theme('spacing.4');
+  }
+  
+  .world-detail__section--active .world-seeding-panel__button {
+    padding: theme('spacing.2') theme('spacing.4');
+    font-size: theme('fontSize.sm');
+  }
+  
+  /* Separator between seeding panel and world info */
+  .world-detail__section--active .world-seeding-panel::after {
+    content: '';
+    display: block;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin-top: theme('spacing.6');
+  }
+}
+
 /* Responsive adjustments for mobile */
 @media (max-width: 640px) {
   .world-seeding-modal__content {

@@ -391,6 +391,16 @@ export function WorldDetailLayout() {
         <div className="world-detail__mobile-content">
           {/* World Tab */}
           <div className={`world-detail__section ${activeMobileTab === 'world' ? 'world-detail__section--active' : ''}`}>
+            {/* Show seeding panel on mobile World tab if world is unseeded */}
+            {!currentArc && locations.length === 0 && factions.length === 0 && characters.length === 0 && !isLoading && (
+              <WorldSeedingPanel
+                worldId={worldId!}
+                onSeedWorld={handleSeedWorld}
+                isSeeding={isSeeding}
+                seedingProgress={seedingProgress}
+              />
+            )}
+            
             <WorldInfoPanel world={world} currentArc={currentArc} />
             <EventsSection
               currentArc={currentArc}
